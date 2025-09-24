@@ -2,6 +2,7 @@ extends Control
 
 # Real Space Generator with cosmic_kale preset - using core SpaceGenerator class
 @export var background_resolution: Vector2i = Vector2i(720, 480)  # Lower resolution for better performance
+@export var scroll_speed: float = 1.0  # Global scroll speed multiplier
 
 # Preload all required classes
 const SpaceGeneratorClass = preload("res://addons/Space Generator/SpaceGenerator/space_generator.gd")
@@ -66,6 +67,9 @@ func load_cosmic_kale_preset_async():
 	
 	var preset_data = json.data
 	
+	# Randomize seeds for variety
+	randomize_preset_seeds(preset_data)
+	
 	# Wait a frame to let the scene tree settle
 	await get_tree().process_frame
 	
@@ -73,13 +77,86 @@ func load_cosmic_kale_preset_async():
 	if space_generator and space_generator.has_method("load_preset"):
 		space_generator.load_preset(preset_data)
 	
+	# Apply the scroll speed multiplier to the loaded layers
+	await get_tree().process_frame  # Wait for layers to be fully initialized
+	apply_scroll_speed()
+	
 	print("Space background loaded!")
 
+func randomize_preset_seeds(preset_data: Dictionary):
+	# Randomize seeds for all layers to create variety
+	var rng = RandomNumberGenerator.new()
+	rng.randomize()
+	
+	print("🎲 Randomizing space background seeds for variety...")
+	
+	# Go through all layers and randomize their seeds
+	for key in preset_data.keys():
+		if key.begins_with("NebulaLayer") or key.begins_with("StarLayer"):
+			var layer_data = preset_data[key]
+			
+			# Randomize nebula seeds (main noise pattern)
+			if layer_data.has("seed"):
+				var old_seed = layer_data["seed"]
+				layer_data["seed"] = rng.randi()
+				print("  %s: seed %d → %d" % [key, old_seed, layer_data["seed"]])
+			
+			# Randomize modulation seeds (secondary noise for nebula layers)
+			if layer_data.has("modulation_seed"):
+				var old_mod_seed = layer_data["modulation_seed"]
+				layer_data["modulation_seed"] = rng.randi()
+				print("  %s: modulation_seed %d → %d" % [key, old_mod_seed, layer_data["modulation_seed"]])
+	
+	print("✨ Seed randomization complete!")
+
 func set_scroll_speed(new_speed: float):
-	# Update layer speeds if needed
-	pass
+	# Update the global scroll speed multiplier
+	scroll_speed = new_speed
+	apply_scroll_speed()
+
+func apply_scroll_speed():
+	# Apply the scroll speed multiplier to all layers using their original preset speeds
+	if space_generator:
+		for layer in space_generator.layers:
+			if layer.has_method("set_speed"):
+				# Get the original speed from the cosmic_kale preset and multiply by our global multiplier
+				var original_speed = get_original_layer_speed(layer.title)
+				var final_speed = original_speed * scroll_speed
+				layer.set_speed(final_speed)
+
+func get_original_layer_speed(layer_title: String) -> float:
+	# Return the original speeds from the cosmic_kale preset
+	match layer_title:
+		"Background Nebula":
+			return 11.5
+		"Foreground Nebula": 
+			return 29.2
+		"Star Layer A", "Star Layer B":
+			return 6.0
+		_:
+			return 6.0  # Default speed
 
 func regenerate():
-	# Regenerate the space background
-	if space_generator and space_generator.has_method("generate_space"):
-		space_generator.generate_space(background_resolution)
+	# Regenerate the space background with new random seeds
+	print("Regenerating space background with new seeds...")
+	
+	# Reload and randomize the preset
+	var preset_file = FileAccess.open("res://addons/Space Generator/Presets/cosmic_kale.json", FileAccess.READ)
+	if preset_file:
+		var preset_json_string = preset_file.get_as_text()
+		preset_file.close()
+		
+		var json = JSON.new()
+		var parse_result = json.parse(preset_json_string)
+		if parse_result == OK:
+			var preset_data = json.data
+			randomize_preset_seeds(preset_data)
+			
+			if space_generator and space_generator.has_method("load_preset"):
+				space_generator.load_preset(preset_data)
+		else:
+			print("Error parsing preset during regeneration")
+	else:
+		# Fallback: just regenerate with current settings
+		if space_generator and space_generator.has_method("generate_space"):
+			space_generator.generate_space(background_resolution)

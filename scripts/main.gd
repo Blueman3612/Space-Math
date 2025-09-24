@@ -31,7 +31,7 @@ func _input(event):
 			update_question_display()
 		elif event.keycode == KEY_R:
 			# Regenerate space background
-			var space_bg = get_node("SpaceBackground")
+			var space_bg = get_node("BackgroundLayer/SpaceBackground")
 			if space_bg and space_bg.has_method("regenerate"):
 				space_bg.regenerate()
 
