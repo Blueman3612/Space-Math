@@ -7,7 +7,7 @@ var rng = RandomNumberGenerator.new()
 # Game configuration variables
 var blink_interval = 0.5  # Time for underscore blink cycle (fade in/out)
 var max_answer_chars = 4  # Maximum characters for answer input
-var movement_smoothing = 0.1  # Exponential smoothing factor (10% per frame)
+var animation_duration = 0.5  # Duration for label animations in seconds
 var transition_delay = 0.0  # Delay before generating new question
 
 # Position variables
@@ -21,7 +21,6 @@ var current_question = null  # Store current question data
 var user_answer = ""
 var blink_timer = 0.0
 var underscore_visible = true
-var moving_labels = []  # Array to track labels in transition
 var label_settings_resource: LabelSettings
 
 func _ready():
@@ -35,9 +34,7 @@ func _ready():
 		var parse_result = json.parse(json_string)
 		if parse_result == OK:
 			math_facts = json.data
-			print("Math facts loaded successfully! Found ", math_facts.size(), " top-level keys")
-			if math_facts.has("grades"):
-				print("Grades found: ", math_facts.grades.keys())
+		# Math facts loaded successfully
 		else:
 			print("Error parsing JSON: ", json.get_error_message())
 	else:
@@ -100,9 +97,6 @@ func _process(delta):
 	
 	# Update problem display
 	update_problem_display()
-	
-	# Update moving labels
-	update_moving_labels(delta)
 
 func setup_initial_problem():
 	# Get the existing Problem label and set it up as current
@@ -140,20 +134,19 @@ func submit_answer():
 	if user_answer == "":
 		return  # Don't submit empty answers
 	
-	# Move current label up and off screen
+	print("Submitting answer: ", user_answer)
+	
+	# Move current label up and off screen (fire and forget)
 	if current_problem_label:
-		moving_labels.append({
-			"label": current_problem_label,
-			"target_position": off_screen_top,
-			"is_moving_up": true
-		})
+		var old_label = current_problem_label
+		var tween = create_tween()
+		tween.set_ease(Tween.EASE_OUT)
+		tween.set_trans(Tween.TRANS_EXPO)
+		tween.tween_property(old_label, "position", off_screen_top, animation_duration)
+		tween.tween_callback(old_label.queue_free)
 	
-	# Create new label at bottom off-screen position
+	# Immediately create new problem - this is now the ONLY active problem
 	create_new_problem_label()
-	
-	# Generate new question after delay
-	if transition_delay > 0.0:
-		await get_tree().create_timer(transition_delay).timeout
 	generate_new_question()
 
 func create_new_problem_label():
@@ -168,47 +161,15 @@ func create_new_problem_label():
 	# Add to scene
 	add_child(new_label)
 	
-	# Set as current problem label
+	# Set as current problem label IMMEDIATELY
 	current_problem_label = new_label
 	
-	# Add to moving labels array to animate to primary position
-	moving_labels.append({
-		"label": new_label,
-		"target_position": primary_position,
-		"is_moving_up": false
-	})
+	# Animate to center position (fire and forget)
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(new_label, "position", primary_position, animation_duration)
 
-func update_moving_labels(delta):
-	var labels_to_remove = []
-	
-	for i in range(moving_labels.size()):
-		var moving_label = moving_labels[i]
-		var label = moving_label.label
-		var target = moving_label.target_position
-		
-		if not is_instance_valid(label):
-			labels_to_remove.append(i)
-			continue
-		
-		# Exponential smoothing movement
-		var current_pos = label.position
-		var distance = target - current_pos
-		var movement = distance * movement_smoothing
-		label.position += movement
-		
-		# Check if label reached target (within small threshold)
-		if distance.length() < 5.0:
-			label.position = target
-			
-			# If this label was moving up (finished problem), remove it
-			if moving_label.is_moving_up:
-				label.queue_free()
-			
-			labels_to_remove.append(i)
-	
-	# Remove completed movements (in reverse order to maintain indices)
-	for i in range(labels_to_remove.size() - 1, -1, -1):
-		moving_labels.remove_at(labels_to_remove[i])
 
 func get_math_question(track = null, grade = null, operator = null, no_zeroes = false):
 	if not math_facts.has("grades"):
@@ -222,14 +183,12 @@ func get_math_question(track = null, grade = null, operator = null, no_zeroes = 
 	if track != null:
 		# Find questions from specific track
 		var track_key = "TRACK" + str(track)
-		print("Looking for track: ", track_key)
 		for grade_key in math_facts.grades:
 			var grade_data = math_facts.grades[grade_key]
 			if grade_data.has("tracks") and grade_data.tracks.has(track_key):
 				questions = grade_data.tracks[track_key].facts
 				question_title = grade_data.tracks[track_key].title
 				question_grade = grade_data.name
-				print("Found track ", track_key, " in grade ", grade_key, " with ", questions.size(), " questions")
 				break
 		
 		# If track not found, pick random existing track
@@ -325,10 +284,7 @@ func get_math_question(track = null, grade = null, operator = null, no_zeroes = 
 	
 	# Return random question from filtered results
 	if questions.is_empty():
-		print("No questions found after filtering")
 		return null
-	
-	print("Selecting from ", questions.size(), " available questions")
 	
 	var random_question = questions[rng.randi() % questions.size()]
 	
