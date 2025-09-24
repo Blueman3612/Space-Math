@@ -9,13 +9,13 @@ var blink_interval = 0.5  # Time for underscore blink cycle (fade in/out)
 var max_answer_chars = 4  # Maximum characters for answer input
 var animation_duration = 0.5  # Duration for label animations in seconds
 var transition_delay = 0.1  # Delay before generating new question
-var backspace_hold_time = 0.12  # Time to hold backspace before it repeats
+var backspace_hold_time = 0.15  # Time to hold backspace before it repeats
 var scroll_boost_multiplier = 80.0  # How much to boost background scroll speed on submission
 
 # Position variables
 var primary_position = Vector2(416, 476)  # Main problem position
-var off_screen_top = Vector2(416, -324)   # Off-screen top position
-var off_screen_bottom = Vector2(416, 1276) # Off-screen bottom position
+var off_screen_top = Vector2(416, 1276)   # Off-screen top position
+var off_screen_bottom = Vector2(416, -324) # Off-screen bottom position
 
 # Game state variables
 var current_problem_label: Label
@@ -27,6 +27,7 @@ var label_settings_resource: LabelSettings
 var answer_submitted = false  # Track if current problem has been submitted
 var backspace_timer = 0.0  # Timer for backspace hold functionality
 var backspace_held = false  # Track if backspace is being held
+var backspace_just_pressed = false  # Track if backspace was just pressed this frame
 
 func _ready():
 	# Load and parse the math facts JSON
@@ -62,7 +63,7 @@ func _input(event):
 			if space_bg and space_bg.has_method("regenerate"):
 				space_bg.regenerate()
 		
-		# Handle number input and negative sign (only if not submitted)
+			# Handle number input and negative sign (only if not submitted)
 		if not answer_submitted:
 			if event.keycode >= KEY_0 and event.keycode <= KEY_9:
 				var digit = str(event.keycode - KEY_0)
@@ -71,10 +72,12 @@ func _input(event):
 					effective_length -= 1  # Don't count negative sign toward limit
 				if effective_length < max_answer_chars:
 					user_answer += digit
+					AudioManager.play_tick()  # Play tick sound on digit input
 			
 			# Handle negative sign (only at the beginning)
 			elif event.keycode == KEY_MINUS and user_answer == "":
 				user_answer = "-"
+				AudioManager.play_tick()  # Play tick sound on minus input
 			
 			# Handle keypad numbers
 			elif event.keycode >= KEY_KP_0 and event.keycode <= KEY_KP_9:
@@ -84,11 +87,11 @@ func _input(event):
 					effective_length -= 1  # Don't count negative sign toward limit
 				if effective_length < max_answer_chars:
 					user_answer += digit
+					AudioManager.play_tick()  # Play tick sound on keypad digit input
 	
-	# Handle backspace (single press)
+	# Handle immediate backspace press detection
 	if Input.is_action_just_pressed("Backspace") and not answer_submitted:
-		if user_answer.length() > 0:
-			user_answer = user_answer.substr(0, user_answer.length() - 1)
+		backspace_just_pressed = true
 	
 	# Handle submit
 	if Input.is_action_just_pressed("Submit"):
@@ -100,6 +103,15 @@ func _process(delta):
 	if blink_timer >= blink_interval:
 		blink_timer = 0.0
 		underscore_visible = not underscore_visible
+	
+	# Handle backspace - immediate response for single press, hold for repeat
+	if backspace_just_pressed and not answer_submitted:
+		# Immediate backspace on first press
+		if user_answer.length() > 0:
+			user_answer = user_answer.substr(0, user_answer.length() - 1)
+			AudioManager.play_tick()
+		backspace_just_pressed = false
+		backspace_timer = 0.0
 	
 	# Handle backspace hold functionality
 	if Input.is_action_pressed("Backspace") and not answer_submitted:
@@ -115,7 +127,9 @@ func _process(delta):
 				backspace_timer = 0.0
 				if user_answer.length() > 0:
 					user_answer = user_answer.substr(0, user_answer.length() - 1)
+					AudioManager.play_tick()
 	else:
+		# Reset hold state when backspace is released
 		backspace_held = false
 		backspace_timer = 0.0
 	
@@ -168,13 +182,15 @@ func submit_answer():
 	var user_answer_int = int(user_answer)
 	var is_correct = (user_answer_int == current_question.result)
 	
-	# Set color based on correctness
+	# Set color based on correctness and play appropriate sound
 	if current_problem_label:
 		if is_correct:
 			current_problem_label.modulate = Color(0, 1, 0)  # Green for correct
+			AudioManager.play_correct()  # Play correct sound
 			print("✓ Correct! Answer was ", current_question.result)
 		else:
 			current_problem_label.modulate = Color(1, 0, 0)  # Red for incorrect
+			AudioManager.play_incorrect()  # Play incorrect sound
 			print("✗ Incorrect. Answer was ", current_question.result, ", you entered ", user_answer_int)
 	
 	# Wait to show the color feedback (if transition_delay > 0)
