@@ -2,7 +2,9 @@ extends Control
 
 # Real Space Generator with cosmic_kale preset - using core SpaceGenerator class
 @export var background_resolution: Vector2i = Vector2i(720, 480)  # Lower resolution for better performance
-@export var scroll_speed: float = 1.0  # Global scroll speed multiplier
+@export var base_scroll_speed: float = 1.0  # Base scroll speed multiplier
+var current_scroll_speed: float = 1.0  # Current active scroll speed
+var scroll_tween: Tween  # Tween for smooth scroll speed transitions
 
 # Preload all required classes
 const SpaceGeneratorClass = preload("res://addons/Space Generator/SpaceGenerator/space_generator.gd")
@@ -45,6 +47,9 @@ func setup_space_generator():
 	# Set resolution
 	space_generator.export_resolution = background_resolution
 	print("SpaceGenerator setup complete, loading preset...")
+	
+	# Initialize current scroll speed to base speed
+	current_scroll_speed = base_scroll_speed
 	
 	# Load and apply the cosmic kale preset asynchronously
 	load_cosmic_kale_preset_async()
@@ -109,19 +114,40 @@ func randomize_preset_seeds(preset_data: Dictionary):
 	
 	print("✨ Seed randomization complete!")
 
-func set_scroll_speed(new_speed: float):
-	# Update the global scroll speed multiplier
-	scroll_speed = new_speed
+func set_base_scroll_speed(new_base_speed: float):
+	# Update the base scroll speed multiplier
+	base_scroll_speed = new_base_speed
+	current_scroll_speed = new_base_speed
+	apply_scroll_speed()
+
+func boost_scroll_speed(multiplier: float, duration: float):
+	# Instantly boost scroll speed, then smoothly return to base over duration
+	var target_speed = base_scroll_speed * multiplier
+	current_scroll_speed = target_speed
+	apply_scroll_speed()
+	
+	# Create tween to smoothly return to base speed
+	if scroll_tween:
+		scroll_tween.kill()
+	
+	scroll_tween = create_tween()
+	scroll_tween.set_ease(Tween.EASE_OUT)
+	scroll_tween.set_trans(Tween.TRANS_EXPO)
+	scroll_tween.tween_method(update_scroll_speed, target_speed, base_scroll_speed, duration)
+
+func update_scroll_speed(speed: float):
+	# Called by tween to update scroll speed smoothly
+	current_scroll_speed = speed
 	apply_scroll_speed()
 
 func apply_scroll_speed():
-	# Apply the scroll speed multiplier to all layers using their original preset speeds
+	# Apply the current scroll speed multiplier to all layers using their original preset speeds
 	if space_generator:
 		for layer in space_generator.layers:
 			if layer.has_method("set_speed"):
-				# Get the original speed from the cosmic_kale preset and multiply by our global multiplier
+				# Get the original speed from the cosmic_kale preset and multiply by current multiplier
 				var original_speed = get_original_layer_speed(layer.title)
-				var final_speed = original_speed * scroll_speed
+				var final_speed = original_speed * current_scroll_speed
 				layer.set_speed(final_speed)
 
 func get_original_layer_speed(layer_title: String) -> float:

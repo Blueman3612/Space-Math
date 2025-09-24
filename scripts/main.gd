@@ -10,6 +10,7 @@ var max_answer_chars = 4  # Maximum characters for answer input
 var animation_duration = 0.5  # Duration for label animations in seconds
 var transition_delay = 0.1  # Delay before generating new question
 var backspace_hold_time = 0.12  # Time to hold backspace before it repeats
+var scroll_boost_multiplier = 80.0  # How much to boost background scroll speed on submission
 
 # Position variables
 var primary_position = Vector2(416, 476)  # Main problem position
@@ -179,6 +180,11 @@ func submit_answer():
 	# Wait to show the color feedback (if transition_delay > 0)
 	if transition_delay > 0.0:
 		await get_tree().create_timer(transition_delay).timeout
+	
+	# Trigger scroll speed boost effect after transition delay
+	var space_bg = get_node("BackgroundLayer/SpaceBackground")
+	if space_bg and space_bg.has_method("boost_scroll_speed"):
+		space_bg.boost_scroll_speed(scroll_boost_multiplier, animation_duration * 2.0)
 	
 	# Move current label up and off screen (fire and forget)
 	if current_problem_label:
