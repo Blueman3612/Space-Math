@@ -1,16 +1,4 @@
-res://scenes/main.tscn
-res://scripts/main.gd
-res://scenes/space_background.gd
 res://scenes/space_background.tscn
-res://scripts/space_background.gd
 res://addons/Space Generator/SpaceGenerator/space_generator.gd
 res://addons/Space Generator/Utilities/preset_utility.gd
-res://addons/Space Generator/GeneratorLayers/NebulaLayer/nebula_layer.gd
-res://addons/Space Generator/GeneratorLayers/NebulaLayer/nebula_layer.tscn
-res://addons/Space Generator/GeneratorLayers/StarLayer/star_layer.tscn
-res://addons/Space Generator/GeneratorLayers/StarLayer/star_layer.gd
-res://addons/Space Generator/GeneratorLayers/PlanetLayer/planet.gd
-res://addons/Space Generator/UI/ui_manager.gd
-res://addons/Space Generator/UI/layer_control.gd
-res://addons/Space Generator/UI/palette_dialogue.gd
-res://addons/Space Generator/UI/default_theme.tres
+res://scripts/space_background.gd

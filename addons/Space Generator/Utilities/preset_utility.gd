@@ -6,8 +6,7 @@ const STAR_LAYER_RESOURCE : Resource = \
 		preload("res://addons/Space Generator/GeneratorLayers/StarLayer/star_layer.tscn")
 const NEBULA_LAYER_RESOURCE : Resource = \
 		preload("res://addons/Space Generator/GeneratorLayers/NebulaLayer/nebula_layer.tscn")
-const PLANET_LAYER_RESOURCE : Resource = \
-		preload("res://addons/Space Generator/GeneratorLayers/PlanetLayer/planet_layer.tscn")
+# PLANET_LAYER_RESOURCE removed - PlanetLayer folder deleted
 
 
 static func generate_preset\
@@ -31,9 +30,7 @@ static func generate_preset\
 		elif layer is NebulaLayer:
 			preset_contents["NebulaLayer%s" % unique_id] \
 					= encode_nebula_layer(layer, i)
-		elif layer is PlanetLayer:
-			preset_contents["PlanetLayer%s" % unique_id] \
-					= encode_planet_layer(layer, i)
+		# Planet layer encoding removed - PlanetLayer deleted
 	return preset_contents
 
 
@@ -44,8 +41,7 @@ static func decode_preset(preset_data : Dictionary) -> Dictionary:
 			new_layers.append(decode_star_layer(preset_data[key]))
 		if key.begins_with("NebulaLayer"):
 			new_layers.append(decode_nebula_layer(preset_data[key]))
-		if key.begins_with("PlanetLayer"):
-			new_layers.append(decode_planet_layer(preset_data[key]))
+		# Planet layer decoding removed - PlanetLayer deleted
 	return \
 	{
 		"preset_name" : preset_data["preset_name"],
@@ -152,28 +148,4 @@ static func decode_nebula_layer(layer_data : Dictionary) -> NebulaLayer:
 	return new_nebula_layer
 
 
-static func encode_planet_layer(layer : PlanetLayer, index : int) -> Dictionary:
-	var planet_layer_data : Dictionary = {}
-	planet_layer_data["index"] = index
-	planet_layer_data["min_spawn_frequency"] = layer.min_spawn_frequency
-	planet_layer_data["max_spawn_frequency"] = layer.max_spawn_frequency
-	planet_layer_data["max_concurrent_planets"] = layer.max_concurrent_planets
-	planet_layer_data["title"] = layer.title
-	planet_layer_data["resolution"] = layer.resolution
-	planet_layer_data["speed"] = layer.speed
-	return planet_layer_data
-
-
-static func decode_planet_layer(layer_data : Dictionary) -> PlanetLayer:
-	var new_planet_layer : PlanetLayer = PLANET_LAYER_RESOURCE.instantiate()
-	new_planet_layer.index = layer_data["index"]
-	new_planet_layer.min_spawn_frequency = layer_data["min_spawn_frequency"]
-	new_planet_layer.max_spawn_frequency = layer_data["max_spawn_frequency"]
-	new_planet_layer.max_concurrent_planets = \
-			layer_data["max_concurrent_planets"]
-
-	new_planet_layer.title = layer_data["title"]
-	new_planet_layer.resolution = TypeConversionUtility.string_to_vector2i\
-			(layer_data["resolution"])
-	new_planet_layer.speed = layer_data["speed"]
-	return new_planet_layer
+# Planet layer encode/decode functions removed - PlanetLayer deleted
