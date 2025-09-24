@@ -1,14 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://dgsyvy33jqe6f"]
+[gd_scene load_steps=4 format=3 uid="uid://dgsyvy33jqe6f"]
 
 [ext_resource type="Script" uid="uid://b7dgkimpo8qo0" path="res://scripts/main.gd" id="1_8k3xf"]
 [ext_resource type="PackedScene" uid="uid://cfyfodwnxrl3q" path="res://scenes/space_background.tscn" id="3_space_bg"]
-[ext_resource type="FontFile" uid="uid://d4jen7ry6jk7n" path="res://assets/fonts/GravityBold8.ttf" id="3_sugp2"]
-
-[sub_resource type="LabelSettings" id="LabelSettings_0wfyh"]
-font = ExtResource("3_sugp2")
-font_size = 128
-outline_size = 64
-outline_color = Color(0, 0, 0, 1)
+[ext_resource type="LabelSettings" uid="uid://kv8ik3lwuyet" path="res://assets/label settings/GravityBold128.tres" id="3_sugp2"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_8k3xf")
@@ -34,6 +28,6 @@ offset_bottom = 563.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "6 + 9 = 420"
-label_settings = SubResource("LabelSettings_0wfyh")
+label_settings = ExtResource("3_sugp2")
 horizontal_alignment = 1
 vertical_alignment = 1
