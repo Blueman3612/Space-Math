@@ -8,7 +8,8 @@ var rng = RandomNumberGenerator.new()
 var blink_interval = 0.5  # Time for underscore blink cycle (fade in/out)
 var max_answer_chars = 4  # Maximum characters for answer input
 var animation_duration = 0.5  # Duration for label animations in seconds
-var transition_delay = 0.0  # Delay before generating new question
+var transition_delay = 0.1  # Delay before generating new question
+var backspace_hold_time = 0.12  # Time to hold backspace before it repeats
 
 # Position variables
 var primary_position = Vector2(416, 476)  # Main problem position
@@ -22,6 +23,9 @@ var user_answer = ""
 var blink_timer = 0.0
 var underscore_visible = true
 var label_settings_resource: LabelSettings
+var answer_submitted = false  # Track if current problem has been submitted
+var backspace_timer = 0.0  # Timer for backspace hold functionality
+var backspace_held = false  # Track if backspace is being held
 
 func _ready():
 	# Load and parse the math facts JSON
@@ -57,30 +61,31 @@ func _input(event):
 			if space_bg and space_bg.has_method("regenerate"):
 				space_bg.regenerate()
 		
-		# Handle number input and negative sign
-		if event.keycode >= KEY_0 and event.keycode <= KEY_9:
-			var digit = str(event.keycode - KEY_0)
-			var effective_length = user_answer.length()
-			if user_answer.begins_with("-"):
-				effective_length -= 1  # Don't count negative sign toward limit
-			if effective_length < max_answer_chars:
-				user_answer += digit
-		
-		# Handle negative sign (only at the beginning)
-		elif event.keycode == KEY_MINUS and user_answer == "":
-			user_answer = "-"
-		
-		# Handle keypad numbers
-		elif event.keycode >= KEY_KP_0 and event.keycode <= KEY_KP_9:
-			var digit = str(event.keycode - KEY_KP_0)
-			var effective_length = user_answer.length()
-			if user_answer.begins_with("-"):
-				effective_length -= 1  # Don't count negative sign toward limit
-			if effective_length < max_answer_chars:
-				user_answer += digit
+		# Handle number input and negative sign (only if not submitted)
+		if not answer_submitted:
+			if event.keycode >= KEY_0 and event.keycode <= KEY_9:
+				var digit = str(event.keycode - KEY_0)
+				var effective_length = user_answer.length()
+				if user_answer.begins_with("-"):
+					effective_length -= 1  # Don't count negative sign toward limit
+				if effective_length < max_answer_chars:
+					user_answer += digit
+			
+			# Handle negative sign (only at the beginning)
+			elif event.keycode == KEY_MINUS and user_answer == "":
+				user_answer = "-"
+			
+			# Handle keypad numbers
+			elif event.keycode >= KEY_KP_0 and event.keycode <= KEY_KP_9:
+				var digit = str(event.keycode - KEY_KP_0)
+				var effective_length = user_answer.length()
+				if user_answer.begins_with("-"):
+					effective_length -= 1  # Don't count negative sign toward limit
+				if effective_length < max_answer_chars:
+					user_answer += digit
 	
-	# Handle backspace
-	if Input.is_action_just_pressed("Backspace"):
+	# Handle backspace (single press)
+	if Input.is_action_just_pressed("Backspace") and not answer_submitted:
 		if user_answer.length() > 0:
 			user_answer = user_answer.substr(0, user_answer.length() - 1)
 	
@@ -94,6 +99,24 @@ func _process(delta):
 	if blink_timer >= blink_interval:
 		blink_timer = 0.0
 		underscore_visible = not underscore_visible
+	
+	# Handle backspace hold functionality
+	if Input.is_action_pressed("Backspace") and not answer_submitted:
+		if not backspace_held:
+			backspace_timer += delta
+			if backspace_timer >= backspace_hold_time:
+				backspace_held = true
+				backspace_timer = 0.0
+		else:
+			# Repeat backspace every 0.05 seconds while held
+			backspace_timer += delta
+			if backspace_timer >= 0.05:
+				backspace_timer = 0.0
+				if user_answer.length() > 0:
+					user_answer = user_answer.substr(0, user_answer.length() - 1)
+	else:
+		backspace_held = false
+		backspace_timer = 0.0
 	
 	# Update problem display
 	update_problem_display()
@@ -112,6 +135,7 @@ func setup_initial_problem():
 
 func generate_new_question():
 	user_answer = ""
+	answer_submitted = false  # Reset submission state for new question
 	# Store current question for answer checking later
 	# Get a random track between 5-12 (same as original logic)
 	var random_track = rng.randi_range(5, 12)
@@ -124,17 +148,37 @@ func update_problem_display():
 		var base_text = current_question.question + " = "
 		var display_text = base_text + user_answer
 		
-		# Add blinking underscore (simple on/off)
-		if underscore_visible:
+		# Add blinking underscore only if not submitted
+		if not answer_submitted and underscore_visible:
 			display_text += "_"
 		
 		current_problem_label.text = display_text
 
 func submit_answer():
-	if user_answer == "":
-		return  # Don't submit empty answers
+	if user_answer == "" or user_answer == "-" or answer_submitted:
+		return  # Don't submit empty answers, just minus sign, or already submitted
 	
 	print("Submitting answer: ", user_answer)
+	
+	# Mark as submitted to prevent further input
+	answer_submitted = true
+	
+	# Check if answer is correct
+	var user_answer_int = int(user_answer)
+	var is_correct = (user_answer_int == current_question.result)
+	
+	# Set color based on correctness
+	if current_problem_label:
+		if is_correct:
+			current_problem_label.modulate = Color(0, 1, 0)  # Green for correct
+			print("✓ Correct! Answer was ", current_question.result)
+		else:
+			current_problem_label.modulate = Color(1, 0, 0)  # Red for incorrect
+			print("✗ Incorrect. Answer was ", current_question.result, ", you entered ", user_answer_int)
+	
+	# Wait to show the color feedback (if transition_delay > 0)
+	if transition_delay > 0.0:
+		await get_tree().create_timer(transition_delay).timeout
 	
 	# Move current label up and off screen (fire and forget)
 	if current_problem_label:
@@ -157,6 +201,7 @@ func create_new_problem_label():
 	new_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	new_label.position = off_screen_bottom
 	new_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	new_label.modulate = Color(1, 1, 1)  # Reset to white color
 	
 	# Add to scene
 	add_child(new_label)
