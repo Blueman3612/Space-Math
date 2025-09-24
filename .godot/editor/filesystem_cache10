@@ -1,0 +1,13 @@
+63f7b34db8d8cdea90c76aacccf841ec
+::res://::1758734404
+icon.svg::CompressedTexture2D::717530580592770632::1758734203::1758734404::1::::<><><>0<>0<>181a73eff14ebc5e432c30888e3041ad<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
+README.md::TextFile::-1::1758734203::0::1::::<><><>0<>0<><>::
+::res://assets/::1758734203
+::res://assets/fonts/::1758734203
+diffusion.ttf::FontFile::8567493237963356004::1758734203::1758734404::1::::<><><>0<>0<>ddfa8cdead19ac7e9f748d3bdec0946e<>res://.godot/imported/diffusion.ttf-f125e20538251fde0f5c719b70ba3e0b.fontdata::
+::res://scenes/::1758734203
+main.tscn::PackedScene::7619049927078751939::1758734203::0::1::::<><><>0<>0<><>::uid://b7dgkimpo8qo0::::res://scripts/main.gd<>uid://ducfmkmh1qqbc::::res://assets/fonts/diffusion.ttf
+::res://scripts/::1758734203
+main.gd::GDScript::4639039412693974653::1758734203::0::1::::<>Node2D<><>0<>0<><>::
+::res://tools/::1758734203
+math-facts.json::JSON::-1::1758734203::0::1::::<><><>0<>0<><>::
