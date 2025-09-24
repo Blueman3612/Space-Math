@@ -1,20 +1,20 @@
 63f7b34db8d8cdea90c76aacccf841ec
-::res://::1758739569
+::res://::1758746140
 icon.svg::CompressedTexture2D::717530580592770632::1758734203::1758734404::1::::<><><>0<>0<>181a73eff14ebc5e432c30888e3041ad<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
 README.md::TextFile::-1::1758734203::0::1::::<><><>0<>0<><>::
 ::res://addons/::1758735623
 ::res://addons/Space Generator/::1758739185
 ::res://addons/Space Generator/GeneratorLayers/::1758738641
-generator_layer.gd::GDScript::4752988536916833503::1758735629::0::1::::GeneratorLayer<>TextureRect<><>0<>0<><>::
-::res://addons/Space Generator/GeneratorLayers/NebulaLayer/::1758735629
-nebula_layer.gd::GDScript::6469520119846852320::1758737388::0::1::::NebulaLayer<>GeneratorLayer<><>0<>1<><>::
+generator_layer.gd::GDScript::4752988536916833503::1758743768::0::1::::GeneratorLayer<>TextureRect<><>0<>0<><>::
+::res://addons/Space Generator/GeneratorLayers/NebulaLayer/::1758743238
+nebula_layer.gd::GDScript::6469520119846852320::1758743095::0::1::::NebulaLayer<>GeneratorLayer<><>0<>1<><>::
 nebula_layer.tscn::PackedScene::4280884453719328720::1758737388::0::1::::<><><>0<>0<><>::res://addons/Space Generator/GeneratorLayers/NebulaLayer/nebula_layer.gd<>uid://bftuej38oq5pq::::res://addons/Space Generator/GeneratorLayers/NebulaLayer/Palettes/default_fg_palette.png<>res://addons/Space Generator/GeneratorLayers/NebulaLayer/nebula_shader.gdshader
-nebula_shader.gdshader::Shader::3286886595434392119::1758735629::0::1::::<><><>0<>0<><>::
+nebula_shader.gdshader::Shader::3286886595434392119::1758743238::0::1::::<><><>0<>0<><>::
 ::res://addons/Space Generator/GeneratorLayers/NebulaLayer/Palettes/::1758735630
 default_bg_palette.png::CompressedTexture2D::8390592300626819576::1758735629::1758735630::1::::<><><>0<>0<>b51a11e361bcba532169e46c7e48aaf5<>res://.godot/imported/default_bg_palette.png-3dd33d5b0822d26a190d1d5791750fac.ctex::
 default_fg_palette.png::CompressedTexture2D::2777810079724764294::1758735629::1758735630::1::::<><><>0<>0<>63937d1b5ff77840eb43ba43f8170c01<>res://.godot/imported/default_fg_palette.png-e63dcfb504688613f8f916276b29b654.ctex::
-::res://addons/Space Generator/GeneratorLayers/StarLayer/::1758737466
-star_flicker.gdshader::Shader::4142129003312917689::1758735629::0::1::::<><><>0<>0<><>::
+::res://addons/Space Generator/GeneratorLayers/StarLayer/::1758743238
+star_flicker.gdshader::Shader::4142129003312917689::1758743238::0::1::::<><><>0<>0<><>::
 star_layer.gd::GDScript::3596496431568789647::1758737466::0::1::::StarLayer<>GeneratorLayer<><>0<>0<><>::
 star_layer.tscn::PackedScene::3229321850322129953::1758737388::0::1::::<><><>0<>0<><>::res://addons/Space Generator/GeneratorLayers/StarLayer/star_flicker.gdshader<>res://addons/Space Generator/GeneratorLayers/StarLayer/star_layer.gd
 ::res://addons/Space Generator/GeneratorLayers/StarLayer/Textures/::1758735630
@@ -27,18 +27,20 @@ small_star_2.png::CompressedTexture2D::24754673777004425::1758735629::1758735630
 ::res://addons/Space Generator/Presets/::1758738788
 cosmic_kale.json::JSON::-1::1758735629::0::1::::<><><>0<>0<><>::
 ::res://addons/Space Generator/SpaceGenerator/::1758739261
-space_generator.gd::GDScript::1820487054223720475::1758739429::0::1::::SpaceGenerator<>Node<><>0<>0<><>::
-::res://addons/Space Generator/Utilities/::1758739562
-preset_utility.gd::GDScript::8839112667769159548::1758739495::0::1::::PresetUtiltity<>Node<><>0<>0<><>::
+space_generator.gd::GDScript::1820487054223720475::1758739673::0::1::::SpaceGenerator<>Node<><>0<>0<><>::
+::res://addons/Space Generator/Utilities/::1758739570
+preset_utility.gd::GDScript::8839112667769159548::1758739673::0::1::::PresetUtiltity<>Node<><>0<>0<><>::
 type_conversion_utility.gd::GDScript::1894975884959762618::1758739562::0::1::::TypeConversionUtility<>Node<><>0<>0<><>::
 ::res://assets/::1758734203
-::res://assets/fonts/::1758734404
+::res://assets/fonts/::1758745688
+diffusion-bold.ttf::FontFile::7692247560745052394::1758745363::1758745364::1::::<><><>0<>0<>6c404307c22c38a7692cd8e21a2194f7<>res://.godot/imported/diffusion-bold.ttf-a9ca008321b2e0eb4daf7a33aef8bff4.fontdata::
 diffusion.ttf::FontFile::8567493237963356004::1758734203::1758734404::1::::<><><>0<>0<>ddfa8cdead19ac7e9f748d3bdec0946e<>res://.godot/imported/diffusion.ttf-f125e20538251fde0f5c719b70ba3e0b.fontdata::
-::res://scenes/::1758739536
-main.tscn::PackedScene::7619049927078751939::1758739002::0::1::::<><><>0<>0<><>::uid://b7dgkimpo8qo0::::res://scripts/main.gd<>uid://ducfmkmh1qqbc::::res://assets/fonts/diffusion.ttf<>uid://cfyfodwnxrl3q::::res://scenes/space_background.tscn
-space_background.tscn::PackedScene::5173659429930125196::1758739536::0::1::::<><><>0<>0<><>::uid://c72x3cyt0et3::::res://scripts/space_background.gd
-::res://scripts/::1758736081
-main.gd::GDScript::4639039412693974653::1758735987::0::1::::<>Node2D<><>0<>0<><>::
-space_background.gd::GDScript::208119682330726058::1758739447::0::1::::<>Control<><>0<>0<><>::
+GravityBold8.ttf::FontFile::9213585707801732461::1758745688::1758745688::1::::<><><>0<>0<>baf5913ce2b6f9faafb4d3805a00c79d<>res://.godot/imported/GravityBold8.ttf-d35fbdb5f27b3d72ab834b2d433ae812.fontdata::
+::res://scenes/::1758745920
+main.tscn::PackedScene::7619049927078751939::1758745920::0::1::::<><><>0<>0<><>::uid://b7dgkimpo8qo0::::res://scripts/main.gd<>uid://cfyfodwnxrl3q::::res://scenes/space_background.tscn<>uid://d4jen7ry6jk7n::::res://assets/fonts/GravityBold8.ttf
+space_background.tscn::PackedScene::5173659429930125196::1758744871::0::1::::<><><>0<>0<><>::uid://c72x3cyt0et3::::res://scripts/space_background.gd
+::res://scripts/::1758744052
+main.gd::GDScript::4639039412693974653::1758740089::0::1::::<>Node2D<><>0<>0<><>::
+space_background.gd::GDScript::208119682330726058::1758744052::0::1::::<>Control<><>0<>0<><>::
 ::res://tools/::1758734203
 math-facts.json::JSON::-1::1758734203::0::1::::<><><>0<>0<><>::

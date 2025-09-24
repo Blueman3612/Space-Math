@@ -1,12 +1,14 @@
 [gd_scene load_steps=5 format=3 uid="uid://dgsyvy33jqe6f"]
 
 [ext_resource type="Script" uid="uid://b7dgkimpo8qo0" path="res://scripts/main.gd" id="1_8k3xf"]
-[ext_resource type="FontFile" uid="uid://ducfmkmh1qqbc" path="res://assets/fonts/diffusion.ttf" id="2_0wfyh"]
 [ext_resource type="PackedScene" uid="uid://cfyfodwnxrl3q" path="res://scenes/space_background.tscn" id="3_space_bg"]
+[ext_resource type="FontFile" uid="uid://d4jen7ry6jk7n" path="res://assets/fonts/GravityBold8.ttf" id="3_sugp2"]
 
-[sub_resource type="LabelSettings" id="LabelSettings_o5qli"]
-font = ExtResource("2_0wfyh")
-font_size = 64
+[sub_resource type="LabelSettings" id="LabelSettings_0wfyh"]
+font = ExtResource("3_sugp2")
+font_size = 128
+outline_size = 64
+outline_color = Color(0, 0, 0, 1)
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_8k3xf")
@@ -19,37 +21,19 @@ layer = -10
 [node name="Camera2D" type="Camera2D" parent="."]
 anchor_mode = 0
 
-[node name="QuestionLabel" type="Label" parent="."]
+[node name="Problem" type="Label" parent="."]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_right = 1920.0
-offset_bottom = 1080.0
-z_index = 10
+offset_left = 960.0
+offset_top = 540.0
+offset_right = 1000.0
+offset_bottom = 563.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "Press Space to generate a math question!"
-label_settings = SubResource("LabelSettings_o5qli")
+text = "6 + 9 = 420"
+label_settings = SubResource("LabelSettings_0wfyh")
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 3
-
-[node name="InfoLabel" type="Label" parent="."]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_top = -452.0
-offset_right = 1920.0
-offset_bottom = 628.0
-z_index = 10
-grow_horizontal = 2
-grow_vertical = 2
-text = "Press Space to generate a math question!"
-label_settings = SubResource("LabelSettings_o5qli")
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 3
