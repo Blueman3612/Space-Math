@@ -1,0 +1,143 @@
+[gd_scene load_steps=14 format=3 uid="uid://cty7f06ayes3d"]
+
+[ext_resource type="Script" path="res://addons/Space Generator/SpaceGenerator/space_generator.gd" id="1_8dqb6"]
+[ext_resource type="PackedScene" uid="uid://b18xsn8oiptpo" path="res://addons/Space Generator/GeneratorLayers/NebulaLayer/nebula_layer.tscn" id="2_ao41h"]
+[ext_resource type="PackedScene" uid="uid://bmakpuxdb661j" path="res://addons/Space Generator/GeneratorLayers/StarLayer/star_layer.tscn" id="2_d6qfi"]
+[ext_resource type="Shader" path="res://addons/Space Generator/GeneratorLayers/StarLayer/star_flicker.gdshader" id="5_erl07"]
+[ext_resource type="PackedScene" uid="uid://d0omivo80nscj" path="res://addons/Space Generator/UI/ui_manager.tscn" id="5_q4bfc"]
+[ext_resource type="PackedScene" uid="uid://y827grheqhve" path="res://addons/Space Generator/UI/music_settings.tscn" id="6_k6vg4"]
+[ext_resource type="Texture2D" uid="uid://drsp3gxhn1jxg" path="res://addons/Space Generator/GeneratorLayers/NebulaLayer/Palettes/default_bg_palette.png" id="7_eqrwb"]
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_kcvwn"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_6oj0y"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_15hbl"]
+width = 360
+height = 240
+seamless = true
+noise = SubResource("FastNoiseLite_6oj0y")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_t6scq"]
+resource_local_to_scene = true
+shader = ExtResource("5_erl07")
+shader_parameter/rate = 1.12
+shader_parameter/depth = 0.16
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_15hbl")
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_ofv6x"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_q355h"]
+viewport_path = NodePath("SubViewport")
+
+[node name="SpaceGenerator" type="Node" node_paths=PackedStringArray("layers", "layer_container", "nebula_layers", "star_layers", "ui_manager")]
+script = ExtResource("1_8dqb6")
+layers = [NodePath("Layers/LowerNebula"), NodePath("Layers/StarGenerator"), NodePath("Layers/UpperNebula")]
+layer_container = NodePath("Layers")
+nebula_layers = [NodePath("Layers/LowerNebula"), NodePath("Layers/UpperNebula")]
+star_layers = [NodePath("Layers/StarGenerator")]
+ui_manager = NodePath("UIManager")
+
+[node name="Layers" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LowerNebula" parent="Layers" instance=ExtResource("2_ao41h")]
+layout_mode = 0
+offset_top = 0.0
+offset_right = 1440.0
+offset_bottom = 1200.0
+texture = SubResource("ViewportTexture_kcvwn")
+palette = ExtResource("7_eqrwb")
+threshold = 0.114
+alpha = 1.0
+dither_enabled = false
+modulation_enabled = true
+modulation_color = Color(0.270588, 0.0862745, 0.231373, 1)
+modulation_intensity = 0.398
+modulation_alpha_intensity = 0.231
+modulation_steps = 10
+oscillate = true
+oscillation_intensity = 0.04
+oscillation_rate = 0.8
+oscillation_offset = 0.5
+title = "Background Nebula"
+speed = 6.0
+
+[node name="StarGenerator" parent="Layers" instance=ExtResource("2_d6qfi")]
+material = SubResource("ShaderMaterial_t6scq")
+layout_mode = 0
+offset_right = 1440.0
+offset_bottom = 1440.0
+texture = SubResource("ViewportTexture_ofv6x")
+title = "Star Layer"
+speed = 6.0
+
+[node name="UpperNebula" parent="Layers" instance=ExtResource("2_ao41h")]
+layout_mode = 0
+offset_top = 0.0
+offset_right = 1440.0
+offset_bottom = 1200.0
+texture = SubResource("ViewportTexture_q355h")
+threshold = 0.315
+alpha = 0.55
+dither_enabled = false
+modulation_seed = 8
+modulation_enabled = true
+modulation_color = Color(1, 0.419608, 0.807843, 1)
+modulation_intensity = 0.644
+modulation_alpha_intensity = 0.645
+modulation_steps = 12
+oscillate = true
+oscillation_intensity = 0.04
+oscillation_rate = 0.5
+title = "Foreground Nebula"
+speed = 24.0
+
+[node name="UIManager" parent="." instance=ExtResource("5_q4bfc")]
+
+[node name="NebulaLayerBelow" parent="UIManager/MainUIHBox/LeftPanel/VBoxContainer/LeftPanelExpanded/VBoxContainer/TabContainer/Layers/LayersScrollContainer/VBoxContainer" index="0" node_paths=PackedStringArray("matched_layer")]
+matched_layer = NodePath("../../../../../../../../../../../Layers/LowerNebula")
+
+[node name="StarLayer" parent="UIManager/MainUIHBox/LeftPanel/VBoxContainer/LeftPanelExpanded/VBoxContainer/TabContainer/Layers/LayersScrollContainer/VBoxContainer" index="1" node_paths=PackedStringArray("matched_layer")]
+matched_layer = NodePath("../../../../../../../../../../../Layers/StarGenerator")
+
+[node name="NebulaLayerAbove" parent="UIManager/MainUIHBox/LeftPanel/VBoxContainer/LeftPanelExpanded/VBoxContainer/TabContainer/Layers/LayersScrollContainer/VBoxContainer" index="2" node_paths=PackedStringArray("matched_layer")]
+matched_layer = NodePath("../../../../../../../../../../../Layers/UpperNebula")
+
+[node name="MusicSettings" parent="UIManager/MainUIHBox/LeftPanel/VBoxContainer/LeftPanelExpanded/VBoxContainer/TabContainer/Settings" index="3" instance=ExtResource("6_k6vg4")]
+layout_mode = 2
+
+[node name="StarQuantitySlider" parent="UIManager/MainUIHBox/RightPanel/StarsLayerControlPanel/ScrollContainer/RightPanelVBox/StarQuantity" index="1"]
+mouse_default_cursor_shape = 2
+
+[node name="SmallStarsSlider" parent="UIManager/MainUIHBox/RightPanel/StarsLayerControlPanel/ScrollContainer/RightPanelVBox/SmallStars" index="1"]
+mouse_default_cursor_shape = 2
+
+[node name="MediumStarsSlider" parent="UIManager/MainUIHBox/RightPanel/StarsLayerControlPanel/ScrollContainer/RightPanelVBox/MediumStars" index="1"]
+mouse_default_cursor_shape = 2
+
+[node name="LargeStarsSlider" parent="UIManager/MainUIHBox/RightPanel/StarsLayerControlPanel/ScrollContainer/RightPanelVBox/LargeStars" index="1"]
+mouse_default_cursor_shape = 2
+
+[node name="ScrollSpeedHSlider" parent="UIManager/MainUIHBox/RightPanel/StarsLayerControlPanel/ScrollContainer/RightPanelVBox/ScrollSpeedHBox" index="1"]
+mouse_default_cursor_shape = 2
+
+[connection signal="export_requested" from="UIManager" to="." method="evaluate_export_request"]
+[connection signal="layer_added" from="UIManager" to="." method="add_layer"]
+[connection signal="layer_duplicated" from="UIManager" to="." method="duplicate_layer"]
+[connection signal="preset_load_requested" from="UIManager" to="." method="load_preset"]
+[connection signal="preset_upload_requested" from="UIManager" to="." method="upload_preset"]
+[connection signal="reorder_requested" from="UIManager" to="." method="reorder_layer"]
+[connection signal="resolution_confirmed" from="UIManager/MainUIHBox/LeftPanel/VBoxContainer/LeftPanelExpanded/VBoxContainer/TabContainer/Settings/Resolution" to="." method="generate_space"]
+
+[editable path="UIManager"]
+[editable path="UIManager/MainUIHBox/LeftPanel/VBoxContainer/LeftPanelExpanded/VBoxContainer/TabContainer/Layers/LayersScrollContainer/VBoxContainer/NebulaLayerBelow"]
+[editable path="UIManager/MainUIHBox/LeftPanel/VBoxContainer/LeftPanelExpanded/VBoxContainer/TabContainer/Layers/LayersScrollContainer/VBoxContainer/StarLayer"]
+[editable path="UIManager/MainUIHBox/LeftPanel/VBoxContainer/LeftPanelExpanded/VBoxContainer/TabContainer/Layers/LayersScrollContainer/VBoxContainer/NebulaLayerAbove"]

@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://dgsyvy33jqe6f"]
+[gd_scene load_steps=5 format=3 uid="uid://dgsyvy33jqe6f"]
 
 [ext_resource type="Script" uid="uid://b7dgkimpo8qo0" path="res://scripts/main.gd" id="1_8k3xf"]
 [ext_resource type="FontFile" uid="uid://ducfmkmh1qqbc" path="res://assets/fonts/diffusion.ttf" id="2_0wfyh"]
+[ext_resource type="PackedScene" uid="uid://cfyfodwnxrl3q" path="res://scenes/space_background.tscn" id="3_space_bg"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_o5qli"]
 font = ExtResource("2_0wfyh")
@@ -10,7 +11,10 @@ font_size = 64
 [node name="Main" type="Node2D"]
 script = ExtResource("1_8k3xf")
 
+[node name="SpaceBackground" parent="." instance=ExtResource("3_space_bg")]
+
 [node name="Camera2D" type="Camera2D" parent="."]
+anchor_mode = 0
 
 [node name="QuestionLabel" type="Label" parent="."]
 anchors_preset = 8
@@ -18,10 +22,8 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -960.0
-offset_top = -540.0
-offset_right = 960.0
-offset_bottom = 540.0
+offset_right = 1920.0
+offset_bottom = 1080.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "Press Space to generate a math question!"
@@ -36,10 +38,9 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -960.0
-offset_top = -1004.0
-offset_right = 960.0
-offset_bottom = 76.0
+offset_top = -452.0
+offset_right = 1920.0
+offset_bottom = 628.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "Press Space to generate a math question!"

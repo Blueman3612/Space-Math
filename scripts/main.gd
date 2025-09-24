@@ -29,6 +29,11 @@ func _input(event):
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_SPACE:
 			update_question_display()
+		elif event.keycode == KEY_R:
+			# Regenerate space background
+			var space_bg = get_node("SpaceBackground")
+			if space_bg and space_bg.has_method("regenerate"):
+				space_bg.regenerate()
 
 func update_question_display():
 	# Get a random track between 5-12
