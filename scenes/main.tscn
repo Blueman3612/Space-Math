@@ -1,9 +1,10 @@
-[gd_scene load_steps=9 format=3 uid="uid://dgsyvy33jqe6f"]
+[gd_scene load_steps=11 format=3 uid="uid://dgsyvy33jqe6f"]
 
 [ext_resource type="Script" uid="uid://b7dgkimpo8qo0" path="res://scripts/main.gd" id="1_8k3xf"]
 [ext_resource type="Theme" uid="uid://qx67shaxna0a" path="res://assets/themes/classic/classic.tres" id="1_jyhfs"]
 [ext_resource type="PackedScene" uid="uid://cfyfodwnxrl3q" path="res://scenes/space_background.tscn" id="3_space_bg"]
-[ext_resource type="Texture2D" uid="uid://cmik51fbl0e8h" path="res://assets/sprites/Title.png" id="5_tbgi4"]
+[ext_resource type="LabelSettings" uid="uid://kv8ik3lwuyet" path="res://assets/label settings/GravityBold128.tres" id="3_sugp2"]
+[ext_resource type="Texture2D" uid="uid://cdja31dcj5rdk" path="res://assets/sprites/Title.png" id="5_tbgi4"]
 [ext_resource type="LabelSettings" uid="uid://cbtne7xhouqs1" path="res://assets/label settings/GravityBold64.tres" id="6_tefeu"]
 [ext_resource type="FontFile" uid="uid://d4jen7ry6jk7n" path="res://assets/fonts/GravityBold8.ttf" id="6_tipki"]
 [ext_resource type="Texture2D" uid="uid://bw8wg1e8arbcr" path="res://assets/sprites/Star Icon.png" id="7_o6xl0"]
@@ -14,6 +15,10 @@ font_size = 96
 font_color = Color(1, 0, 0, 1)
 outline_size = 48
 outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_tipki"]
+font = ExtResource("6_tipki")
+font_size = 128
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -37,12 +42,13 @@ offset_bottom = 1080.0
 mouse_filter = 2
 
 [node name="MainMenu" type="Control" parent="."]
+visible = false
 anchors_preset = 0
 offset_right = 1920.0
 offset_bottom = 1080.0
 
 [node name="Title" type="Sprite2D" parent="MainMenu"]
-position = Vector2(960, 224)
+position = Vector2(960, 256)
 scale = Vector2(2, 2)
 texture = ExtResource("5_tbgi4")
 
@@ -480,3 +486,248 @@ position = Vector2(148, 136)
 scale = Vector2(2, 2)
 texture = ExtResource("7_o6xl0")
 hframes = 2
+
+[node name="GameOver" type="Control" parent="."]
+anchors_preset = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+mouse_filter = 2
+
+[node name="LevelComplete" type="Label" parent="GameOver"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -800.0
+offset_top = 96.0
+offset_right = 800.0
+offset_bottom = 224.0
+grow_horizontal = 2
+text = "LEVEL COMPLETE"
+label_settings = ExtResource("3_sugp2")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CorrectTitle" type="Label" parent="GameOver"]
+self_modulate = Color(0.5019608, 0.5019608, 0.5019608, 1)
+layout_mode = 0
+offset_left = 24.0
+offset_top = 576.0
+offset_right = 432.0
+offset_bottom = 640.0
+text = "Correct"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 2
+
+[node name="TimeTitle" type="Label" parent="GameOver"]
+self_modulate = Color(0.5019608, 0.5019608, 0.5019608, 1)
+layout_mode = 0
+offset_left = 24.0
+offset_top = 688.0
+offset_right = 432.0
+offset_bottom = 752.0
+text = "Time"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 2
+
+[node name="You" type="Label" parent="GameOver"]
+self_modulate = Color(0.5019608, 0.5019608, 0.5019608, 1)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 492.0
+offset_top = 448.0
+offset_right = 960.0
+offset_bottom = 512.0
+grow_horizontal = 2
+text = "YOU"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlayerAccuracy" type="Label" parent="GameOver"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 492.0
+offset_top = 576.0
+offset_right = 960.0
+offset_bottom = 640.0
+grow_horizontal = 2
+text = "69/69"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlayerTime" type="Label" parent="GameOver"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 492.0
+offset_top = 688.0
+offset_right = 960.0
+offset_bottom = 752.0
+grow_horizontal = 2
+text = "4:20"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Star1" type="Control" parent="GameOver"]
+anchors_preset = 0
+offset_left = 608.0
+offset_top = 416.0
+offset_right = 608.0
+offset_bottom = 416.0
+mouse_filter = 2
+
+[node name="Sprite" type="Sprite2D" parent="GameOver/Star1"]
+scale = Vector2(8, 8)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Accuracy" type="Label" parent="GameOver/Star1"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -148.0
+offset_top = 160.0
+offset_right = 148.0
+offset_bottom = 224.0
+grow_horizontal = 2
+text = "25/40"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Time" type="Label" parent="GameOver/Star1"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -148.0
+offset_top = 272.0
+offset_right = 148.0
+offset_bottom = 336.0
+grow_horizontal = 2
+text = "2:30"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Star2" type="Control" parent="GameOver"]
+anchors_preset = 0
+offset_left = 960.0
+offset_top = 416.0
+offset_right = 960.0
+offset_bottom = 416.0
+mouse_filter = 2
+
+[node name="Sprite" type="Sprite2D" parent="GameOver/Star2"]
+scale = Vector2(8, 8)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Accuracy" type="Label" parent="GameOver/Star2"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -148.0
+offset_top = 160.0
+offset_right = 148.0
+offset_bottom = 224.0
+grow_horizontal = 2
+text = "30/40"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Time" type="Label" parent="GameOver/Star2"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -148.0
+offset_top = 272.0
+offset_right = 148.0
+offset_bottom = 336.0
+grow_horizontal = 2
+text = "2:00"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Star3" type="Control" parent="GameOver"]
+anchors_preset = 0
+offset_left = 1312.0
+offset_top = 416.0
+offset_right = 1312.0
+offset_bottom = 416.0
+mouse_filter = 2
+
+[node name="Sprite" type="Sprite2D" parent="GameOver/Star3"]
+scale = Vector2(8, 8)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Accuracy" type="Label" parent="GameOver/Star3"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -148.0
+offset_top = 160.0
+offset_right = 148.0
+offset_bottom = 224.0
+grow_horizontal = 2
+text = "35/40"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Time" type="Label" parent="GameOver/Star3"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -148.0
+offset_top = 272.0
+offset_right = 148.0
+offset_bottom = 336.0
+grow_horizontal = 2
+text = "1:30"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ContinueButton" type="Button" parent="GameOver"]
+modulate = Color(0, 1, 0, 1)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -480.0
+offset_top = -248.0
+offset_right = 480.0
+offset_bottom = -56.0
+grow_horizontal = 2
+grow_vertical = 0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Label" type="Label" parent="GameOver/ContinueButton"]
+layout_mode = 0
+offset_left = 8.0
+offset_right = 968.0
+offset_bottom = 192.0
+text = "CONTINUE"
+label_settings = SubResource("LabelSettings_tipki")
+horizontal_alignment = 1
+vertical_alignment = 1

@@ -17,9 +17,13 @@ var scroll_boost_multiplier = 80.0  # How much to boost background scroll speed 
 var feedback_max_alpha = 0.1  # Maximum alpha for feedback color overlay
 var problems_per_level = 5  # Number of problems to complete before returning to menu
 
+# Title animation variables
+var title_bounce_speed = 2.0  # Speed of the sin wave animation
+var title_bounce_distance = 16.0  # Distance of the bounce in pixels
+
 # Menu position constants
-const menu_above_screen = Vector2(0, -1208)
-const menu_below_screen = Vector2(0, 1208)
+const menu_above_screen = Vector2(0, -1144)
+const menu_below_screen = Vector2(0, 1144)
 const menu_on_screen = Vector2(0, 0)
 
 # Track progression mapping (button index to track number, ordered by difficulty)
@@ -46,6 +50,9 @@ var backspace_held = false  # Track if backspace is being held
 var backspace_just_pressed = false  # Track if backspace was just pressed this frame
 var feedback_color_rect: ColorRect  # Reference to the feedback color overlay
 var main_menu_node: Control  # Reference to the MainMenu node
+var title_sprite: Sprite2D  # Reference to the Title sprite
+var title_base_position: Vector2  # Store the original position of the title
+var title_animation_time = 0.0  # Track time for sin wave animation
 
 func _ready():
 	# Load and parse the math facts JSON
@@ -73,6 +80,11 @@ func _ready():
 	# Get reference to feedback color overlay and main menu
 	feedback_color_rect = get_node("FeedbackColor")
 	main_menu_node = get_node("MainMenu")
+	title_sprite = main_menu_node.get_node("Title")
+	
+	# Store the original position of the title for animation
+	if title_sprite:
+		title_base_position = title_sprite.position
 	
 	# Connect menu buttons
 	connect_menu_buttons()
@@ -120,6 +132,12 @@ func _input(event):
 		submit_answer()
 
 func _process(delta):
+	# Animate title during MENU state
+	if current_state == GameState.MENU and title_sprite:
+		title_animation_time += delta * title_bounce_speed
+		var bounce_offset = sin(title_animation_time) * title_bounce_distance
+		title_sprite.position = title_base_position + Vector2(0, bounce_offset)
+	
 	# Only process game logic during PLAY state
 	if current_state == GameState.PLAY:
 		# Update blink timer
