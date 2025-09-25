@@ -1,10 +1,25 @@
-[gd_scene load_steps=4 format=3 uid="uid://dgsyvy33jqe6f"]
+[gd_scene load_steps=10 format=3 uid="uid://dgsyvy33jqe6f"]
 
 [ext_resource type="Script" uid="uid://b7dgkimpo8qo0" path="res://scripts/main.gd" id="1_8k3xf"]
+[ext_resource type="Theme" uid="uid://qx67shaxna0a" path="res://assets/themes/classic/classic.tres" id="1_jyhfs"]
 [ext_resource type="PackedScene" uid="uid://cfyfodwnxrl3q" path="res://scenes/space_background.tscn" id="3_space_bg"]
 [ext_resource type="LabelSettings" uid="uid://kv8ik3lwuyet" path="res://assets/label settings/GravityBold128.tres" id="3_sugp2"]
+[ext_resource type="Texture2D" uid="uid://cmik51fbl0e8h" path="res://assets/sprites/Title.png" id="5_tbgi4"]
+[ext_resource type="LabelSettings" uid="uid://cbtne7xhouqs1" path="res://assets/label settings/GravityBold64.tres" id="6_tefeu"]
+[ext_resource type="FontFile" uid="uid://d4jen7ry6jk7n" path="res://assets/fonts/GravityBold8.ttf" id="6_tipki"]
+[ext_resource type="Texture2D" uid="uid://bw8wg1e8arbcr" path="res://assets/sprites/Star Icon.png" id="7_o6xl0"]
 
-[node name="Main" type="Node2D"]
+[sub_resource type="LabelSettings" id="LabelSettings_85g3d"]
+font = ExtResource("6_tipki")
+font_size = 96
+font_color = Color(1, 0, 0, 1)
+outline_size = 48
+outline_color = Color(0, 0, 0, 1)
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+theme = ExtResource("1_jyhfs")
 script = ExtResource("1_8k3xf")
 
 [node name="BackgroundLayer" type="CanvasLayer" parent="."]
@@ -17,10 +32,14 @@ anchor_mode = 0
 
 [node name="FeedbackColor" type="ColorRect" parent="."]
 modulate = Color(1, 1, 1, 0)
+layout_mode = 0
 offset_right = 1920.0
 offset_bottom = 1080.0
+mouse_filter = 2
 
 [node name="Problem" type="Label" parent="."]
+visible = false
+layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -35,3 +54,448 @@ grow_vertical = 2
 text = "6 + 9 = 420"
 label_settings = ExtResource("3_sugp2")
 vertical_alignment = 1
+
+[node name="MainMenu" type="Control" parent="."]
+anchors_preset = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+
+[node name="Title" type="Sprite2D" parent="MainMenu"]
+position = Vector2(960, 224)
+scale = Vector2(2, 2)
+texture = ExtResource("5_tbgi4")
+
+[node name="ExitButton" type="Button" parent="MainMenu"]
+self_modulate = Color(1, 0, 0, 1)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -928.0
+offset_top = -508.0
+offset_right = -736.0
+offset_bottom = -316.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Label" type="Label" parent="MainMenu/ExitButton"]
+layout_mode = 0
+offset_left = 6.0
+offset_right = 198.0
+offset_bottom = 192.0
+text = "X"
+label_settings = SubResource("LabelSettings_85g3d")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LevelButton1" type="Button" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -880.0
+offset_top = -32.0
+offset_right = -688.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Contents" type="Control" parent="MainMenu/LevelButton1"]
+anchors_preset = 0
+offset_right = 192.0
+offset_bottom = 192.0
+mouse_filter = 2
+
+[node name="Number" type="Label" parent="MainMenu/LevelButton1/Contents"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = -32.0
+offset_right = 196.0
+offset_bottom = 160.0
+text = "1"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Star1" type="Sprite2D" parent="MainMenu/LevelButton1/Contents"]
+position = Vector2(44, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star2" type="Sprite2D" parent="MainMenu/LevelButton1/Contents"]
+position = Vector2(96, 144)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star3" type="Sprite2D" parent="MainMenu/LevelButton1/Contents"]
+position = Vector2(148, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="LevelButton2" type="Button" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -656.0
+offset_top = -32.0
+offset_right = -464.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Contents" type="Control" parent="MainMenu/LevelButton2"]
+anchors_preset = 0
+offset_right = 192.0
+offset_bottom = 192.0
+mouse_filter = 2
+
+[node name="Number" type="Label" parent="MainMenu/LevelButton2/Contents"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = -32.0
+offset_right = 196.0
+offset_bottom = 160.0
+text = "2"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Star1" type="Sprite2D" parent="MainMenu/LevelButton2/Contents"]
+position = Vector2(44, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star2" type="Sprite2D" parent="MainMenu/LevelButton2/Contents"]
+position = Vector2(96, 144)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star3" type="Sprite2D" parent="MainMenu/LevelButton2/Contents"]
+position = Vector2(148, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="LevelButton3" type="Button" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -432.0
+offset_top = -32.0
+offset_right = -240.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Contents" type="Control" parent="MainMenu/LevelButton3"]
+anchors_preset = 0
+offset_right = 192.0
+offset_bottom = 192.0
+mouse_filter = 2
+
+[node name="Number" type="Label" parent="MainMenu/LevelButton3/Contents"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = -32.0
+offset_right = 196.0
+offset_bottom = 160.0
+text = "3"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Star1" type="Sprite2D" parent="MainMenu/LevelButton3/Contents"]
+position = Vector2(44, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star2" type="Sprite2D" parent="MainMenu/LevelButton3/Contents"]
+position = Vector2(96, 144)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star3" type="Sprite2D" parent="MainMenu/LevelButton3/Contents"]
+position = Vector2(148, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="LevelButton4" type="Button" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -208.0
+offset_top = -32.0
+offset_right = -16.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Contents" type="Control" parent="MainMenu/LevelButton4"]
+anchors_preset = 0
+offset_right = 192.0
+offset_bottom = 192.0
+mouse_filter = 2
+
+[node name="Number" type="Label" parent="MainMenu/LevelButton4/Contents"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = -32.0
+offset_right = 196.0
+offset_bottom = 160.0
+text = "4"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Star1" type="Sprite2D" parent="MainMenu/LevelButton4/Contents"]
+position = Vector2(44, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star2" type="Sprite2D" parent="MainMenu/LevelButton4/Contents"]
+position = Vector2(96, 144)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star3" type="Sprite2D" parent="MainMenu/LevelButton4/Contents"]
+position = Vector2(148, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="LevelButton5" type="Button" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 16.0
+offset_top = -32.0
+offset_right = 208.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Contents" type="Control" parent="MainMenu/LevelButton5"]
+anchors_preset = 0
+offset_right = 192.0
+offset_bottom = 192.0
+mouse_filter = 2
+
+[node name="Number" type="Label" parent="MainMenu/LevelButton5/Contents"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = -32.0
+offset_right = 196.0
+offset_bottom = 160.0
+text = "5"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Star1" type="Sprite2D" parent="MainMenu/LevelButton5/Contents"]
+position = Vector2(44, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star2" type="Sprite2D" parent="MainMenu/LevelButton5/Contents"]
+position = Vector2(96, 144)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star3" type="Sprite2D" parent="MainMenu/LevelButton5/Contents"]
+position = Vector2(148, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="LevelButton6" type="Button" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 240.0
+offset_top = -32.0
+offset_right = 432.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Contents" type="Control" parent="MainMenu/LevelButton6"]
+anchors_preset = 0
+offset_right = 192.0
+offset_bottom = 192.0
+mouse_filter = 2
+
+[node name="Number" type="Label" parent="MainMenu/LevelButton6/Contents"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = -32.0
+offset_right = 196.0
+offset_bottom = 160.0
+text = "6"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Star1" type="Sprite2D" parent="MainMenu/LevelButton6/Contents"]
+position = Vector2(44, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star2" type="Sprite2D" parent="MainMenu/LevelButton6/Contents"]
+position = Vector2(96, 144)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star3" type="Sprite2D" parent="MainMenu/LevelButton6/Contents"]
+position = Vector2(148, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="LevelButton7" type="Button" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 464.0
+offset_top = -32.0
+offset_right = 656.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Contents" type="Control" parent="MainMenu/LevelButton7"]
+anchors_preset = 0
+offset_right = 192.0
+offset_bottom = 192.0
+mouse_filter = 2
+
+[node name="Number" type="Label" parent="MainMenu/LevelButton7/Contents"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = -32.0
+offset_right = 196.0
+offset_bottom = 160.0
+text = "7"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Star1" type="Sprite2D" parent="MainMenu/LevelButton7/Contents"]
+position = Vector2(44, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star2" type="Sprite2D" parent="MainMenu/LevelButton7/Contents"]
+position = Vector2(96, 144)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star3" type="Sprite2D" parent="MainMenu/LevelButton7/Contents"]
+position = Vector2(148, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="LevelButton8" type="Button" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 688.0
+offset_top = -32.0
+offset_right = 880.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Contents" type="Control" parent="MainMenu/LevelButton8"]
+anchors_preset = 0
+offset_right = 192.0
+offset_bottom = 192.0
+mouse_filter = 2
+
+[node name="Number" type="Label" parent="MainMenu/LevelButton8/Contents"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = -32.0
+offset_right = 196.0
+offset_bottom = 160.0
+text = "8"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Star1" type="Sprite2D" parent="MainMenu/LevelButton8/Contents"]
+position = Vector2(44, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star2" type="Sprite2D" parent="MainMenu/LevelButton8/Contents"]
+position = Vector2(96, 144)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star3" type="Sprite2D" parent="MainMenu/LevelButton8/Contents"]
+position = Vector2(148, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2

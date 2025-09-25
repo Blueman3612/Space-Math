@@ -1,4 +1,4 @@
-extends Node2D
+extends Control
 
 # Math facts data and RNG
 var math_facts = {}
