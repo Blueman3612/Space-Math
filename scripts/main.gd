@@ -11,6 +11,7 @@ var animation_duration = 0.5  # Duration for label animations in seconds
 var transition_delay = 0.1  # Delay before generating new question
 var backspace_hold_time = 0.15  # Time to hold backspace before it repeats
 var scroll_boost_multiplier = 80.0  # How much to boost background scroll speed on submission
+var feedback_max_alpha = 0.1  # Maximum alpha for feedback color overlay
 
 # Position variables
 var primary_position = Vector2(416, 476)  # Main problem position
@@ -28,6 +29,7 @@ var answer_submitted = false  # Track if current problem has been submitted
 var backspace_timer = 0.0  # Timer for backspace hold functionality
 var backspace_held = false  # Track if backspace is being held
 var backspace_just_pressed = false  # Track if backspace was just pressed this frame
+var feedback_color_rect: ColorRect  # Reference to the feedback color overlay
 
 func _ready():
 	# Load and parse the math facts JSON
@@ -51,6 +53,9 @@ func _ready():
 	
 	# Load label settings resource
 	label_settings_resource = load("res://assets/label settings/GravityBold128.tres")
+	
+	# Get reference to feedback color overlay
+	feedback_color_rect = get_node("FeedbackColor")
 	
 	# Set up initial problem
 	setup_initial_problem()
@@ -182,15 +187,17 @@ func submit_answer():
 	var user_answer_int = int(user_answer)
 	var is_correct = (user_answer_int == current_question.result)
 	
-	# Set color based on correctness and play appropriate sound
+	# Set color based on correctness, play sound, and show feedback overlay
 	if current_problem_label:
 		if is_correct:
 			current_problem_label.modulate = Color(0, 1, 0)  # Green for correct
 			AudioManager.play_correct()  # Play correct sound
+			show_feedback_flash(Color(0, 1, 0))  # Green feedback flash
 			print("✓ Correct! Answer was ", current_question.result)
 		else:
 			current_problem_label.modulate = Color(1, 0, 0)  # Red for incorrect
 			AudioManager.play_incorrect()  # Play incorrect sound
+			show_feedback_flash(Color(1, 0, 0))  # Red feedback flash
 			print("✗ Incorrect. Answer was ", current_question.result, ", you entered ", user_answer_int)
 	
 	# Wait to show the color feedback (if transition_delay > 0)
@@ -432,3 +439,22 @@ func find_closest_grade_with_operator(target_grade, operator):
 		"questions": questions,
 		"grade_name": grade_data.name
 	}
+
+func show_feedback_flash(flash_color: Color):
+	"""Show a colored flash overlay that fades in then out with smooth timing"""
+	if not feedback_color_rect:
+		return
+	
+	# Start with the color at 0 alpha (invisible)
+	feedback_color_rect.modulate = Color(flash_color.r, flash_color.g, flash_color.b, 0.0)
+	
+	# Create tween for the two-phase animation
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	
+	# Phase 1: Fade in from 0 to feedback_max_alpha over transition_delay
+	tween.tween_property(feedback_color_rect, "modulate:a", feedback_max_alpha, transition_delay)
+	
+	# Phase 2: Fade out from feedback_max_alpha to 0 over animation_duration * 2
+	tween.tween_property(feedback_color_rect, "modulate:a", 0.0, animation_duration * 2.0)

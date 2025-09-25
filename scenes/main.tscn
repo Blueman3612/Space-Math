@@ -15,6 +15,11 @@ layer = -10
 [node name="Camera2D" type="Camera2D" parent="."]
 anchor_mode = 0
 
+[node name="FeedbackColor" type="ColorRect" parent="."]
+modulate = Color(1, 1, 1, 0)
+offset_right = 1920.0
+offset_bottom = 1080.0
+
 [node name="Problem" type="Label" parent="."]
 anchors_preset = 8
 anchor_left = 0.5
