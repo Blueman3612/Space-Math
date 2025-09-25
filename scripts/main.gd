@@ -50,6 +50,7 @@ var backspace_held = false  # Track if backspace is being held
 var backspace_just_pressed = false  # Track if backspace was just pressed this frame
 var feedback_color_rect: ColorRect  # Reference to the feedback color overlay
 var main_menu_node: Control  # Reference to the MainMenu node
+var game_over_node: Control  # Reference to the GameOver node
 var title_sprite: Sprite2D  # Reference to the Title sprite
 var title_base_position: Vector2  # Store the original position of the title
 var title_animation_time = 0.0  # Track time for sin wave animation
@@ -77,9 +78,10 @@ func _ready():
 	# Load label settings resource
 	label_settings_resource = load("res://assets/label settings/GravityBold128.tres")
 	
-	# Get reference to feedback color overlay and main menu
+	# Get reference to feedback color overlay, main menu, and game over
 	feedback_color_rect = get_node("FeedbackColor")
 	main_menu_node = get_node("MainMenu")
+	game_over_node = get_node("GameOver")
 	title_sprite = main_menu_node.get_node("Title")
 	
 	# Store the original position of the title for animation
@@ -88,6 +90,7 @@ func _ready():
 	
 	# Connect menu buttons
 	connect_menu_buttons()
+	connect_game_over_buttons()
 
 func _input(event):
 	if event is InputEventKey and event.pressed:
@@ -259,9 +262,9 @@ func submit_answer():
 	
 	# Check if we've completed the required number of problems
 	if problems_completed >= problems_per_level:
-		# Wait for the transition delay, then return to menu
+		# Wait for the transition delay, then go to game over
 		await get_tree().create_timer(transition_delay).timeout
-		return_to_menu()
+		go_to_game_over()
 	else:
 		# Create new problem - continue playing
 		create_new_problem_label()
@@ -557,18 +560,50 @@ func start_play_state():
 	create_new_problem_label()
 	generate_new_question()
 
-func return_to_menu():
-	"""Transition from PLAY to MENU state"""
-	current_state = GameState.MENU
+func go_to_game_over():
+	"""Transition from PLAY to GAME_OVER state"""
+	current_state = GameState.GAME_OVER
 	
 	# Clean up any remaining problem labels
 	cleanup_problem_labels()
 	
-	# Menu is already at menu_above_screen, animate down to center
+	# GameOver teleports to above screen, then animates down to center
+	game_over_node.position = menu_above_screen
 	var tween = create_tween()
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_EXPO)
-	tween.tween_property(main_menu_node, "position", menu_on_screen, animation_duration)
+	tween.tween_property(game_over_node, "position", menu_on_screen, animation_duration)
+
+func return_to_menu():
+	"""Transition from GAME_OVER to MENU state"""
+	current_state = GameState.MENU
+	
+	# MainMenu teleports to above screen, then animates down to center
+	main_menu_node.position = menu_above_screen
+	var menu_tween = create_tween()
+	menu_tween.set_ease(Tween.EASE_OUT)
+	menu_tween.set_trans(Tween.TRANS_EXPO)
+	menu_tween.tween_property(main_menu_node, "position", menu_on_screen, animation_duration)
+	
+	# At the same time, GameOver moves down to below screen
+	var gameover_tween = create_tween()
+	gameover_tween.set_ease(Tween.EASE_OUT)
+	gameover_tween.set_trans(Tween.TRANS_EXPO)
+	gameover_tween.tween_property(game_over_node, "position", menu_below_screen, animation_duration)
+
+func connect_game_over_buttons():
+	"""Connect all game over buttons to their respective functions"""
+	# Connect continue button
+	var continue_button = game_over_node.get_node("ContinueButton")
+	if continue_button:
+		continue_button.pressed.connect(_on_continue_button_pressed)
+
+func _on_continue_button_pressed():
+	"""Handle continue button press - only respond during GAME_OVER state"""
+	if current_state != GameState.GAME_OVER:
+		return
+	
+	return_to_menu()
 
 func cleanup_problem_labels():
 	"""Remove any remaining problem labels from the scene"""

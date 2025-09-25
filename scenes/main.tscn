@@ -42,7 +42,6 @@ offset_bottom = 1080.0
 mouse_filter = 2
 
 [node name="MainMenu" type="Control" parent="."]
-visible = false
 anchors_preset = 0
 offset_right = 1920.0
 offset_bottom = 1080.0
@@ -489,8 +488,9 @@ hframes = 2
 
 [node name="GameOver" type="Control" parent="."]
 anchors_preset = 0
+offset_top = -1144.0
 offset_right = 1920.0
-offset_bottom = 1080.0
+offset_bottom = -64.0
 mouse_filter = 2
 
 [node name="LevelComplete" type="Label" parent="GameOver"]
