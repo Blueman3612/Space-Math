@@ -1,5 +1,8 @@
 extends Control
 
+# Game state enum
+enum GameState { MENU, PLAY, GAME_OVER }
+
 # Math facts data and RNG
 var math_facts = {}
 var rng = RandomNumberGenerator.new()
@@ -12,6 +15,15 @@ var transition_delay = 0.1  # Delay before generating new question
 var backspace_hold_time = 0.15  # Time to hold backspace before it repeats
 var scroll_boost_multiplier = 80.0  # How much to boost background scroll speed on submission
 var feedback_max_alpha = 0.1  # Maximum alpha for feedback color overlay
+var problems_per_level = 5  # Number of problems to complete before returning to menu
+
+# Menu position constants
+const menu_above_screen = Vector2(0, -1208)
+const menu_below_screen = Vector2(0, 1208)
+const menu_on_screen = Vector2(0, 0)
+
+# Track progression mapping (button index to track number, ordered by difficulty)
+const track_progression = [12, 9, 6, 10, 8, 11, 7, 5]
 
 # Position variables
 var primary_position = Vector2(416, 476)  # Main problem position
@@ -19,8 +31,11 @@ var off_screen_top = Vector2(416, 1276)   # Off-screen top position
 var off_screen_bottom = Vector2(416, -324) # Off-screen bottom position
 
 # Game state variables
+var current_state = GameState.MENU
 var current_problem_label: Label
 var current_question = null  # Store current question data
+var current_track = 0  # Current track being played
+var problems_completed = 0  # Number of problems completed in current level
 var user_answer = ""
 var blink_timer = 0.0
 var underscore_visible = true
@@ -30,6 +45,7 @@ var backspace_timer = 0.0  # Timer for backspace hold functionality
 var backspace_held = false  # Track if backspace is being held
 var backspace_just_pressed = false  # Track if backspace was just pressed this frame
 var feedback_color_rect: ColorRect  # Reference to the feedback color overlay
+var main_menu_node: Control  # Reference to the MainMenu node
 
 func _ready():
 	# Load and parse the math facts JSON
@@ -54,11 +70,12 @@ func _ready():
 	# Load label settings resource
 	label_settings_resource = load("res://assets/label settings/GravityBold128.tres")
 	
-	# Get reference to feedback color overlay
+	# Get reference to feedback color overlay and main menu
 	feedback_color_rect = get_node("FeedbackColor")
+	main_menu_node = get_node("MainMenu")
 	
-	# Set up initial problem
-	setup_initial_problem()
+	# Connect menu buttons
+	connect_menu_buttons()
 
 func _input(event):
 	if event is InputEventKey and event.pressed:
@@ -68,8 +85,8 @@ func _input(event):
 			if space_bg and space_bg.has_method("regenerate"):
 				space_bg.regenerate()
 		
-			# Handle number input and negative sign (only if not submitted)
-		if not answer_submitted:
+		# Handle number input and negative sign (only during PLAY state and if not submitted)
+		if current_state == GameState.PLAY and not answer_submitted:
 			if event.keycode >= KEY_0 and event.keycode <= KEY_9:
 				var digit = str(event.keycode - KEY_0)
 				var effective_length = user_answer.length()
@@ -94,52 +111,54 @@ func _input(event):
 					user_answer += digit
 					AudioManager.play_tick()  # Play tick sound on keypad digit input
 	
-	# Handle immediate backspace press detection
-	if Input.is_action_just_pressed("Backspace") and not answer_submitted:
+	# Handle immediate backspace press detection (only during PLAY state)
+	if Input.is_action_just_pressed("Backspace") and current_state == GameState.PLAY and not answer_submitted:
 		backspace_just_pressed = true
 	
-	# Handle submit
-	if Input.is_action_just_pressed("Submit"):
+	# Handle submit (only during PLAY state)
+	if Input.is_action_just_pressed("Submit") and current_state == GameState.PLAY:
 		submit_answer()
 
 func _process(delta):
-	# Update blink timer
-	blink_timer += delta
-	if blink_timer >= blink_interval:
-		blink_timer = 0.0
-		underscore_visible = not underscore_visible
-	
-	# Handle backspace - immediate response for single press, hold for repeat
-	if backspace_just_pressed and not answer_submitted:
-		# Immediate backspace on first press
-		if user_answer.length() > 0:
-			user_answer = user_answer.substr(0, user_answer.length() - 1)
-			AudioManager.play_tick()
-		backspace_just_pressed = false
-		backspace_timer = 0.0
-	
-	# Handle backspace hold functionality
-	if Input.is_action_pressed("Backspace") and not answer_submitted:
-		if not backspace_held:
-			backspace_timer += delta
-			if backspace_timer >= backspace_hold_time:
-				backspace_held = true
-				backspace_timer = 0.0
+	# Only process game logic during PLAY state
+	if current_state == GameState.PLAY:
+		# Update blink timer
+		blink_timer += delta
+		if blink_timer >= blink_interval:
+			blink_timer = 0.0
+			underscore_visible = not underscore_visible
+		
+		# Handle backspace - immediate response for single press, hold for repeat
+		if backspace_just_pressed and not answer_submitted:
+			# Immediate backspace on first press
+			if user_answer.length() > 0:
+				user_answer = user_answer.substr(0, user_answer.length() - 1)
+				AudioManager.play_tick()
+			backspace_just_pressed = false
+			backspace_timer = 0.0
+		
+		# Handle backspace hold functionality
+		if Input.is_action_pressed("Backspace") and not answer_submitted:
+			if not backspace_held:
+				backspace_timer += delta
+				if backspace_timer >= backspace_hold_time:
+					backspace_held = true
+					backspace_timer = 0.0
+			else:
+				# Repeat backspace every 0.05 seconds while held
+				backspace_timer += delta
+				if backspace_timer >= 0.05:
+					backspace_timer = 0.0
+					if user_answer.length() > 0:
+						user_answer = user_answer.substr(0, user_answer.length() - 1)
+						AudioManager.play_tick()
 		else:
-			# Repeat backspace every 0.05 seconds while held
-			backspace_timer += delta
-			if backspace_timer >= 0.05:
-				backspace_timer = 0.0
-				if user_answer.length() > 0:
-					user_answer = user_answer.substr(0, user_answer.length() - 1)
-					AudioManager.play_tick()
-	else:
-		# Reset hold state when backspace is released
-		backspace_held = false
-		backspace_timer = 0.0
-	
-	# Update problem display
-	update_problem_display()
+			# Reset hold state when backspace is released
+			backspace_held = false
+			backspace_timer = 0.0
+		
+		# Update problem display
+		update_problem_display()
 
 func setup_initial_problem():
 	# Get the existing Problem label and set it up as current
@@ -157,11 +176,10 @@ func generate_new_question():
 	user_answer = ""
 	answer_submitted = false  # Reset submission state for new question
 	# Store current question for answer checking later
-	# Get a random track between 5-12 (same as original logic)
-	var random_track = rng.randi_range(5, 12)
-	current_question = get_math_question(random_track)
+	# Use the current track set by the level button
+	current_question = get_math_question(current_track)
 	if not current_question:
-		print("Failed to generate question for track ", random_track)
+		print("Failed to generate question for track ", current_track)
 
 func update_problem_display():
 	if current_problem_label and current_question:
@@ -218,9 +236,18 @@ func submit_answer():
 		tween.tween_property(old_label, "position", off_screen_top, animation_duration)
 		tween.tween_callback(old_label.queue_free)
 	
-	# Immediately create new problem - this is now the ONLY active problem
-	create_new_problem_label()
-	generate_new_question()
+	# Increment problems completed
+	problems_completed += 1
+	
+	# Check if we've completed the required number of problems
+	if problems_completed >= problems_per_level:
+		# Wait for the transition delay, then return to menu
+		await get_tree().create_timer(transition_delay).timeout
+		return_to_menu()
+	else:
+		# Create new problem - continue playing
+		create_new_problem_label()
+		generate_new_question()
 
 func create_new_problem_label():
 	# Create new label
@@ -458,3 +485,76 @@ func show_feedback_flash(flash_color: Color):
 	
 	# Phase 2: Fade out from feedback_max_alpha to 0 over animation_duration * 2
 	tween.tween_property(feedback_color_rect, "modulate:a", 0.0, animation_duration * 2.0)
+
+func connect_menu_buttons():
+	"""Connect all menu buttons to their respective functions"""
+	# Connect level buttons (1-8)
+	for i in range(1, 9):
+		var button_name = "LevelButton" + str(i)
+		var level_button = main_menu_node.get_node(button_name)
+		if level_button:
+			level_button.pressed.connect(_on_level_button_pressed.bind(i))
+	
+	# Connect exit button
+	var exit_button = main_menu_node.get_node("ExitButton")
+	if exit_button:
+		exit_button.pressed.connect(_on_exit_button_pressed)
+
+func _on_level_button_pressed(level: int):
+	"""Handle level button press - only respond during MENU state"""
+	if current_state != GameState.MENU:
+		return
+	
+	# Set the track based on the level button pressed
+	current_track = track_progression[level - 1]  # Convert 1-based to 0-based index
+	start_play_state()
+
+func _on_exit_button_pressed():
+	"""Handle exit button press - only respond during MENU state"""
+	if current_state != GameState.MENU:
+		return
+	
+	get_tree().quit()
+
+func start_play_state():
+	"""Transition from MENU to PLAY state"""
+	current_state = GameState.PLAY
+	problems_completed = 0
+	
+	# First animate menu down off screen (downward)
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(main_menu_node, "position", menu_below_screen, animation_duration)
+	
+	# After the downward animation completes, teleport to above screen
+	tween.tween_callback(func(): main_menu_node.position = menu_above_screen)
+	
+	# Trigger scroll speed boost effect
+	var space_bg = get_node("BackgroundLayer/SpaceBackground")
+	if space_bg and space_bg.has_method("boost_scroll_speed"):
+		space_bg.boost_scroll_speed(scroll_boost_multiplier, animation_duration * 2.0)
+	
+	# Create first problem label and generate question
+	create_new_problem_label()
+	generate_new_question()
+
+func return_to_menu():
+	"""Transition from PLAY to MENU state"""
+	current_state = GameState.MENU
+	
+	# Clean up any remaining problem labels
+	cleanup_problem_labels()
+	
+	# Menu is already at menu_above_screen, animate down to center
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(main_menu_node, "position", menu_on_screen, animation_duration)
+
+func cleanup_problem_labels():
+	"""Remove any remaining problem labels from the scene"""
+	for child in get_children():
+		if child is Label and child != current_problem_label:
+			child.queue_free()
+	current_problem_label = null
