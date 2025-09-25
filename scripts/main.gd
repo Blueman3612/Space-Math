@@ -16,6 +16,7 @@ var backspace_hold_time = 0.15  # Time to hold backspace before it repeats
 var scroll_boost_multiplier = 80.0  # How much to boost background scroll speed on submission
 var feedback_max_alpha = 0.1  # Maximum alpha for feedback color overlay
 var problems_per_level = 5  # Number of problems to complete before returning to menu
+var timer_grace_period = 0.5  # Grace period before timer starts in seconds
 
 # Title animation variables
 var title_bounce_speed = 2.0  # Speed of the sin wave animation
@@ -51,9 +52,21 @@ var backspace_just_pressed = false  # Track if backspace was just pressed this f
 var feedback_color_rect: ColorRect  # Reference to the feedback color overlay
 var main_menu_node: Control  # Reference to the MainMenu node
 var game_over_node: Control  # Reference to the GameOver node
+var play_node: Control  # Reference to the Play node
 var title_sprite: Sprite2D  # Reference to the Title sprite
 var title_base_position: Vector2  # Store the original position of the title
 var title_animation_time = 0.0  # Track time for sin wave animation
+
+# Timer and accuracy tracking
+var level_start_time = 0.0  # Time when the level started
+var current_level_time = 0.0  # Current elapsed time for the level
+var timer_active = false  # Whether the timer is currently running
+var grace_period_timer = 0.0  # Timer for the grace period
+var correct_answers = 0  # Number of correct answers in current level
+var timer_label: Label  # Reference to the Timer label
+var accuracy_label: Label  # Reference to the Accuracy label
+var player_time_label: Label  # Reference to the PlayerTime label in GameOver
+var player_accuracy_label: Label  # Reference to the PlayerAccuracy label in GameOver
 
 func _ready():
 	# Load and parse the math facts JSON
@@ -78,11 +91,20 @@ func _ready():
 	# Load label settings resource
 	label_settings_resource = load("res://assets/label settings/GravityBold128.tres")
 	
-	# Get reference to feedback color overlay, main menu, and game over
+	# Get reference to feedback color overlay, main menu, game over, and play
 	feedback_color_rect = get_node("FeedbackColor")
 	main_menu_node = get_node("MainMenu")
 	game_over_node = get_node("GameOver")
+	play_node = get_node("Play")
 	title_sprite = main_menu_node.get_node("Title")
+	
+	# Get references to timer and accuracy labels
+	timer_label = play_node.get_node("Timer")
+	accuracy_label = play_node.get_node("Accuracy")
+	
+	# Get references to game over labels
+	player_time_label = game_over_node.get_node("PlayerTime")
+	player_accuracy_label = game_over_node.get_node("PlayerAccuracy")
 	
 	# Store the original position of the title for animation
 	if title_sprite:
@@ -143,6 +165,16 @@ func _process(delta):
 	
 	# Only process game logic during PLAY state
 	if current_state == GameState.PLAY:
+		# Handle timer logic with grace period
+		if not timer_active:
+			grace_period_timer += delta
+			if grace_period_timer >= timer_grace_period:
+				timer_active = true
+				level_start_time = Time.get_time_dict_from_system()["hour"] * 3600 + Time.get_time_dict_from_system()["minute"] * 60 + Time.get_time_dict_from_system()["second"]
+		else:
+			# Update timer only if active using delta time for precision
+			current_level_time += delta
+		
 		# Update blink timer
 		blink_timer += delta
 		if blink_timer >= blink_interval:
@@ -180,6 +212,9 @@ func _process(delta):
 		
 		# Update problem display
 		update_problem_display()
+		
+		# Update UI labels
+		update_play_ui()
 
 func setup_initial_problem():
 	# Get the existing Problem label and set it up as current
@@ -226,6 +261,14 @@ func submit_answer():
 	var user_answer_int = int(user_answer)
 	var is_correct = (user_answer_int == current_question.result)
 	
+	# Track correct answers
+	if is_correct:
+		correct_answers += 1
+	
+	# Pause timer during transition
+	var timer_was_active = timer_active
+	timer_active = false
+	
 	# Set color based on correctness, play sound, and show feedback overlay
 	if current_problem_label:
 		if is_correct:
@@ -262,10 +305,17 @@ func submit_answer():
 	
 	# Check if we've completed the required number of problems
 	if problems_completed >= problems_per_level:
+		# Stop timer immediately when last question is answered
+		timer_active = false
+		
 		# Wait for the transition delay, then go to game over
 		await get_tree().create_timer(transition_delay).timeout
 		go_to_game_over()
 	else:
+		# Resume timer after transition delay (if it was active)
+		if timer_was_active:
+			timer_active = true
+		
 		# Create new problem - continue playing
 		create_new_problem_label()
 		generate_new_question()
@@ -541,6 +591,13 @@ func start_play_state():
 	"""Transition from MENU to PLAY state"""
 	current_state = GameState.PLAY
 	problems_completed = 0
+	correct_answers = 0
+	
+	# Initialize timer variables
+	level_start_time = 0.0
+	current_level_time = 0.0
+	timer_active = false
+	grace_period_timer = 0.0
 	
 	# First animate menu down off screen (downward)
 	var tween = create_tween()
@@ -550,6 +607,13 @@ func start_play_state():
 	
 	# After the downward animation completes, teleport to above screen
 	tween.tween_callback(func(): main_menu_node.position = menu_above_screen)
+	
+	# Play node flies in from above
+	play_node.position = menu_above_screen
+	var play_tween = create_tween()
+	play_tween.set_ease(Tween.EASE_OUT)
+	play_tween.set_trans(Tween.TRANS_EXPO)
+	play_tween.tween_property(play_node, "position", menu_on_screen, animation_duration)
 	
 	# Trigger scroll speed boost effect
 	var space_bg = get_node("BackgroundLayer/SpaceBackground")
@@ -564,8 +628,20 @@ func go_to_game_over():
 	"""Transition from PLAY to GAME_OVER state"""
 	current_state = GameState.GAME_OVER
 	
+	# Stop the timer (should already be stopped, but ensure it)
+	timer_active = false
+	
+	# Update GameOver labels with player performance
+	update_game_over_labels()
+	
 	# Clean up any remaining problem labels
 	cleanup_problem_labels()
+	
+	# Play node flies down off screen
+	var play_tween = create_tween()
+	play_tween.set_ease(Tween.EASE_OUT)
+	play_tween.set_trans(Tween.TRANS_EXPO)
+	play_tween.tween_property(play_node, "position", menu_below_screen, animation_duration)
 	
 	# GameOver teleports to above screen, then animates down to center
 	game_over_node.position = menu_above_screen
@@ -604,6 +680,43 @@ func _on_continue_button_pressed():
 		return
 	
 	return_to_menu()
+
+func update_play_ui():
+	"""Update the Timer and Accuracy labels during gameplay"""
+	if not timer_label or not accuracy_label:
+		return
+	
+	# Update timer display (mm:ss.ss format)
+	var display_time = current_level_time
+	if not timer_active:
+		display_time = 0.0  # Show 0:00.00 during grace period
+	
+	var minutes = int(display_time / 60)
+	var seconds = int(display_time) % 60
+	var hundredths = int((display_time - int(display_time)) * 100)
+	
+	var time_string = "%d:%02d.%02d" % [minutes, seconds, hundredths]
+	timer_label.text = time_string
+	
+	# Update accuracy display (correct/total format)
+	var accuracy_string = "%d/%d" % [correct_answers, problems_per_level]
+	accuracy_label.text = accuracy_string
+
+func update_game_over_labels():
+	"""Update the GameOver labels with player's final performance"""
+	if not player_time_label or not player_accuracy_label:
+		return
+	
+	# Update player time display (mm:ss.ss format - same as in-game timer)
+	var minutes = int(current_level_time / 60)
+	var seconds = int(current_level_time) % 60
+	var hundredths = int((current_level_time - int(current_level_time)) * 100)
+	var time_string = "%d:%02d.%02d" % [minutes, seconds, hundredths]
+	player_time_label.text = time_string
+	
+	# Update player accuracy display (correct/total format)
+	var accuracy_string = "%d/%d" % [correct_answers, problems_per_level]
+	player_accuracy_label.text = accuracy_string
 
 func cleanup_problem_labels():
 	"""Remove any remaining problem labels from the scene"""

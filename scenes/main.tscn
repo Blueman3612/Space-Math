@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://dgsyvy33jqe6f"]
+[gd_scene load_steps=12 format=3 uid="uid://dgsyvy33jqe6f"]
 
 [ext_resource type="Script" uid="uid://b7dgkimpo8qo0" path="res://scripts/main.gd" id="1_8k3xf"]
 [ext_resource type="Theme" uid="uid://qx67shaxna0a" path="res://assets/themes/classic/classic.tres" id="1_jyhfs"]
@@ -8,6 +8,7 @@
 [ext_resource type="LabelSettings" uid="uid://cbtne7xhouqs1" path="res://assets/label settings/GravityBold64.tres" id="6_tefeu"]
 [ext_resource type="FontFile" uid="uid://d4jen7ry6jk7n" path="res://assets/fonts/GravityBold8.ttf" id="6_tipki"]
 [ext_resource type="Texture2D" uid="uid://bw8wg1e8arbcr" path="res://assets/sprites/Star Icon.png" id="7_o6xl0"]
+[ext_resource type="LabelSettings" uid="uid://cfexrs5iigrqq" path="res://assets/label settings/GravityBold32.tres" id="9_85g3d"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_85g3d"]
 font = ExtResource("6_tipki")
@@ -731,3 +732,30 @@ text = "CONTINUE"
 label_settings = SubResource("LabelSettings_tipki")
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="Play" type="Control" parent="."]
+anchors_preset = 0
+offset_top = -1144.0
+offset_right = 1920.0
+offset_bottom = -64.0
+mouse_filter = 2
+
+[node name="Timer" type="Label" parent="Play"]
+self_modulate = Color(0.5019608, 0.5019608, 0.5019608, 1)
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 184.0
+offset_bottom = 48.0
+text = "4:20.69"
+label_settings = ExtResource("9_85g3d")
+
+[node name="Accuracy" type="Label" parent="Play"]
+self_modulate = Color(0.627451, 0.627451, 0.627451, 1)
+layout_mode = 0
+offset_left = 16.0
+offset_top = 64.0
+offset_right = 184.0
+offset_bottom = 96.0
+text = "6/9"
+label_settings = ExtResource("9_85g3d")
