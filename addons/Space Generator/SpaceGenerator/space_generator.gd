@@ -27,7 +27,7 @@ func _ready() -> void:
 	# export var doesn't work on web export for this one variable
 	# I don't know why
 	# This catches it, which will do for now 
-	if layer_container == null: layer_container = $Layers
+	#if layer_container == null: layer_container = $Layers
 
 	generate_space(export_resolution)
 	
