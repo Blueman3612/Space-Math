@@ -610,7 +610,7 @@ offset_top = 272.0
 offset_right = 148.0
 offset_bottom = 336.0
 grow_horizontal = 2
-text = "2:30"
+text = "2:00"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -653,7 +653,7 @@ offset_top = 272.0
 offset_right = 148.0
 offset_bottom = 336.0
 grow_horizontal = 2
-text = "2:00"
+text = "1:40"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -696,7 +696,7 @@ offset_top = 272.0
 offset_right = 148.0
 offset_bottom = 336.0
 grow_horizontal = 2
-text = "1:30"
+text = "1:20"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -732,6 +732,45 @@ text = "CONTINUE"
 label_settings = SubResource("LabelSettings_tipki")
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="CQPMTitle" type="Label" parent="GameOver"]
+self_modulate = Color(0.5019608, 0.5019608, 0.5019608, 1)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 572.0
+offset_top = 816.0
+offset_right = 880.0
+offset_bottom = 880.0
+grow_horizontal = 2
+text = "CQPM"
+label_settings = ExtResource("9_85g3d")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CQPM" type="Label" parent="GameOver"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 492.0
+offset_top = 896.0
+offset_right = 960.0
+offset_bottom = 960.0
+grow_horizontal = 2
+text = "13.37"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CQPMTooltip" type="Control" parent="GameOver"]
+anchors_preset = 0
+offset_left = 1532.0
+offset_top = 816.0
+offset_right = 1840.0
+offset_bottom = 984.0
+tooltip_text = "Correct Questions Per Minute"
 
 [node name="Play" type="Control" parent="."]
 anchors_preset = 0

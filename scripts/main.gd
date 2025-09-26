@@ -27,9 +27,9 @@ var star_final_scale = 8.0  # Final scale for earned stars
 var label_fade_time = 0.5  # Time for star labels to fade in
 
 # Star requirements (accuracy, time in seconds)
-var star1_requirements = {"accuracy": 25, "time": 150.0}  # 2:30
-var star2_requirements = {"accuracy": 30, "time": 120.0}  # 2:00
-var star3_requirements = {"accuracy": 35, "time": 90.0}   # 1:30
+var star1_requirements = {"accuracy": 25, "time": 120.0}  # 2:00
+var star2_requirements = {"accuracy": 30, "time": 100.0}  # 1:40
+var star3_requirements = {"accuracy": 35, "time": 80.0}   # 1:20
 
 # Title animation variables
 var title_bounce_speed = 2.0  # Speed of the sin wave animation
