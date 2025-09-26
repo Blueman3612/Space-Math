@@ -12,6 +12,9 @@ var blink_interval = 0.5  # Time for underscore blink cycle (fade in/out)
 var max_answer_chars = 4  # Maximum characters for answer input
 var animation_duration = 0.5  # Duration for label animations in seconds
 var transition_delay = 0.1  # Delay before generating new question
+var transition_delay_incorrect = 1.5  # Delay for incorrect answers (1.5 seconds)
+var incorrect_label_animation_time = 0.25  # Time for incorrect label animation
+var incorrect_label_move_distance = 192.0  # Distance to move incorrect label down
 var backspace_hold_time = 0.15  # Time to hold backspace before it repeats
 var scroll_boost_multiplier = 80.0  # How much to boost background scroll speed on submission
 var feedback_max_alpha = 0.1  # Maximum alpha for feedback color overlay
@@ -81,6 +84,8 @@ var level_start_time = 0.0  # Time when the level started
 var current_level_time = 0.0  # Current elapsed time for the level
 var timer_active = false  # Whether the timer is currently running
 var grace_period_timer = 0.0  # Timer for the grace period
+var timer_started = false  # Whether the timer has started (past grace period)
+var in_transition_delay = false  # Whether we're currently in a transition delay
 var correct_answers = 0  # Number of correct answers in current level
 var timer_label: Label  # Reference to the Timer label
 var accuracy_label: Label  # Reference to the Accuracy label
@@ -171,12 +176,6 @@ func _ready():
 
 func _input(event):
 	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_R:
-			# Regenerate space background
-			var space_bg = get_node("BackgroundLayer/SpaceBackground")
-			if space_bg and space_bg.has_method("regenerate"):
-				space_bg.regenerate()
-		
 		# Handle number input and negative sign (only during PLAY state and if not submitted)
 		if current_state == GameState.PLAY and not answer_submitted:
 			if event.keycode >= KEY_0 and event.keycode <= KEY_9:
@@ -220,14 +219,18 @@ func _process(delta):
 	
 	# Only process game logic during PLAY state
 	if current_state == GameState.PLAY:
-		# Handle timer logic with grace period
-		if not timer_active:
-			grace_period_timer += delta
-			if grace_period_timer >= timer_grace_period:
-				timer_active = true
-				level_start_time = Time.get_time_dict_from_system()["hour"] * 3600 + Time.get_time_dict_from_system()["minute"] * 60 + Time.get_time_dict_from_system()["second"]
-		else:
-			# Update timer only if active using delta time for precision
+		# Handle timer logic with grace period (but not during transition delays)
+		if not timer_started and not in_transition_delay:
+			# During grace period, timer hasn't started yet
+			if not timer_active:
+				grace_period_timer += delta
+				if grace_period_timer >= timer_grace_period:
+					timer_active = true
+					timer_started = true
+					level_start_time = Time.get_time_dict_from_system()["hour"] * 3600 + Time.get_time_dict_from_system()["minute"] * 60 + Time.get_time_dict_from_system()["second"]
+		
+		# Update timer only if active (whether during grace period or after)
+		if timer_active:
 			current_level_time += delta
 		
 		# Update blink timer
@@ -317,26 +320,45 @@ func submit_answer():
 	if is_correct:
 		correct_answers += 1
 	
-	# Pause timer during transition
+	# Pause timer during transition and store its previous state
 	var timer_was_active = timer_active
+	var should_start_timer = false
+	
+	# Check if we're in grace period and should start timer after transition
+	if not timer_started and grace_period_timer >= timer_grace_period:
+		should_start_timer = true
+	
+	# Set transition delay flag and pause timer
+	in_transition_delay = true
 	timer_active = false
+	
+	# Determine which delay to use based on correctness
+	var delay_to_use = transition_delay  # Default delay for correct answers
+	if not is_correct:
+		delay_to_use = transition_delay_incorrect  # Longer delay for incorrect answers
 	
 	# Set color based on correctness, play sound, and show feedback overlay
 	if current_problem_label:
 		if is_correct:
-			current_problem_label.modulate = Color(0, 1, 0)  # Green for correct
+			current_problem_label.self_modulate = Color(0, 1, 0)  # Green for correct
 			AudioManager.play_correct()  # Play correct sound
 			show_feedback_flash(Color(0, 1, 0))  # Green feedback flash
 			print("✓ Correct! Answer was ", current_question.result)
 		else:
-			current_problem_label.modulate = Color(1, 0, 0)  # Red for incorrect
+			current_problem_label.self_modulate = Color(1, 0, 0)  # Red for incorrect
 			AudioManager.play_incorrect()  # Play incorrect sound
 			show_feedback_flash(Color(1, 0, 0))  # Red feedback flash
 			print("✗ Incorrect. Answer was ", current_question.result, ", you entered ", user_answer_int)
+			
+			# Create animated label showing correct answer for incorrect responses
+			create_incorrect_answer_label()
 	
-	# Wait to show the color feedback (if transition_delay > 0)
-	if transition_delay > 0.0:
-		await get_tree().create_timer(transition_delay).timeout
+	# Wait for the full transition delay (timer remains paused during this time)
+	if delay_to_use > 0.0:
+		await get_tree().create_timer(delay_to_use).timeout
+	
+	# Clear transition delay flag
+	in_transition_delay = false
 	
 	# Trigger scroll speed boost effect after transition delay
 	var space_bg = get_node("BackgroundLayer/SpaceBackground")
@@ -357,8 +379,7 @@ func submit_answer():
 	
 	# Check if we've completed the required number of problems
 	if problems_completed >= problems_per_level:
-		# Stop timer immediately when last question is answered
-		timer_active = false
+		# Timer is already stopped above, keep it stopped for game over
 		
 		# Hide play UI labels when play state ends
 		if timer_label:
@@ -366,13 +387,17 @@ func submit_answer():
 		if accuracy_label:
 			accuracy_label.visible = false
 		
-		# Wait for the transition delay, then go to game over
-		await get_tree().create_timer(transition_delay).timeout
+		# Wait for the same transition delay used above, then go to game over
+		await get_tree().create_timer(delay_to_use).timeout
 		go_to_game_over()
 	else:
-		# Resume timer after transition delay (if it was active)
-		if timer_was_active:
+		# Resume timer after transition delay or start it if grace period completed during transition
+		if timer_was_active or should_start_timer:
 			timer_active = true
+			# If timer should start now, mark it as started and record start time
+			if should_start_timer and not timer_started:
+				timer_started = true
+				level_start_time = Time.get_time_dict_from_system()["hour"] * 3600 + Time.get_time_dict_from_system()["minute"] * 60 + Time.get_time_dict_from_system()["second"]
 		
 		# Create new problem - continue playing
 		create_new_problem_label()
@@ -386,7 +411,7 @@ func create_new_problem_label():
 	new_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	new_label.position = off_screen_bottom
 	new_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	new_label.modulate = Color(1, 1, 1)  # Reset to white color
+	new_label.self_modulate = Color(1, 1, 1)  # Reset to white color
 	
 	# Add to scene
 	add_child(new_label)
@@ -599,6 +624,32 @@ func find_closest_grade_with_operator(target_grade, operator):
 		"grade_name": grade_data.name
 	}
 
+func create_incorrect_answer_label():
+	"""Create and animate a label showing the correct answer when user is incorrect"""
+	if not current_problem_label or not current_question:
+		return
+	
+	# Create new label as child of current problem label
+	var incorrect_label = Label.new()
+	incorrect_label.label_settings = label_settings_resource  # Uses GravityBold128
+	incorrect_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	incorrect_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	incorrect_label.position = Vector2(0, 0)  # Start at (0, 0) relative to parent
+	incorrect_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	incorrect_label.text = current_question.expression  # Set to the expression
+	incorrect_label.self_modulate = Color(0, 0.5, 0)  # Dark green color
+	
+	# Add as child to current problem label
+	current_problem_label.add_child(incorrect_label)
+	
+	# Animate the label moving down 320 pixels over 0.25 seconds
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(incorrect_label, "position", Vector2(0, incorrect_label_move_distance), incorrect_label_animation_time)
+	
+	# The label will be cleaned up when the parent problem label is removed
+
 func show_feedback_flash(flash_color: Color):
 	"""Show a colored flash overlay that fades in then out with smooth timing"""
 	if not feedback_color_rect:
@@ -676,6 +727,8 @@ func start_play_state():
 	level_start_time = 0.0
 	current_level_time = 0.0
 	timer_active = false
+	timer_started = false
+	in_transition_delay = false
 	grace_period_timer = 0.0
 	
 	# First animate menu down off screen (downward)
@@ -790,8 +843,8 @@ func update_play_ui():
 	
 	# Update timer display (mm:ss.ss format)
 	var display_time = current_level_time
-	if not timer_active:
-		display_time = 0.0  # Show 0:00.00 during grace period
+	if not timer_started:
+		display_time = 0.0  # Show 0:00.00 only during initial grace period
 	
 	var minutes = int(display_time / 60)
 	var seconds = int(display_time) % 60
