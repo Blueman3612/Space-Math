@@ -608,6 +608,22 @@ func show_feedback_flash(flash_color: Color):
 	# Phase 2: Fade out from feedback_max_alpha to 0 over animation_duration * 2
 	tween.tween_property(feedback_color_rect, "modulate:a", 0.0, animation_duration * 2.0)
 
+func connect_button_sounds(button: Button):
+	"""Connect hover and click sound effects to a button"""
+	if button:
+		# Connect hover sound (mouse_entered signal)
+		button.mouse_entered.connect(_on_button_hover)
+		# Connect click sound - this will be called before the button's pressed signal
+		button.button_down.connect(_on_button_click)
+
+func _on_button_hover():
+	"""Play hover sound when mouse enters any button"""
+	AudioManager.play_blip()
+
+func _on_button_click():
+	"""Play click sound when any button is pressed down"""
+	AudioManager.play_select()
+
 func connect_menu_buttons():
 	"""Connect all menu buttons to their respective functions"""
 	# Connect level buttons (1-8)
@@ -616,11 +632,13 @@ func connect_menu_buttons():
 		var level_button = main_menu_node.get_node(button_name)
 		if level_button:
 			level_button.pressed.connect(_on_level_button_pressed.bind(i))
+			connect_button_sounds(level_button)
 	
 	# Connect exit button
 	var exit_button = main_menu_node.get_node("ExitButton")
 	if exit_button:
 		exit_button.pressed.connect(_on_exit_button_pressed)
+		connect_button_sounds(exit_button)
 
 func _on_level_button_pressed(level: int):
 	"""Handle level button press - only respond during MENU state"""
@@ -736,6 +754,7 @@ func connect_game_over_buttons():
 	var continue_button = game_over_node.get_node("ContinueButton")
 	if continue_button:
 		continue_button.pressed.connect(_on_continue_button_pressed)
+		connect_button_sounds(continue_button)
 
 func _on_continue_button_pressed():
 	"""Handle continue button press - only respond during GAME_OVER state"""
