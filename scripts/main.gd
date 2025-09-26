@@ -735,9 +735,12 @@ func _on_level_button_pressed(level: int):
 	start_play_state()
 
 func _on_exit_button_pressed():
-	"""Handle exit button press - only respond during MENU state"""
-	if current_state != GameState.MENU:
-		return
+	# Use PlaycademySdk.runtime.exit() when available, otherwise fall back to quit
+	if PlaycademySdk and PlaycademySdk.is_ready():
+		PlaycademySdk.runtime.exit()
+	else:
+		# Fallback to normal quit for non-Playcademy environments
+		get_tree().quit() 
 	
 	get_tree().quit()
 

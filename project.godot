@@ -21,12 +21,17 @@ config/icon="res://icon.svg"
 [autoload]
 
 AudioManager="*res://scripts/audio_manager.gd"
+PlaycademySdk="*res://addons/playcademy/sdk/playcademy_sdk.gd"
 
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
 window/stretch/mode="viewport"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/playcademy/manifest_exporter/plugin.cfg")
 
 [gui]
 
