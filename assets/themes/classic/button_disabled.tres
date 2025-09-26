@@ -1,0 +1,11 @@
+[gd_resource type="StyleBoxTexture" load_steps=2 format=3 uid="uid://bhag12lvp4mnp"]
+
+[ext_resource type="Texture2D" uid="uid://cryuin3uei2ld" path="res://assets/sprites/Astro Math Button 9slice.png" id="1_k2115"]
+
+[resource]
+texture = ExtResource("1_k2115")
+texture_margin_left = 32.0
+texture_margin_top = 32.0
+texture_margin_right = 32.0
+texture_margin_bottom = 32.0
+region_rect = Rect2(288, 0, 96, 96)

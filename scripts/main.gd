@@ -70,6 +70,12 @@ var title_sprite: Sprite2D  # Reference to the Title sprite
 var title_base_position: Vector2  # Store the original position of the title
 var title_animation_time = 0.0  # Track time for sin wave animation
 
+# Save system variables
+var save_data = {}
+var save_file_path = "user://save_data.json"
+var current_question_start_time = 0.0  # Track when current question timing started
+var cqpm_label: Label  # Reference to CQPM label in GameOver
+
 # Timer and accuracy tracking
 var level_start_time = 0.0  # Time when the level started
 var current_level_time = 0.0  # Current elapsed time for the level
@@ -134,6 +140,7 @@ func _ready():
 	player_time_label = game_over_node.get_node("PlayerTime")
 	player_accuracy_label = game_over_node.get_node("PlayerAccuracy")
 	continue_button = game_over_node.get_node("ContinueButton")
+	cqpm_label = game_over_node.get_node("CQPM")
 	
 	# Get references to star nodes and their components
 	star1_node = game_over_node.get_node("Star1")
@@ -154,6 +161,9 @@ func _ready():
 	# Store the original position of the title for animation
 	if title_sprite:
 		title_base_position = title_sprite.position
+	
+	# Initialize save system
+	initialize_save_system()
 	
 	# Connect menu buttons
 	connect_menu_buttons()
@@ -261,18 +271,6 @@ func _process(delta):
 		# Update UI labels
 		update_play_ui()
 
-func setup_initial_problem():
-	# Get the existing Problem label and set it up as current
-	current_problem_label = get_node("Problem")
-	if current_problem_label:
-		current_problem_label.position = primary_position
-		current_problem_label.label_settings = label_settings_resource
-		# Only generate question if math facts are loaded
-		if not math_facts.is_empty():
-			generate_new_question()
-		else:
-			print("Math facts not loaded, cannot generate question")
-
 func generate_new_question():
 	user_answer = ""
 	answer_submitted = false  # Reset submission state for new question
@@ -302,9 +300,18 @@ func submit_answer():
 	# Mark as submitted to prevent further input
 	answer_submitted = true
 	
+	# Calculate time taken for this question
+	var question_time = 0.0
+	if current_question_start_time > 0:
+		question_time = Time.get_time_dict_from_system()["hour"] * 3600 + Time.get_time_dict_from_system()["minute"] * 60 + Time.get_time_dict_from_system()["second"] - current_question_start_time
+	
 	# Check if answer is correct
 	var user_answer_int = int(user_answer)
 	var is_correct = (user_answer_int == current_question.result)
+	
+	# Save question data
+	if current_question:
+		save_question_data(current_question, user_answer_int, question_time)
 	
 	# Track correct answers
 	if is_correct:
@@ -392,6 +399,9 @@ func create_new_problem_label():
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_EXPO)
 	tween.tween_property(new_label, "position", primary_position, animation_duration)
+	
+	# Start timing this question when animation completes
+	tween.tween_callback(start_question_timing)
 
 
 func get_math_question(track = null, grade = null, operator = null, no_zeroes = false):
@@ -706,6 +716,12 @@ func go_to_game_over():
 	# Stop the timer (should already be stopped, but ensure it)
 	timer_active = false
 	
+	# Calculate and save level performance data
+	var stars_earned = evaluate_stars().size()
+	var level_number = get_level_number_from_track(current_track)
+	if level_number > 0:
+		update_level_data(level_number, correct_answers, current_level_time, stars_earned)
+	
 	# Update GameOver labels with player performance
 	update_game_over_labels()
 	
@@ -734,6 +750,10 @@ func go_to_game_over():
 func return_to_menu():
 	"""Transition from GAME_OVER to MENU state"""
 	current_state = GameState.MENU
+	
+	# Update menu display with new save data
+	update_menu_stars()
+	update_level_availability()
 	
 	# MainMenu teleports to above screen, then animates down to center
 	main_menu_node.position = menu_above_screen
@@ -799,6 +819,11 @@ func update_game_over_labels():
 	# Update player accuracy display (correct/total format)
 	var accuracy_string = "%d/%d" % [correct_answers, problems_per_level]
 	player_accuracy_label.text = accuracy_string
+	
+	# Update CQPM display
+	if cqpm_label:
+		var cqpm = calculate_cqpm(correct_answers, current_level_time)
+		cqpm_label.text = "%.2f" % cqpm
 
 func evaluate_stars():
 	"""Evaluate which stars the player has earned"""
@@ -960,3 +985,234 @@ func cleanup_problem_labels():
 		if child is Label and child != current_problem_label:
 			child.queue_free()
 	current_problem_label = null
+
+# Save System Functions
+
+func start_question_timing():
+	"""Start timing the current question"""
+	current_question_start_time = Time.get_time_dict_from_system()["hour"] * 3600 + Time.get_time_dict_from_system()["minute"] * 60 + Time.get_time_dict_from_system()["second"]
+
+func initialize_save_system():
+	"""Initialize the save system and load existing save data"""
+	load_save_data()
+	update_menu_stars()
+	update_level_availability()
+
+func get_default_save_data():
+	"""Return the default save data structure"""
+	var default_data = {
+		"version": ProjectSettings.get_setting("application/config/version"),
+		"levels": {},
+		"questions": {}
+	}
+	
+	# Initialize level data for all 8 levels
+	for level in range(1, 9):
+		default_data.levels[str(level)] = {
+			"highest_stars": 0,
+			"best_accuracy": 0,
+			"best_time": 999999.0,  # Very high default time
+			"best_cqpm": 0.0
+		}
+	
+	return default_data
+
+func load_save_data():
+	"""Load save data from file or create default if none exists"""
+	if FileAccess.file_exists(save_file_path):
+		var file = FileAccess.open(save_file_path, FileAccess.READ)
+		if file:
+			var json_string = file.get_as_text()
+			file.close()
+			
+			var json = JSON.new()
+			var parse_result = json.parse(json_string)
+			if parse_result == OK:
+				save_data = json.data
+				# Run migration if needed
+				migrate_save_data()
+			else:
+				print("Error parsing save data JSON: ", json.get_error_message())
+				save_data = get_default_save_data()
+		else:
+			print("Could not open save file")
+			save_data = get_default_save_data()
+	else:
+		print("No save file found, creating default save data")
+		save_data = get_default_save_data()
+		save_save_data()
+
+func save_save_data():
+	"""Save current save data to file"""
+	var file = FileAccess.open(save_file_path, FileAccess.WRITE)
+	if file:
+		var json_string = JSON.stringify(save_data, "\t")
+		file.store_string(json_string)
+		file.close()
+		print("Save data saved successfully")
+	else:
+		print("Could not save data to file")
+
+func migrate_save_data():
+	"""Handle save data migration for version changes"""
+	var current_version = ProjectSettings.get_setting("application/config/version")
+	var save_version = save_data.get("version", "0.0")
+	
+	if save_version != current_version:
+		print("Migrating save data from version ", save_version, " to ", current_version)
+		
+		# Ensure all required fields exist
+		if not save_data.has("levels"):
+			save_data.levels = {}
+		if not save_data.has("questions"):
+			save_data.questions = {}
+		
+		# Ensure all 8 levels have data
+		for level in range(1, 9):
+			var level_key = str(level)
+			if not save_data.levels.has(level_key):
+				save_data.levels[level_key] = {
+					"highest_stars": 0,
+					"best_accuracy": 0,
+					"best_time": 999999.0,
+					"best_cqpm": 0.0
+				}
+			else:
+				# Ensure all fields exist for existing levels
+				var level_data = save_data.levels[level_key]
+				if not level_data.has("best_cqpm"):
+					level_data.best_cqpm = 0.0
+		
+		# Update version
+		save_data.version = current_version
+		save_save_data()
+
+func get_question_key(question_data):
+	"""Generate a unique key for a question based on its operands and operator"""
+	return str(question_data.operands[0]) + "_" + question_data.operator + "_" + str(question_data.operands[1])
+
+func save_question_data(question_data, player_answer, time_taken):
+	"""Save data for a completed question"""
+	var question_key = get_question_key(question_data)
+	
+	if not save_data.questions.has(question_key):
+		save_data.questions[question_key] = []
+	
+	var question_record = {
+		"operands": question_data.operands,
+		"operator": question_data.operator,
+		"result": question_data.result,
+		"player_answer": player_answer,
+		"time_taken": time_taken,
+		"timestamp": Time.get_unix_time_from_system()
+	}
+	
+	# Add to the beginning of the array
+	save_data.questions[question_key].push_front(question_record)
+	
+	# Keep only the last 5 answers
+	if save_data.questions[question_key].size() > 5:
+		save_data.questions[question_key] = save_data.questions[question_key].slice(0, 5)
+	
+	save_save_data()
+
+func update_level_data(level_number, accuracy, time_taken, stars_earned):
+	"""Update the saved data for a level"""
+	var level_key = str(level_number)
+	if not save_data.levels.has(level_key):
+		save_data.levels[level_key] = {
+			"highest_stars": 0,
+			"best_accuracy": 0,
+			"best_time": 999999.0,
+			"best_cqpm": 0.0
+		}
+	
+	var level_data = save_data.levels[level_key]
+	var updated = false
+	
+	# Update highest stars
+	if stars_earned > level_data.highest_stars:
+		level_data.highest_stars = stars_earned
+		updated = true
+	
+	# Update best accuracy
+	if accuracy > level_data.best_accuracy:
+		level_data.best_accuracy = accuracy
+		updated = true
+	
+	# Update best time
+	if time_taken < level_data.best_time:
+		level_data.best_time = time_taken
+		updated = true
+	
+	# Calculate and update CQPM (Correct Questions Per Minute)
+	var cqpm = 0.0
+	if time_taken > 0:
+		cqpm = (accuracy / time_taken) * 60.0
+	
+	if cqpm > level_data.best_cqpm:
+		level_data.best_cqpm = cqpm
+		updated = true
+	
+	if updated:
+		save_save_data()
+
+func calculate_cqpm(correct_answers, time_in_seconds):
+	"""Calculate Correct Questions Per Minute"""
+	if time_in_seconds <= 0:
+		return 0.0
+	return (float(correct_answers) / time_in_seconds) * 60.0
+
+func get_level_number_from_track(track):
+	"""Get the level number (1-8) from a track number using track_progression mapping"""
+	for i in range(track_progression.size()):
+		if track_progression[i] == track:
+			return i + 1  # Convert 0-based index to 1-based level number
+	return 0  # Track not found
+
+func update_menu_stars():
+	"""Update the star display on menu level buttons based on save data"""
+	for level in range(1, 9):
+		var level_key = str(level)
+		var button_name = "LevelButton" + str(level)
+		var level_button = main_menu_node.get_node(button_name)
+		
+		if level_button and save_data.levels.has(level_key):
+			var stars_earned = save_data.levels[level_key].highest_stars
+			var contents = level_button.get_node("Contents")
+			
+			# Update each star sprite
+			for star_num in range(1, 4):
+				var star_sprite = contents.get_node("Star" + str(star_num))
+				if star_sprite:
+					star_sprite.frame = 1 if star_num <= stars_earned else 0
+
+func update_level_availability():
+	"""Update level button availability based on progression"""
+	for level in range(1, 9):
+		var button_name = "LevelButton" + str(level)
+		var level_button = main_menu_node.get_node(button_name)
+		
+		if level_button:
+			var should_be_available = true
+			
+			# Level 1 is always available
+			if level > 1:
+				# Check if previous level has at least 1 star
+				var prev_level_key = str(level - 1)
+				if save_data.levels.has(prev_level_key):
+					var prev_stars = save_data.levels[prev_level_key].highest_stars
+					should_be_available = prev_stars > 0
+				else:
+					should_be_available = false
+			
+			# Set button state
+			level_button.disabled = not should_be_available
+			
+			# Update visual state
+			var contents = level_button.get_node("Contents")
+			if contents:
+				if should_be_available:
+					contents.modulate = Color(1, 1, 1, 1)  # Fully opaque
+				else:
+					contents.modulate = Color(1, 1, 1, 0.5)  # Half transparent
