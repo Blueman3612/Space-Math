@@ -15,8 +15,21 @@ var transition_delay = 0.1  # Delay before generating new question
 var backspace_hold_time = 0.15  # Time to hold backspace before it repeats
 var scroll_boost_multiplier = 80.0  # How much to boost background scroll speed on submission
 var feedback_max_alpha = 0.1  # Maximum alpha for feedback color overlay
-var problems_per_level = 5  # Number of problems to complete before returning to menu
+var problems_per_level = 40  # Number of problems to complete before returning to menu
 var timer_grace_period = 0.5  # Grace period before timer starts in seconds
+
+# Star animation variables
+var star_delay = 0.4  # Delay between each star animation in seconds
+var star_expand_time = 0.2  # Time for star to expand to max scale
+var star_shrink_time = 0.5  # Time for star to shrink to final scale
+var star_max_scale = 32.0  # Maximum scale during star animation
+var star_final_scale = 8.0  # Final scale for earned stars
+var label_fade_time = 0.5  # Time for star labels to fade in
+
+# Star requirements (accuracy, time in seconds)
+var star1_requirements = {"accuracy": 25, "time": 150.0}  # 2:30
+var star2_requirements = {"accuracy": 30, "time": 120.0}  # 2:00
+var star3_requirements = {"accuracy": 35, "time": 90.0}   # 1:30
 
 # Title animation variables
 var title_bounce_speed = 2.0  # Speed of the sin wave animation
@@ -67,6 +80,21 @@ var timer_label: Label  # Reference to the Timer label
 var accuracy_label: Label  # Reference to the Accuracy label
 var player_time_label: Label  # Reference to the PlayerTime label in GameOver
 var player_accuracy_label: Label  # Reference to the PlayerAccuracy label in GameOver
+var continue_button: Button  # Reference to the ContinueButton
+
+# Star node references
+var star1_node: Control
+var star2_node: Control
+var star3_node: Control
+var star1_sprite: Sprite2D
+var star2_sprite: Sprite2D
+var star3_sprite: Sprite2D
+var star1_accuracy_label: Label
+var star1_time_label: Label
+var star2_accuracy_label: Label
+var star2_time_label: Label
+var star3_accuracy_label: Label
+var star3_time_label: Label
 
 func _ready():
 	# Load and parse the math facts JSON
@@ -105,6 +133,23 @@ func _ready():
 	# Get references to game over labels
 	player_time_label = game_over_node.get_node("PlayerTime")
 	player_accuracy_label = game_over_node.get_node("PlayerAccuracy")
+	continue_button = game_over_node.get_node("ContinueButton")
+	
+	# Get references to star nodes and their components
+	star1_node = game_over_node.get_node("Star1")
+	star2_node = game_over_node.get_node("Star2")
+	star3_node = game_over_node.get_node("Star3")
+	
+	star1_sprite = star1_node.get_node("Sprite")
+	star2_sprite = star2_node.get_node("Sprite")
+	star3_sprite = star3_node.get_node("Sprite")
+	
+	star1_accuracy_label = star1_node.get_node("Accuracy")
+	star1_time_label = star1_node.get_node("Time")
+	star2_accuracy_label = star2_node.get_node("Accuracy")
+	star2_time_label = star2_node.get_node("Time")
+	star3_accuracy_label = star3_node.get_node("Accuracy")
+	star3_time_label = star3_node.get_node("Time")
 	
 	# Store the original position of the title for animation
 	if title_sprite:
@@ -307,6 +352,12 @@ func submit_answer():
 	if problems_completed >= problems_per_level:
 		# Stop timer immediately when last question is answered
 		timer_active = false
+		
+		# Hide play UI labels when play state ends
+		if timer_label:
+			timer_label.visible = false
+		if accuracy_label:
+			accuracy_label.visible = false
 		
 		# Wait for the transition delay, then go to game over
 		await get_tree().create_timer(transition_delay).timeout
@@ -620,6 +671,12 @@ func start_play_state():
 	if space_bg and space_bg.has_method("boost_scroll_speed"):
 		space_bg.boost_scroll_speed(scroll_boost_multiplier, animation_duration * 2.0)
 	
+	# Show play UI labels
+	if timer_label:
+		timer_label.visible = true
+	if accuracy_label:
+		accuracy_label.visible = true
+	
 	# Create first problem label and generate question
 	create_new_problem_label()
 	generate_new_question()
@@ -633,6 +690,9 @@ func go_to_game_over():
 	
 	# Update GameOver labels with player performance
 	update_game_over_labels()
+	
+	# Initialize star states (make all stars invisible, continue button invisible)
+	initialize_star_states()
 	
 	# Clean up any remaining problem labels
 	cleanup_problem_labels()
@@ -649,6 +709,9 @@ func go_to_game_over():
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_EXPO)
 	tween.tween_property(game_over_node, "position", menu_on_screen, animation_duration)
+	
+	# Start star animation sequence after GameOver animation completes
+	tween.tween_callback(start_star_animation_sequence)
 
 func return_to_menu():
 	"""Transition from GAME_OVER to MENU state"""
@@ -717,6 +780,160 @@ func update_game_over_labels():
 	# Update player accuracy display (correct/total format)
 	var accuracy_string = "%d/%d" % [correct_answers, problems_per_level]
 	player_accuracy_label.text = accuracy_string
+
+func evaluate_stars():
+	"""Evaluate which stars the player has earned"""
+	var stars_earned = []
+	
+	# Check Star 1
+	if correct_answers >= star1_requirements.accuracy and current_level_time <= star1_requirements.time:
+		stars_earned.append(1)
+	
+	# Check Star 2
+	if correct_answers >= star2_requirements.accuracy and current_level_time <= star2_requirements.time:
+		stars_earned.append(2)
+	
+	# Check Star 3
+	if correct_answers >= star3_requirements.accuracy and current_level_time <= star3_requirements.time:
+		stars_earned.append(3)
+	
+	return stars_earned
+
+func check_star_requirement(star_num: int, requirement_type: String) -> bool:
+	"""Check if a specific requirement for a star has been met"""
+	var requirements
+	match star_num:
+		1: requirements = star1_requirements
+		2: requirements = star2_requirements
+		3: requirements = star3_requirements
+		_: return false
+	
+	match requirement_type:
+		"accuracy": return correct_answers >= requirements.accuracy
+		"time": return current_level_time <= requirements.time
+		_: return false
+
+func initialize_star_states():
+	"""Initialize all stars to invisible state and hide continue button"""
+	# Make all star nodes invisible
+	star1_node.visible = false
+	star2_node.visible = false
+	star3_node.visible = false
+	
+	# Hide continue button
+	continue_button.visible = false
+	
+	# Reset all star sprite scales and frames
+	star1_sprite.scale = Vector2.ZERO
+	star2_sprite.scale = Vector2.ZERO
+	star3_sprite.scale = Vector2.ZERO
+	
+	# Set all star labels to transparent
+	star1_accuracy_label.self_modulate.a = 0.0
+	star1_time_label.self_modulate.a = 0.0
+	star2_accuracy_label.self_modulate.a = 0.0
+	star2_time_label.self_modulate.a = 0.0
+	star3_accuracy_label.self_modulate.a = 0.0
+	star3_time_label.self_modulate.a = 0.0
+
+func start_star_animation_sequence():
+	"""Start the sequential star animation after half animation_duration delay"""
+	await get_tree().create_timer(animation_duration / 2.0).timeout
+	
+	# Evaluate which stars were earned
+	var stars_earned = evaluate_stars()
+	
+	# Animate stars in sequence
+	animate_star(1, 1 in stars_earned)
+	await get_tree().create_timer(star_delay).timeout
+	
+	animate_star(2, 2 in stars_earned)
+	await get_tree().create_timer(star_delay).timeout
+	
+	animate_star(3, 3 in stars_earned)
+	# Show continue button when Star 3 starts animating
+	continue_button.visible = true
+
+func animate_star(star_num: int, earned: bool):
+	"""Animate a single star based on whether it was earned"""
+	var star_node: Control
+	var star_sprite: Sprite2D
+	var accuracy_label: Label
+	var time_label: Label
+	
+	# Get references for the specific star
+	match star_num:
+		1:
+			star_node = star1_node
+			star_sprite = star1_sprite
+			accuracy_label = star1_accuracy_label
+			time_label = star1_time_label
+		2:
+			star_node = star2_node
+			star_sprite = star2_sprite
+			accuracy_label = star2_accuracy_label
+			time_label = star2_time_label
+		3:
+			star_node = star3_node
+			star_sprite = star3_sprite
+			accuracy_label = star3_accuracy_label
+			time_label = star3_time_label
+		_:
+			return
+	
+	# Make star visible
+	star_node.visible = true
+	
+	# Set sprite frame based on earned status
+	star_sprite.frame = 1 if earned else 0
+	
+	# Create sprite animation tween
+	var sprite_tween = create_tween()
+	sprite_tween.set_ease(Tween.EASE_OUT)
+	sprite_tween.set_trans(Tween.TRANS_EXPO)
+	
+	if earned:
+		# Earned star animation: 0 -> 16 -> 8
+		sprite_tween.tween_property(star_sprite, "scale", Vector2(star_max_scale, star_max_scale), star_expand_time)
+		sprite_tween.tween_property(star_sprite, "scale", Vector2(star_final_scale, star_final_scale), star_shrink_time)
+		# Play get sound
+		AudioManager.play_get()
+	else:
+		# Unearned star animation: 0 -> 8
+		sprite_tween.tween_property(star_sprite, "scale", Vector2(star_final_scale, star_final_scale), star_shrink_time)
+		# Play close sound
+		AudioManager.play_close()
+	
+	# Animate labels (accuracy and time)
+	animate_star_labels(star_num, accuracy_label, time_label)
+
+func animate_star_labels(star_num: int, accuracy_label: Label, time_label: Label):
+	"""Animate the accuracy and time labels for a star"""
+	# Check if individual requirements were met
+	var accuracy_met = check_star_requirement(star_num, "accuracy")
+	var time_met = check_star_requirement(star_num, "time")
+	
+	# Set colors based on whether requirements were met
+	if accuracy_met:
+		accuracy_label.self_modulate = Color(0, 0.5, 0, 0)  # Half green, start transparent
+	else:
+		accuracy_label.self_modulate = Color(0.5, 0, 0, 0)  # Half red, start transparent
+	
+	if time_met:
+		time_label.self_modulate = Color(0, 0.5, 0, 0)  # Half green, start transparent
+	else:
+		time_label.self_modulate = Color(0.5, 0, 0, 0)  # Half red, start transparent
+	
+	# Create fade-in animations
+	var accuracy_tween = create_tween()
+	accuracy_tween.set_ease(Tween.EASE_OUT)
+	accuracy_tween.set_trans(Tween.TRANS_EXPO)
+	accuracy_tween.tween_property(accuracy_label, "self_modulate:a", 1.0, label_fade_time)
+	
+	var time_tween = create_tween()
+	time_tween.set_ease(Tween.EASE_OUT)
+	time_tween.set_trans(Tween.TRANS_EXPO)
+	time_tween.tween_property(time_label, "self_modulate:a", 1.0, label_fade_time)
 
 func cleanup_problem_labels():
 	"""Remove any remaining problem labels from the scene"""
