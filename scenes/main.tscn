@@ -66,6 +66,7 @@ offset_right = -736.0
 offset_bottom = -316.0
 grow_horizontal = 2
 grow_vertical = 2
+tooltip_text = "Exit Game"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 
@@ -92,6 +93,7 @@ offset_right = -688.0
 offset_bottom = 160.0
 grow_horizontal = 2
 grow_vertical = 2
+tooltip_text = "Sums Up To 10"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 
@@ -143,6 +145,7 @@ offset_right = -464.0
 offset_bottom = 160.0
 grow_horizontal = 2
 grow_vertical = 2
+tooltip_text = "Single-Digit Addends"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 
@@ -194,6 +197,7 @@ offset_right = -240.0
 offset_bottom = 160.0
 grow_horizontal = 2
 grow_vertical = 2
+tooltip_text = "Sums Up To 20"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 
@@ -245,6 +249,7 @@ offset_right = -16.0
 offset_bottom = 160.0
 grow_horizontal = 2
 grow_vertical = 2
+tooltip_text = "Single-Digit Subtrahends"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 
@@ -296,6 +301,7 @@ offset_right = 208.0
 offset_bottom = 160.0
 grow_horizontal = 2
 grow_vertical = 2
+tooltip_text = "Minuends And Subtrahends Up To 20"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 
@@ -347,6 +353,7 @@ offset_right = 432.0
 offset_bottom = 160.0
 grow_horizontal = 2
 grow_vertical = 2
+tooltip_text = "Single-Digit Factors"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 
@@ -398,6 +405,7 @@ offset_right = 656.0
 offset_bottom = 160.0
 grow_horizontal = 2
 grow_vertical = 2
+tooltip_text = "Factors Up To 12"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 
@@ -449,6 +457,7 @@ offset_right = 880.0
 offset_bottom = 160.0
 grow_horizontal = 2
 grow_vertical = 2
+tooltip_text = "Quotients Up To 12"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 

@@ -771,7 +771,7 @@ func return_to_menu():
 func connect_game_over_buttons():
 	"""Connect all game over buttons to their respective functions"""
 	# Connect continue button
-	var continue_button = game_over_node.get_node("ContinueButton")
+	continue_button = game_over_node.get_node("ContinueButton")
 	if continue_button:
 		continue_button.pressed.connect(_on_continue_button_pressed)
 		connect_button_sounds(continue_button)
@@ -902,26 +902,26 @@ func animate_star(star_num: int, earned: bool):
 	"""Animate a single star based on whether it was earned"""
 	var star_node: Control
 	var star_sprite: Sprite2D
-	var accuracy_label: Label
-	var time_label: Label
+	var star_accuracy_label: Label
+	var star_time_label: Label
 	
 	# Get references for the specific star
 	match star_num:
 		1:
 			star_node = star1_node
 			star_sprite = star1_sprite
-			accuracy_label = star1_accuracy_label
-			time_label = star1_time_label
+			star_accuracy_label = star1_accuracy_label
+			star_time_label = star1_time_label
 		2:
 			star_node = star2_node
 			star_sprite = star2_sprite
-			accuracy_label = star2_accuracy_label
-			time_label = star2_time_label
+			star_accuracy_label = star2_accuracy_label
+			star_time_label = star2_time_label
 		3:
 			star_node = star3_node
 			star_sprite = star3_sprite
-			accuracy_label = star3_accuracy_label
-			time_label = star3_time_label
+			star_accuracy_label = star3_accuracy_label
+			star_time_label = star3_time_label
 		_:
 			return
 	
@@ -949,9 +949,9 @@ func animate_star(star_num: int, earned: bool):
 		AudioManager.play_close()
 	
 	# Animate labels (accuracy and time)
-	animate_star_labels(star_num, accuracy_label, time_label)
+	animate_star_labels(star_num, star_accuracy_label, star_time_label)
 
-func animate_star_labels(star_num: int, accuracy_label: Label, time_label: Label):
+func animate_star_labels(star_num: int, star_accuracy_label: Label, time_label: Label):
 	"""Animate the accuracy and time labels for a star"""
 	# Check if individual requirements were met
 	var accuracy_met = check_star_requirement(star_num, "accuracy")
@@ -959,9 +959,9 @@ func animate_star_labels(star_num: int, accuracy_label: Label, time_label: Label
 	
 	# Set colors based on whether requirements were met
 	if accuracy_met:
-		accuracy_label.self_modulate = Color(0, 0.5, 0, 0)  # Half green, start transparent
+		star_accuracy_label.self_modulate = Color(0, 0.5, 0, 0)  # Half green, start transparent
 	else:
-		accuracy_label.self_modulate = Color(0.5, 0, 0, 0)  # Half red, start transparent
+		star_accuracy_label.self_modulate = Color(0.5, 0, 0, 0)  # Half red, start transparent
 	
 	if time_met:
 		time_label.self_modulate = Color(0, 0.5, 0, 0)  # Half green, start transparent
@@ -972,7 +972,7 @@ func animate_star_labels(star_num: int, accuracy_label: Label, time_label: Label
 	var accuracy_tween = create_tween()
 	accuracy_tween.set_ease(Tween.EASE_OUT)
 	accuracy_tween.set_trans(Tween.TRANS_EXPO)
-	accuracy_tween.tween_property(accuracy_label, "self_modulate:a", 1.0, label_fade_time)
+	accuracy_tween.tween_property(star_accuracy_label, "self_modulate:a", 1.0, label_fade_time)
 	
 	var time_tween = create_tween()
 	time_tween.set_ease(Tween.EASE_OUT)
@@ -1157,11 +1157,11 @@ func update_level_data(level_number, accuracy, time_taken, stars_earned):
 	if updated:
 		save_save_data()
 
-func calculate_cqpm(correct_answers, time_in_seconds):
+func calculate_cqpm(correct_answers_in_level, time_in_seconds):
 	"""Calculate Correct Questions Per Minute"""
 	if time_in_seconds <= 0:
 		return 0.0
-	return (float(correct_answers) / time_in_seconds) * 60.0
+	return (float(correct_answers_in_level) / time_in_seconds) * 60.0
 
 func get_level_number_from_track(track):
 	"""Get the level number (1-8) from a track number using track_progression mapping"""
