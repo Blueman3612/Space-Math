@@ -92,6 +92,7 @@ var accuracy_label: Label  # Reference to the Accuracy label
 var player_time_label: Label  # Reference to the PlayerTime label in GameOver
 var player_accuracy_label: Label  # Reference to the PlayerAccuracy label in GameOver
 var continue_button: Button  # Reference to the ContinueButton
+var progress_line: Line2D  # Reference to the ProgressLine
 
 # Star node references
 var star1_node: Control
@@ -140,6 +141,7 @@ func _ready():
 	# Get references to timer and accuracy labels
 	timer_label = play_node.get_node("Timer")
 	accuracy_label = play_node.get_node("Accuracy")
+	progress_line = play_node.get_node("ProgressLine")
 	
 	# Get references to game over labels
 	player_time_label = game_over_node.get_node("PlayerTime")
@@ -377,6 +379,18 @@ func submit_answer():
 	# Increment problems completed
 	problems_completed += 1
 	
+	# Animate progress line after incrementing
+	if progress_line and play_node:
+		var play_width = play_node.size.x
+		var progress_increment = play_width / problems_per_level
+		var new_x_position = progress_increment * problems_completed
+		
+		# Animate point 1 to the new x position
+		var tween = create_tween()
+		tween.set_ease(Tween.EASE_OUT)
+		tween.set_trans(Tween.TRANS_EXPO)
+		tween.tween_method(update_progress_line_point, progress_line.get_point_position(1).x, new_x_position, animation_duration)
+	
 	# Check if we've completed the required number of problems
 	if problems_completed >= problems_per_level:
 		# Timer is already stopped above, keep it stopped for game over
@@ -413,8 +427,8 @@ func create_new_problem_label():
 	new_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	new_label.self_modulate = Color(1, 1, 1)  # Reset to white color
 	
-	# Add to scene
-	add_child(new_label)
+	# Add to Play node so it renders behind Play UI elements
+	play_node.add_child(new_label)
 	
 	# Set as current problem label IMMEDIATELY
 	current_problem_label = new_label
@@ -650,6 +664,11 @@ func create_incorrect_answer_label():
 	
 	# The label will be cleaned up when the parent problem label is removed
 
+func update_progress_line_point(x_position: float):
+	"""Update the x position of point 1 in the progress line"""
+	if progress_line and progress_line.get_point_count() >= 2:
+		progress_line.set_point_position(1, Vector2(x_position, 0))
+
 func show_feedback_flash(flash_color: Color):
 	"""Show a colored flash overlay that fades in then out with smooth timing"""
 	if not feedback_color_rect:
@@ -757,6 +776,12 @@ func start_play_state():
 		timer_label.visible = true
 	if accuracy_label:
 		accuracy_label.visible = true
+	
+	# Initialize progress line
+	if progress_line:
+		progress_line.clear_points()
+		progress_line.add_point(Vector2(0, 0))  # Point 0 at (0, 0)
+		progress_line.add_point(Vector2(0, 0))  # Point 1 starts at (0, 0)
 	
 	# Create first problem label and generate question
 	create_new_problem_label()
@@ -1033,10 +1058,11 @@ func animate_star_labels(star_num: int, star_accuracy_label: Label, time_label: 
 	time_tween.tween_property(time_label, "self_modulate:a", 1.0, label_fade_time)
 
 func cleanup_problem_labels():
-	"""Remove any remaining problem labels from the scene"""
-	for child in get_children():
-		if child is Label and child != current_problem_label:
-			child.queue_free()
+	"""Remove any remaining problem labels from the Play node"""
+	if play_node:
+		for child in play_node.get_children():
+			if child is Label and child != current_problem_label:
+				child.queue_free()
 	current_problem_label = null
 
 # Save System Functions

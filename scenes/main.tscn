@@ -807,3 +807,10 @@ offset_right = 184.0
 offset_bottom = 96.0
 text = "6/9"
 label_settings = ExtResource("9_85g3d")
+
+[node name="ProgressLine" type="Line2D" parent="Play"]
+z_index = 1
+position = Vector2(0, 1076)
+points = PackedVector2Array(0, 0, 0, 0)
+width = 8.0
+default_color = Color(0, 1, 1, 1)
