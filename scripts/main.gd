@@ -149,6 +149,11 @@ func _ready():
 	continue_button = game_over_node.get_node("ContinueButton")
 	cqpm_label = game_over_node.get_node("CQPM")
 	
+	# Get reference to version label and set it to project version
+	var version_label = main_menu_node.get_node("VersionLabel")
+	if version_label:
+		version_label.text = ProjectSettings.get_setting("application/config/version")
+	
 	# Get references to star nodes and their components
 	star1_node = game_over_node.get_node("Star1")
 	star2_node = game_over_node.get_node("Star2")
