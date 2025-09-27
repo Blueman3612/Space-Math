@@ -143,6 +143,7 @@ func _ready():
 	accuracy_label = play_node.get_node("Accuracy")
 	progress_line = play_node.get_node("ProgressLine")
 	
+	
 	# Get references to game over labels
 	player_time_label = game_over_node.get_node("PlayerTime")
 	player_accuracy_label = game_over_node.get_node("PlayerAccuracy")
@@ -1069,7 +1070,8 @@ func cleanup_problem_labels():
 	"""Remove any remaining problem labels from the Play node"""
 	if play_node:
 		for child in play_node.get_children():
-			if child is Label and child != current_problem_label:
+			# Only remove dynamically created labels, not the Timer, Accuracy, or ProgressLine
+			if child is Label and child != current_problem_label and child != timer_label and child != accuracy_label:
 				child.queue_free()
 	current_problem_label = null
 
