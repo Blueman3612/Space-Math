@@ -79,6 +79,11 @@ var save_file_path = "user://save_data.json"
 var current_question_start_time = 0.0  # Track when current question timing started
 var cqpm_label: Label  # Reference to CQPM label in GameOver
 
+# Weighted question system variables
+var question_weights = {}  # Dictionary mapping question keys to their weights
+var unavailable_questions = []  # List of question keys that can't be selected this level
+var available_questions = []  # List of all questions available for current track
+
 # Timer and accuracy tracking
 var level_start_time = 0.0  # Time when the level started
 var current_level_time = 0.0  # Current elapsed time for the level
@@ -286,8 +291,13 @@ func generate_new_question():
 	user_answer = ""
 	answer_submitted = false  # Reset submission state for new question
 	# Store current question for answer checking later
-	# Use the current track set by the level button
-	current_question = get_math_question(current_track)
+	# Use the weighted system if we have weights initialized, otherwise fall back to old system
+	if not question_weights.is_empty():
+		current_question = get_weighted_random_question()
+	else:
+		# Fallback to old system for non-track modes
+		current_question = get_math_question(current_track)
+	
 	if not current_question:
 		print("Failed to generate question for track ", current_track)
 
@@ -314,7 +324,7 @@ func submit_answer():
 	# Calculate time taken for this question
 	var question_time = 0.0
 	if current_question_start_time > 0:
-		question_time = Time.get_time_dict_from_system()["hour"] * 3600 + Time.get_time_dict_from_system()["minute"] * 60 + Time.get_time_dict_from_system()["second"] - current_question_start_time
+		question_time = Time.get_unix_time_from_system() - current_question_start_time
 	
 	# Check if answer is correct
 	var user_answer_int = int(user_answer)
@@ -725,6 +735,12 @@ func connect_menu_buttons():
 	if exit_button:
 		exit_button.pressed.connect(_on_exit_button_pressed)
 		connect_button_sounds(exit_button)
+	
+	# Connect reset data button
+	var reset_data_button = main_menu_node.get_node("ResetDataButton")
+	if reset_data_button:
+		reset_data_button.pressed.connect(_on_reset_data_button_pressed)
+		connect_button_sounds(reset_data_button)
 
 func _on_level_button_pressed(level: int):
 	"""Handle level button press - only respond during MENU state"""
@@ -744,6 +760,23 @@ func _on_exit_button_pressed():
 		get_tree().quit() 
 	
 	get_tree().quit()
+
+func _on_reset_data_button_pressed():
+	"""Handle reset data button press - wipe all save data and reset menu UI"""
+	if current_state != GameState.MENU:
+		return
+	
+	print("Resetting all save data...")
+	
+	# Reset save data to default
+	save_data = get_default_save_data()
+	save_save_data()
+	
+	# Update menu display with reset data
+	update_menu_stars()
+	update_level_availability()
+	
+	print("Save data reset complete!")
 
 func start_play_state():
 	"""Transition from MENU to PLAY state"""
@@ -791,6 +824,9 @@ func start_play_state():
 		progress_line.clear_points()
 		progress_line.add_point(Vector2(0, 0))  # Point 0 at (0, 0)
 		progress_line.add_point(Vector2(0, 0))  # Point 1 starts at (0, 0)
+	
+	# Initialize weighted question system for this track
+	initialize_question_weights_for_track(current_track)
 	
 	# Create first problem label and generate question
 	create_new_problem_label()
@@ -1079,7 +1115,7 @@ func cleanup_problem_labels():
 
 func start_question_timing():
 	"""Start timing the current question"""
-	current_question_start_time = Time.get_time_dict_from_system()["hour"] * 3600 + Time.get_time_dict_from_system()["minute"] * 60 + Time.get_time_dict_from_system()["second"]
+	current_question_start_time = Time.get_unix_time_from_system()
 
 func initialize_save_system():
 	"""Initialize the save system and load existing save data"""
@@ -1149,6 +1185,13 @@ func migrate_save_data():
 	
 	if save_version != current_version:
 		print("Migrating save data from version ", save_version, " to ", current_version)
+		
+		# Special case: Wipe all data from version 1.0 due to data structure changes
+		if save_version == "1.0":
+			print("Version 1.0 detected - wiping all save data due to incompatible data structure changes")
+			save_data = get_default_save_data()
+			save_save_data()
+			return
 		
 		# Ensure all required fields exist
 		if not save_data.has("levels"):
@@ -1251,6 +1294,229 @@ func calculate_cqpm(correct_answers_in_level, time_in_seconds):
 	if time_in_seconds <= 0:
 		return 0.0
 	return (float(correct_answers_in_level) / time_in_seconds) * 60.0
+
+func calculate_question_weight(question_data):
+	"""Calculate the weight for a single question based on historical data"""
+	var question_key = get_question_key(question_data)
+	var base_weight = 1.0
+	var weight_details = []
+	
+	# Get historical data for this question
+	var question_history = []
+	if save_data.questions.has(question_key):
+		question_history = save_data.questions[question_key]
+	
+	var total_answers = question_history.size()
+	var incorrect_count = 0
+	
+	# Count incorrect answers
+	for answer_record in question_history:
+		if answer_record.player_answer != answer_record.result:
+			incorrect_count += 1
+	
+	# Add weight based on amount of data
+	var data_bonus = 0.0
+	match total_answers:
+		0: data_bonus = 32.0
+		1: data_bonus = 8.0
+		2: data_bonus = 4.0
+		3: data_bonus = 2.0
+		4: data_bonus = 1.0
+		_: data_bonus = 0.0  # 5 or more answers
+	
+	if data_bonus > 0:
+		weight_details.append("Data bonus (%d answers): +%.1f" % [total_answers, data_bonus])
+	
+	# Add weight based on incorrect answer count
+	var incorrect_bonus = 0.0
+	match incorrect_count:
+		5: incorrect_bonus = 32.0
+		4: incorrect_bonus = 24.0
+		3: incorrect_bonus = 16.0
+		2: incorrect_bonus = 8.0
+		1: incorrect_bonus = 4.0
+		_: incorrect_bonus = 0.0
+	
+	if incorrect_bonus > 0:
+		weight_details.append("Incorrect count bonus (%d incorrect): +%.1f" % [incorrect_count, incorrect_bonus])
+	
+	# Add weight based on individual answer times
+	var time_penalty = 0.0
+	for answer_record in question_history:
+		var is_correct = (answer_record.player_answer == answer_record.result)
+		var base_multiplier = 0.5 if is_correct else 2.0
+		var time_taken = answer_record.get("time_taken", 0.0)
+		var penalty = base_multiplier * time_taken
+		time_penalty += penalty
+	
+	if time_penalty > 0:
+		weight_details.append("Time penalties: +%.3f (from individual answers)" % time_penalty)
+	
+	var final_weight = base_weight + data_bonus + incorrect_bonus + time_penalty
+	
+	return {
+		"weight": final_weight,
+		"details": weight_details
+	}
+
+func initialize_question_weights_for_track(track):
+	"""Initialize question weights for all questions available in the given track"""
+	# Clear previous data
+	question_weights.clear()
+	unavailable_questions.clear()
+	available_questions.clear()
+	
+	# Get all questions for this track (similar logic to get_math_question)
+	if not math_facts.has("grades"):
+		print("No math facts data available")
+		return
+	
+	var track_key = "TRACK" + str(track)
+	var questions = []
+	
+	# Find questions from specific track
+	for grade_key in math_facts.grades:
+		var grade_data = math_facts.grades[grade_key]
+		if grade_data.has("tracks") and grade_data.tracks.has(track_key):
+			questions = grade_data.tracks[track_key].facts
+			break
+	
+	# If track not found, pick random existing track (fallback)
+	if questions.is_empty():
+		var available_tracks = []
+		for grade_key in math_facts.grades:
+			var grade_data = math_facts.grades[grade_key]
+			if grade_data.has("tracks"):
+				for available_track_key in grade_data.tracks:
+					if available_track_key not in available_tracks:
+						available_tracks.append(available_track_key)
+		
+		if not available_tracks.is_empty():
+			var random_track_key = available_tracks[rng.randi() % available_tracks.size()]
+			for grade_key in math_facts.grades:
+				var grade_data = math_facts.grades[grade_key]
+				if grade_data.has("tracks") and grade_data.tracks.has(random_track_key):
+					questions = grade_data.tracks[random_track_key].facts
+					break
+	
+	print("=== Question Weight Calculations for Track ", track, " ===")
+	
+	# Calculate weights for all questions
+	for question in questions:
+		var question_key = get_question_key(question)
+		available_questions.append(question_key)
+		
+		var weight_result = calculate_question_weight(question)
+		question_weights[question_key] = weight_result.weight
+		
+		# Format question display
+		var operand1 = int(question.operands[0]) if question.operands[0] == int(question.operands[0]) else question.operands[0]
+		var operand2 = int(question.operands[1]) if question.operands[1] == int(question.operands[1]) else question.operands[1]
+		var question_text = str(operand1) + " " + question.operator + " " + str(operand2) + " = " + str(question.result)
+		
+		print("Question: ", question_text)
+		print("- Base weight: 1.0")
+		for detail in weight_result.details:
+			print("- ", detail)
+		print("- Final weight: %.3f" % weight_result.weight)
+		print("")
+	
+	print("Total questions available: ", available_questions.size())
+	print("==========================================")
+	print("")
+
+func get_weighted_random_question():
+	"""Select a random question using weighted selection, avoiding unavailable questions"""
+	# Filter out unavailable questions
+	var selectable_questions = []
+	var selectable_weights = []
+	
+	for question_key in available_questions:
+		if question_key not in unavailable_questions:
+			selectable_questions.append(question_key)
+			selectable_weights.append(question_weights[question_key])
+	
+	# If no questions available, reset unavailable list and try again
+	if selectable_questions.is_empty():
+		print("No more available questions, resetting unavailable list")
+		unavailable_questions.clear()
+		for question_key in available_questions:
+			selectable_questions.append(question_key)
+			selectable_weights.append(question_weights[question_key])
+	
+	if selectable_questions.is_empty():
+		print("Error: No questions available at all")
+		return null
+	
+	# Calculate total weight
+	var total_weight = 0.0
+	for weight in selectable_weights:
+		total_weight += weight
+	
+	# Generate random number between 0 and total_weight
+	var random_value = rng.randf() * total_weight
+	
+	# Find the selected question
+	var cumulative_weight = 0.0
+	for i in range(selectable_questions.size()):
+		cumulative_weight += selectable_weights[i]
+		if random_value <= cumulative_weight:
+			var selected_key = selectable_questions[i]
+			var selected_weight = selectable_weights[i]
+			
+			# Add to unavailable list
+			unavailable_questions.append(selected_key)
+			
+			# Find the actual question data from math_facts
+			var selected_question = find_question_by_key(selected_key)
+			if selected_question:
+				# Console output for question selection
+				var operand1 = int(selected_question.operands[0]) if selected_question.operands[0] == int(selected_question.operands[0]) else selected_question.operands[0]
+				var operand2 = int(selected_question.operands[1]) if selected_question.operands[1] == int(selected_question.operands[1]) else selected_question.operands[1]
+				var question_text = str(operand1) + " " + selected_question.operator + " " + str(operand2) + " = " + str(selected_question.result)
+				print("Selected question: ", question_text, " (weight: %.3f)" % selected_weight)
+				
+				# Format the question for display (without answer)
+				var display_text = str(operand1) + " " + selected_question.operator + " " + str(operand2)
+				
+				return {
+					"operands": selected_question.operands,
+					"operator": selected_question.operator,
+					"result": selected_question.result,
+					"expression": selected_question.expression,
+					"question": display_text,
+					"title": "",  # Will be filled by caller if needed
+					"grade": ""   # Will be filled by caller if needed
+				}
+			else:
+				print("Error: Could not find question data for key: ", selected_key)
+				return null
+	
+	# Fallback (should never reach here)
+	print("Error: Weighted selection failed")
+	return null
+
+func find_question_by_key(question_key):
+	"""Find a question in math_facts by its key"""
+	var parts = question_key.split("_")
+	if parts.size() != 3:
+		return null
+	
+	var operand1 = float(parts[0])
+	var operator = parts[1]
+	var operand2 = float(parts[2])
+	
+	# Search through all grades and tracks
+	for grade_key in math_facts.grades:
+		var grade_data = math_facts.grades[grade_key]
+		if grade_data.has("tracks"):
+			for track_key in grade_data.tracks:
+				var track_data = grade_data.tracks[track_key]
+				for question in track_data.facts:
+					if question.operands[0] == operand1 and question.operator == operator and question.operands[1] == operand2:
+						return question
+	
+	return null
 
 func get_level_number_from_track(track):
 	"""Get the level number (1-8) from a track number using track_progression mapping"""
