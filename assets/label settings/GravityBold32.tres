@@ -3,6 +3,7 @@
 [ext_resource type="FontFile" uid="uid://d4jen7ry6jk7n" path="res://assets/fonts/GravityBold8.ttf" id="1_dtlio"]
 
 [resource]
+line_spacing = 12.0
 font = ExtResource("1_dtlio")
 font_size = 32
 outline_size = 16

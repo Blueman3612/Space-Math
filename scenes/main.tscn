@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://dgsyvy33jqe6f"]
+[gd_scene load_steps=16 format=3 uid="uid://dgsyvy33jqe6f"]
 
 [ext_resource type="Script" uid="uid://b7dgkimpo8qo0" path="res://scripts/main.gd" id="1_8k3xf"]
 [ext_resource type="Theme" uid="uid://qx67shaxna0a" path="res://assets/themes/classic/classic.tres" id="1_jyhfs"]
@@ -7,9 +7,12 @@
 [ext_resource type="Texture2D" uid="uid://cdja31dcj5rdk" path="res://assets/sprites/Title.png" id="5_tbgi4"]
 [ext_resource type="LabelSettings" uid="uid://cbtne7xhouqs1" path="res://assets/label settings/GravityBold64.tres" id="6_tefeu"]
 [ext_resource type="FontFile" uid="uid://d4jen7ry6jk7n" path="res://assets/fonts/GravityBold8.ttf" id="6_tipki"]
+[ext_resource type="Texture2D" uid="uid://ds85akksl0mac" path="res://assets/sprites/Star Icon White.png" id="6_ya4ey"]
+[ext_resource type="LabelSettings" uid="uid://bq2ff3o30gktc" path="res://assets/label settings/GravityBold48.tres" id="7_eb6dy"]
 [ext_resource type="Texture2D" uid="uid://bw8wg1e8arbcr" path="res://assets/sprites/Star Icon.png" id="7_o6xl0"]
 [ext_resource type="LabelSettings" uid="uid://bokvnafms2bfh" path="res://assets/label settings/GravityBold16.tres" id="8_choun"]
 [ext_resource type="LabelSettings" uid="uid://cfexrs5iigrqq" path="res://assets/label settings/GravityBold32.tres" id="9_85g3d"]
+[ext_resource type="LabelSettings" uid="uid://nqkc5o1v0fhc" path="res://assets/label settings/GravityBold256.tres" id="13_trceg"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_85g3d"]
 font = ExtResource("6_tipki")
@@ -81,8 +84,59 @@ label_settings = SubResource("LabelSettings_85g3d")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ResetDataButton" type="Button" parent="MainMenu"]
+[node name="DrillModeButton" type="Button" parent="MainMenu"]
+self_modulate = Color(0.5019608, 0, 1, 1)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -224.0
+offset_top = 32.0
+offset_right = -32.0
+offset_bottom = 224.0
+grow_horizontal = 0
+tooltip_text = "Drill Mode"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+icon = ExtResource("6_ya4ey")
+icon_alignment = 1
+expand_icon = true
+
+[node name="HighScoreTitle" type="Label" parent="MainMenu/DrillModeButton"]
+layout_mode = 0
+offset_left = -432.0
+offset_top = 36.0
+offset_right = -24.0
+offset_bottom = 84.0
+text = "HIGH SCORE"
+label_settings = ExtResource("7_eb6dy")
+horizontal_alignment = 2
+
+[node name="HighScore" type="Label" parent="MainMenu/DrillModeButton"]
+self_modulate = Color(0.5019608, 0, 1, 1)
+layout_mode = 0
+offset_left = -432.0
+offset_top = 108.0
+offset_right = -24.0
+offset_bottom = 156.0
+text = "69420"
+label_settings = ExtResource("7_eb6dy")
+horizontal_alignment = 1
+
+[node name="UnlockRequirements" type="Label" parent="MainMenu/DrillModeButton"]
 visible = false
+self_modulate = Color(0.5019608, 0, 1, 1)
+layout_mode = 0
+offset_left = -480.0
+offset_top = 224.0
+offset_right = 192.0
+offset_bottom = 338.0
+text = "Complete all
+levels to unlock"
+label_settings = ExtResource("7_eb6dy")
+horizontal_alignment = 2
+
+[node name="ResetDataButton" type="Button" parent="MainMenu"]
 self_modulate = Color(1, 1, 0, 1)
 layout_mode = 1
 anchors_preset = 8
@@ -90,9 +144,9 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 736.0
+offset_left = -704.0
 offset_top = -508.0
-offset_right = 928.0
+offset_right = -512.0
 offset_bottom = -316.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -843,6 +897,23 @@ offset_right = 1840.0
 offset_bottom = 984.0
 tooltip_text = "Correct Questions Per Minute"
 
+[node name="DrillModeScore" type="Label" parent="GameOver"]
+self_modulate = Color(0.5019608, 0, 1, 1)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -11.5
+offset_right = 20.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "69420"
+label_settings = ExtResource("13_trceg")
+
 [node name="Play" type="Control" parent="."]
 anchors_preset = 0
 offset_top = -1144.0
@@ -869,6 +940,31 @@ offset_right = 184.0
 offset_bottom = 96.0
 text = "6/9"
 label_settings = ExtResource("9_85g3d")
+
+[node name="DrillTimer" type="Label" parent="Play"]
+self_modulate = Color(0.5019608, 0.5019608, 0.5019608, 1)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -168.0
+offset_top = 32.0
+offset_right = 168.0
+offset_bottom = 96.0
+grow_horizontal = 2
+text = "4:20.69"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+
+[node name="DrillScore" type="Label" parent="Play"]
+self_modulate = Color(0.5019608, 0, 1, 1)
+layout_mode = 0
+offset_left = 32.0
+offset_top = 32.0
+offset_right = 72.0
+offset_bottom = 55.0
+text = "69420"
+label_settings = ExtResource("6_tefeu")
 
 [node name="ProgressLine" type="Line2D" parent="Play"]
 z_index = 1
