@@ -233,6 +233,9 @@ func _ready():
 	# Initialize save system
 	initialize_save_system()
 	
+	# Connect Playcademy Scores API signals if available
+	connect_playcademy_signals()
+	
 	# Connect menu buttons
 	connect_menu_buttons()
 	connect_game_over_buttons()
@@ -1939,6 +1942,9 @@ func update_drill_mode_high_score():
 		# Trigger high score celebration
 		start_high_score_celebration()
 	
+	# Always attempt to submit score to Playcademy (not just on new high scores)
+	attempt_playcademy_auto_submit()
+	
 	return is_new_high_score
 
 func start_high_score_celebration():
@@ -2197,3 +2203,30 @@ func update_drill_mode_availability():
 	if unlock_requirements:
 		if all_levels_completed:
 			unlock_requirements.visible = false
+
+func connect_playcademy_signals():
+	"""Connect Playcademy Scores API signals if available"""
+	if Engine.has_singleton("PlaycademySdk") or (typeof(PlaycademySdk) != TYPE_NIL):
+		if PlaycademySdk and PlaycademySdk.scores:
+			if not PlaycademySdk.scores.submit_succeeded.is_connected(_on_pc_submit_succeeded):
+				PlaycademySdk.scores.submit_succeeded.connect(_on_pc_submit_succeeded)
+			if not PlaycademySdk.scores.submit_failed.is_connected(_on_pc_submit_failed):
+				PlaycademySdk.scores.submit_failed.connect(_on_pc_submit_failed)
+
+func _on_pc_submit_succeeded(_score_data):
+	"""Handle successful Playcademy score submission"""
+	print("Playcademy score submitted successfully: ", _score_data)
+
+func _on_pc_submit_failed(error_message):
+	"""Handle failed Playcademy score submission"""
+	print("Playcademy score submit failed: ", error_message)
+
+func attempt_playcademy_auto_submit():
+	"""Attempt automatic Playcademy score submission for drill mode"""
+	if drill_score <= 0:
+		return
+	
+	if (typeof(PlaycademySdk) != TYPE_NIL) and PlaycademySdk and PlaycademySdk.is_ready() and PlaycademySdk.scores:
+		# Submit without blocking; ignore result (signals still wired for logging)
+		print("Submitting drill mode score to Playcademy: ", drill_score)
+		PlaycademySdk.scores.submit(drill_score, {})
