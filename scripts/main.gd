@@ -1,7 +1,7 @@
 extends Control
 
 # Game state enum
-enum GameState { MENU, PLAY, GAME_OVER }
+enum GameState { MENU, PLAY, DRILL_PLAY, GAME_OVER }
 
 # Math facts data and RNG
 var math_facts = {}
@@ -20,6 +20,7 @@ var scroll_boost_multiplier = 80.0  # How much to boost background scroll speed 
 var feedback_max_alpha = 0.1  # Maximum alpha for feedback color overlay
 var problems_per_level = 40  # Number of problems to complete before returning to menu
 var timer_grace_period = 0.5  # Grace period before timer starts in seconds
+var drill_mode_duration = 60.0  # Duration for drill mode in seconds (1 minute)
 
 # Star animation variables
 var star_delay = 0.4  # Delay between each star animation in seconds
@@ -113,6 +114,15 @@ var star2_time_label: Label
 var star3_accuracy_label: Label
 var star3_time_label: Label
 
+# Drill mode variables
+var is_drill_mode = false  # Whether we're currently in drill mode
+var drill_timer_remaining = 0.0  # Time remaining in drill mode
+var drill_score = 0  # Current drill mode score
+var drill_streak = 0  # Current correct answer streak in drill mode
+var drill_timer_label: Label  # Reference to the DrillTimer label
+var drill_score_label: Label  # Reference to the DrillScore label
+var drill_mode_score_label: Label  # Reference to the DrillModeScore label in GameOver
+
 func _ready():
 	# Load and parse the math facts JSON
 	var file = FileAccess.open("res://tools/math-facts.json", FileAccess.READ)
@@ -147,6 +157,8 @@ func _ready():
 	timer_label = play_node.get_node("Timer")
 	accuracy_label = play_node.get_node("Accuracy")
 	progress_line = play_node.get_node("ProgressLine")
+	drill_timer_label = play_node.get_node("DrillTimer")
+	drill_score_label = play_node.get_node("DrillScore")
 	
 	
 	# Get references to game over labels
@@ -154,6 +166,7 @@ func _ready():
 	player_accuracy_label = game_over_node.get_node("PlayerAccuracy")
 	continue_button = game_over_node.get_node("ContinueButton")
 	cqpm_label = game_over_node.get_node("CQPM")
+	drill_mode_score_label = game_over_node.get_node("DrillModeScore")
 	
 	# Get reference to version label and set it to project version
 	var version_label = main_menu_node.get_node("VersionLabel")
@@ -189,8 +202,8 @@ func _ready():
 
 func _input(event):
 	if event is InputEventKey and event.pressed:
-		# Handle number input and negative sign (only during PLAY state and if not submitted)
-		if current_state == GameState.PLAY and not answer_submitted:
+		# Handle number input and negative sign (only during PLAY or DRILL_PLAY state and if not submitted)
+		if (current_state == GameState.PLAY or current_state == GameState.DRILL_PLAY) and not answer_submitted:
 			if event.keycode >= KEY_0 and event.keycode <= KEY_9:
 				var digit = str(event.keycode - KEY_0)
 				var effective_length = user_answer.length()
@@ -215,12 +228,12 @@ func _input(event):
 					user_answer += digit
 					AudioManager.play_tick()  # Play tick sound on keypad digit input
 	
-	# Handle immediate backspace press detection (only during PLAY state)
-	if Input.is_action_just_pressed("Backspace") and current_state == GameState.PLAY and not answer_submitted:
+	# Handle immediate backspace press detection (only during PLAY or DRILL_PLAY state)
+	if Input.is_action_just_pressed("Backspace") and (current_state == GameState.PLAY or current_state == GameState.DRILL_PLAY) and not answer_submitted:
 		backspace_just_pressed = true
 	
-	# Handle submit (only during PLAY state)
-	if Input.is_action_just_pressed("Submit") and current_state == GameState.PLAY:
+	# Handle submit (only during PLAY or DRILL_PLAY state)
+	if Input.is_action_just_pressed("Submit") and (current_state == GameState.PLAY or current_state == GameState.DRILL_PLAY):
 		submit_answer()
 
 func _process(delta):
@@ -230,8 +243,8 @@ func _process(delta):
 		var bounce_offset = sin(title_animation_time) * title_bounce_distance
 		title_sprite.position = title_base_position + Vector2(0, bounce_offset)
 	
-	# Only process game logic during PLAY state
-	if current_state == GameState.PLAY:
+	# Only process game logic during PLAY or DRILL_PLAY state
+	if current_state == GameState.PLAY or current_state == GameState.DRILL_PLAY:
 		# Handle timer logic with grace period (but not during transition delays)
 		if not timer_started and not in_transition_delay:
 			# During grace period, timer hasn't started yet
@@ -244,7 +257,17 @@ func _process(delta):
 		
 		# Update timer only if active (whether during grace period or after)
 		if timer_active:
-			current_level_time += delta
+			if is_drill_mode:
+				# Drill mode: countdown timer
+				drill_timer_remaining -= delta
+				if drill_timer_remaining <= 0.0:
+					drill_timer_remaining = 0.0
+					# Timer hit 0, end drill mode immediately
+					go_to_drill_mode_game_over()
+					return
+			else:
+				# Normal mode: count up timer
+				current_level_time += delta
 		
 		# Update blink timer
 		blink_timer += delta
@@ -334,9 +357,19 @@ func submit_answer():
 	if current_question:
 		save_question_data(current_question, user_answer_int, question_time)
 	
-	# Track correct answers
+	# Track correct answers and drill mode scoring
 	if is_correct:
 		correct_answers += 1
+		if is_drill_mode:
+			drill_streak += 1
+			# Calculate drill mode score: difficulty + streak
+			var difficulty = calculate_question_difficulty(current_question)
+			var points_earned = difficulty + drill_streak
+			drill_score += points_earned
+			print("Drill mode: +", points_earned, " points (", difficulty, " difficulty + ", drill_streak, " streak)")
+	else:
+		if is_drill_mode:
+			drill_streak = 0  # Reset streak on incorrect answer
 	
 	# Pause timer during transition and store its previous state
 	var timer_was_active = timer_active
@@ -407,8 +440,8 @@ func submit_answer():
 		tween.set_trans(Tween.TRANS_EXPO)
 		tween.tween_method(update_progress_line_point, progress_line.get_point_position(1).x, new_x_position, animation_duration)
 	
-	# Check if we've completed the required number of problems
-	if problems_completed >= problems_per_level:
+	# Check if we've completed the required number of problems (only for normal mode)
+	if not is_drill_mode and problems_completed >= problems_per_level:
 		# Timer is already stopped above, keep it stopped for game over
 		
 		# Hide play UI labels when play state ends
@@ -741,6 +774,12 @@ func connect_menu_buttons():
 	if reset_data_button:
 		reset_data_button.pressed.connect(_on_reset_data_button_pressed)
 		connect_button_sounds(reset_data_button)
+	
+	# Connect drill mode button
+	var drill_mode_button = main_menu_node.get_node("DrillModeButton")
+	if drill_mode_button:
+		drill_mode_button.pressed.connect(_on_drill_mode_button_pressed)
+		connect_button_sounds(drill_mode_button)
 
 func _on_level_button_pressed(level: int):
 	"""Handle level button press - only respond during MENU state"""
@@ -778,11 +817,29 @@ func _on_reset_data_button_pressed():
 	
 	print("Save data reset complete!")
 
-func start_play_state():
-	"""Transition from MENU to PLAY state"""
-	current_state = GameState.PLAY
+func _on_drill_mode_button_pressed():
+	"""Handle drill mode button press - start drill mode"""
+	if current_state != GameState.MENU:
+		return
+	
+	start_drill_mode()
+
+func start_drill_mode():
+	"""Transition from MENU to DRILL_PLAY state"""
+	current_state = GameState.DRILL_PLAY
+	is_drill_mode = true
 	problems_completed = 0
 	correct_answers = 0
+	drill_score = 0
+	drill_streak = 0
+	drill_timer_remaining = drill_mode_duration
+	
+	# Clean up any existing problem labels before starting
+	cleanup_problem_labels()
+	
+	# Reset answer state
+	user_answer = ""
+	answer_submitted = false
 	
 	# Initialize timer variables
 	level_start_time = 0.0
@@ -813,11 +870,67 @@ func start_play_state():
 	if space_bg and space_bg.has_method("boost_scroll_speed"):
 		space_bg.boost_scroll_speed(scroll_boost_multiplier, animation_duration * 2.0)
 	
-	# Show play UI labels
+	# Set UI visibility for drill mode
+	update_drill_mode_ui_visibility()
+	
+	# Initialize weighted question system for all tracks
+	initialize_question_weights_for_all_tracks()
+	
+	# Create first problem label and generate question
+	create_new_problem_label()
+	generate_new_question()
+
+func start_play_state():
+	"""Transition from MENU to PLAY state"""
+	current_state = GameState.PLAY
+	is_drill_mode = false
+	problems_completed = 0
+	correct_answers = 0
+	
+	# Clean up any existing problem labels before starting
+	cleanup_problem_labels()
+	
+	# Reset answer state
+	user_answer = ""
+	answer_submitted = false
+	
+	# Initialize timer variables
+	level_start_time = 0.0
+	current_level_time = 0.0
+	timer_active = false
+	timer_started = false
+	in_transition_delay = false
+	grace_period_timer = 0.0
+	
+	# First animate menu down off screen (downward)
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(main_menu_node, "position", menu_below_screen, animation_duration)
+	
+	# After the downward animation completes, teleport to above screen
+	tween.tween_callback(func(): main_menu_node.position = menu_above_screen)
+	
+	# Play node flies in from above
+	play_node.position = menu_above_screen
+	var play_tween = create_tween()
+	play_tween.set_ease(Tween.EASE_OUT)
+	play_tween.set_trans(Tween.TRANS_EXPO)
+	play_tween.tween_property(play_node, "position", menu_on_screen, animation_duration)
+	
+	# Trigger scroll speed boost effect
+	var space_bg = get_node("BackgroundLayer/SpaceBackground")
+	if space_bg and space_bg.has_method("boost_scroll_speed"):
+		space_bg.boost_scroll_speed(scroll_boost_multiplier, animation_duration * 2.0)
+	
+	# Show play UI labels for normal mode
 	if timer_label:
 		timer_label.visible = true
 	if accuracy_label:
 		accuracy_label.visible = true
+	
+	# Set UI visibility for normal mode
+	update_normal_mode_ui_visibility()
 	
 	# Initialize progress line
 	if progress_line:
@@ -848,6 +961,9 @@ func go_to_game_over():
 	# Update GameOver labels with player performance
 	update_game_over_labels()
 	
+	# Set normal mode game over UI visibility
+	update_normal_mode_game_over_ui_visibility()
+	
 	# Initialize star states (make all stars invisible, continue button invisible)
 	initialize_star_states()
 	
@@ -873,10 +989,12 @@ func go_to_game_over():
 func return_to_menu():
 	"""Transition from GAME_OVER to MENU state"""
 	current_state = GameState.MENU
+	is_drill_mode = false  # Reset drill mode flag
 	
 	# Update menu display with new save data
 	update_menu_stars()
 	update_level_availability()
+	update_drill_mode_high_score_display()
 	
 	# MainMenu teleports to above screen, then animates down to center
 	main_menu_node.position = menu_above_screen
@@ -908,24 +1026,42 @@ func _on_continue_button_pressed():
 
 func update_play_ui():
 	"""Update the Timer and Accuracy labels during gameplay"""
-	if not timer_label or not accuracy_label:
-		return
-	
-	# Update timer display (mm:ss.ss format)
-	var display_time = current_level_time
-	if not timer_started:
-		display_time = 0.0  # Show 0:00.00 only during initial grace period
-	
-	var minutes = int(display_time / 60)
-	var seconds = int(display_time) % 60
-	var hundredths = int((display_time - int(display_time)) * 100)
-	
-	var time_string = "%d:%02d.%02d" % [minutes, seconds, hundredths]
-	timer_label.text = time_string
-	
-	# Update accuracy display (correct/total format)
-	var accuracy_string = "%d/%d" % [correct_answers, problems_per_level]
-	accuracy_label.text = accuracy_string
+	if is_drill_mode:
+		# Update drill mode UI
+		if drill_timer_label:
+			var display_time = drill_timer_remaining
+			if not timer_started:
+				display_time = drill_mode_duration  # Show full time during grace period
+			
+			var minutes = int(display_time / 60)
+			var seconds = int(display_time) % 60
+			var hundredths = int((display_time - int(display_time)) * 100)
+			
+			var time_string = "%d:%02d.%02d" % [minutes, seconds, hundredths]
+			drill_timer_label.text = time_string
+		
+		if drill_score_label:
+			drill_score_label.text = str(int(drill_score))
+	else:
+		# Update normal mode UI
+		if not timer_label or not accuracy_label:
+			return
+		
+		# Update timer display (mm:ss.ss format)
+		var display_time = current_level_time
+		if not timer_started:
+			display_time = 0.0  # Show 0:00.00 only during initial grace period
+		
+		var minutes = int(display_time / 60)
+		var seconds = int(display_time) % 60
+		var hundredths = int((display_time - int(display_time)) * 100)
+		
+		var time_string = "%d:%02d.%02d" % [minutes, seconds, hundredths]
+		timer_label.text = time_string
+		
+		# Update accuracy display (correct/total format)
+		var accuracy_string = "%d/%d" % [correct_answers, problems_per_level]
+		accuracy_label.text = accuracy_string
 
 func update_game_over_labels():
 	"""Update the GameOver labels with player's final performance"""
@@ -1106,8 +1242,12 @@ func cleanup_problem_labels():
 	"""Remove any remaining problem labels from the Play node"""
 	if play_node:
 		for child in play_node.get_children():
-			# Only remove dynamically created labels, not the Timer, Accuracy, or ProgressLine
-			if child is Label and child != current_problem_label and child != timer_label and child != accuracy_label:
+			# Only remove dynamically created labels, not the static UI elements
+			if (child is Label and 
+				child != timer_label and 
+				child != accuracy_label and 
+				child != drill_timer_label and 
+				child != drill_score_label):
 				child.queue_free()
 	current_problem_label = null
 
@@ -1122,6 +1262,7 @@ func initialize_save_system():
 	load_save_data()
 	update_menu_stars()
 	update_level_availability()
+	update_drill_mode_high_score_display()
 
 func get_default_save_data():
 	"""Return the default save data structure"""
@@ -1541,6 +1682,219 @@ func update_menu_stars():
 				var star_sprite = contents.get_node("Star" + str(star_num))
 				if star_sprite:
 					star_sprite.frame = 1 if star_num <= stars_earned else 0
+
+func calculate_question_difficulty(question_data):
+	"""Calculate the difficulty of a question based on its track"""
+	# Find which track this question belongs to
+	for grade_key in math_facts.grades:
+		var grade_data = math_facts.grades[grade_key]
+		if grade_data.has("tracks"):
+			for track_key in grade_data.tracks:
+				var track_data = grade_data.tracks[track_key]
+				for fact in track_data.facts:
+					if (fact.operands[0] == question_data.operands[0] and 
+						fact.operator == question_data.operator and 
+						fact.operands[1] == question_data.operands[1]):
+						# Extract track number from track_key (e.g., "TRACK12" -> 12)
+						var track_number = int(track_key.substr(5))  # Remove "TRACK" prefix
+						# Find index in track_progression
+						for i in range(track_progression.size()):
+							if track_progression[i] == track_number:
+								return (i + 1) * 2  # (index + 1) * 2
+						# If not found in track_progression, return default difficulty
+						return 2
+	# Default difficulty if track not found
+	return 2
+
+func update_drill_mode_ui_visibility():
+	"""Set UI visibility for drill mode"""
+	if timer_label:
+		timer_label.visible = false
+	if accuracy_label:
+		accuracy_label.visible = false
+	if progress_line:
+		progress_line.visible = false
+	if drill_timer_label:
+		drill_timer_label.visible = true
+	if drill_score_label:
+		drill_score_label.visible = true
+
+func update_normal_mode_ui_visibility():
+	"""Set UI visibility for normal mode"""
+	if timer_label:
+		timer_label.visible = true
+	if accuracy_label:
+		accuracy_label.visible = true
+	if progress_line:
+		progress_line.visible = true
+	if drill_timer_label:
+		drill_timer_label.visible = false
+	if drill_score_label:
+		drill_score_label.visible = false
+
+func initialize_question_weights_for_all_tracks():
+	"""Initialize question weights for all questions from all tracks in track_progression"""
+	# Clear previous data
+	question_weights.clear()
+	unavailable_questions.clear()
+	available_questions.clear()
+	
+	print("=== Question Weight Calculations for All Tracks ===")
+	
+	# Get questions from all tracks in track_progression
+	for track in track_progression:
+		var track_key = "TRACK" + str(track)
+		var questions = []
+		
+		# Find questions from this track
+		for grade_key in math_facts.grades:
+			var grade_data = math_facts.grades[grade_key]
+			if grade_data.has("tracks") and grade_data.tracks.has(track_key):
+				questions = grade_data.tracks[track_key].facts
+				break
+		
+		print("Processing Track ", track, " (", questions.size(), " questions)")
+		
+		# Calculate weights for all questions in this track
+		for question in questions:
+			var question_key = get_question_key(question)
+			available_questions.append(question_key)
+			
+			var weight_result = calculate_question_weight(question)
+			question_weights[question_key] = weight_result.weight
+			
+			# Format question display for debug
+			var operand1 = int(question.operands[0]) if question.operands[0] == int(question.operands[0]) else question.operands[0]
+			var operand2 = int(question.operands[1]) if question.operands[1] == int(question.operands[1]) else question.operands[1]
+			var question_text = str(operand1) + " " + question.operator + " " + str(operand2) + " = " + str(question.result)
+			
+			print("  Question: ", question_text, " (weight: %.3f)" % weight_result.weight)
+	
+	print("Total questions available across all tracks: ", available_questions.size())
+	print("==========================================")
+
+func go_to_drill_mode_game_over():
+	"""Transition from DRILL_PLAY to GAME_OVER state"""
+	current_state = GameState.GAME_OVER
+	
+	# Stop the timer
+	timer_active = false
+	
+	# Update drill mode high score if needed
+	update_drill_mode_high_score()
+	
+	# Update GameOver labels with drill mode performance
+	update_drill_mode_game_over_labels()
+	
+	# Set drill mode game over UI visibility
+	update_drill_mode_game_over_ui_visibility()
+	
+	# Clean up any remaining problem labels
+	cleanup_problem_labels()
+	
+	# Play node flies down off screen
+	var play_tween = create_tween()
+	play_tween.set_ease(Tween.EASE_OUT)
+	play_tween.set_trans(Tween.TRANS_EXPO)
+	play_tween.tween_property(play_node, "position", menu_below_screen, animation_duration)
+	
+	# GameOver teleports to above screen, then animates down to center
+	game_over_node.position = menu_above_screen
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(game_over_node, "position", menu_on_screen, animation_duration)
+	
+	# Show continue button immediately for drill mode (no star animation)
+	continue_button.visible = true
+
+func update_drill_mode_high_score():
+	"""Update drill mode high score in save data"""
+	if not save_data.has("drill_mode"):
+		save_data.drill_mode = {"high_score": 0}
+	
+	if drill_score > save_data.drill_mode.high_score:
+		save_data.drill_mode.high_score = drill_score
+		save_save_data()
+		print("New drill mode high score: ", drill_score)
+
+func update_drill_mode_game_over_labels():
+	"""Update GameOver labels for drill mode"""
+	# Update LevelComplete text
+	var level_complete_label = game_over_node.get_node("LevelComplete")
+	if level_complete_label:
+		level_complete_label.text = "YOUR SCORE"
+	
+	# Update drill mode score display
+	if drill_mode_score_label:
+		drill_mode_score_label.text = str(int(drill_score))
+	
+	# Update CQPM display for drill mode
+	if cqpm_label:
+		var drill_time_elapsed = drill_mode_duration - drill_timer_remaining
+		var cqpm = calculate_cqpm(correct_answers, drill_time_elapsed)
+		cqpm_label.text = "%.2f" % cqpm
+
+func update_drill_mode_game_over_ui_visibility():
+	"""Set UI visibility for drill mode game over screen"""
+	# Make only specific nodes visible for drill mode
+	var level_complete_label = game_over_node.get_node("LevelComplete")
+	if level_complete_label:
+		level_complete_label.visible = true
+	
+	if continue_button:
+		continue_button.visible = true
+	
+	var cqpm_title = game_over_node.get_node("CQPMTitle")
+	if cqpm_title:
+		cqpm_title.visible = true
+	
+	if cqpm_label:
+		cqpm_label.visible = true
+	
+	var cqpm_tooltip = game_over_node.get_node("CQPMTooltip")
+	if cqpm_tooltip:
+		cqpm_tooltip.visible = true
+	
+	if drill_mode_score_label:
+		drill_mode_score_label.visible = true
+	
+	# Hide all other nodes
+	var nodes_to_hide = ["CorrectTitle", "TimeTitle", "You", "PlayerAccuracy", "PlayerTime", "Star1", "Star2", "Star3"]
+	for node_name in nodes_to_hide:
+		var node = game_over_node.get_node(node_name)
+		if node:
+			node.visible = false
+
+func update_normal_mode_game_over_ui_visibility():
+	"""Set UI visibility for normal mode game over screen"""
+	# Make all nodes visible except DrillModeScore
+	var level_complete_label = game_over_node.get_node("LevelComplete")
+	if level_complete_label:
+		level_complete_label.text = "LEVEL COMPLETE"  # Reset to normal text
+		level_complete_label.visible = true
+	
+	var nodes_to_show = ["CorrectTitle", "TimeTitle", "You", "PlayerAccuracy", "PlayerTime", "Star1", "Star2", "Star3", "CQPMTitle", "CQPMTooltip"]
+	for node_name in nodes_to_show:
+		var node = game_over_node.get_node(node_name)
+		if node:
+			node.visible = true
+	
+	if cqpm_label:
+		cqpm_label.visible = true
+	
+	# Hide drill mode score
+	if drill_mode_score_label:
+		drill_mode_score_label.visible = false
+
+func update_drill_mode_high_score_display():
+	"""Update the drill mode high score display in the main menu"""
+	var high_score_label = main_menu_node.get_node("DrillModeButton/HighScore")
+	if high_score_label:
+		var high_score = 0
+		if save_data.has("drill_mode") and save_data.drill_mode.has("high_score"):
+			high_score = save_data.drill_mode.high_score
+		high_score_label.text = str(int(high_score))  # Ensure integer display
 
 func update_level_availability():
 	"""Update level button availability based on progression"""
