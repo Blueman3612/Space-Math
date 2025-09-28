@@ -13980,6 +13980,419 @@
           ]
         }
       }
+    },
+    "grade-5": {
+      "name": "Grade 5 - Fractions",
+      "trackOrder": ["TRACK13"],
+      "tracks": {
+        "TRACK13": {
+          "id": "TRACK13",
+          "title": "Fraction Identification",
+          "factCount": 40,
+          "facts": [
+            {
+              "index": 1,
+              "numerator": 1,
+              "denominator": 2,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 2],
+              "result": 1,
+              "expression": "1/2: numerator = 1"
+            },
+            {
+              "index": 2,
+              "numerator": 1,
+              "denominator": 2,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 2],
+              "result": 2,
+              "expression": "1/2: denominator = 2"
+            },
+            {
+              "index": 3,
+              "numerator": 1,
+              "denominator": 3,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 3],
+              "result": 1,
+              "expression": "1/3: numerator = 1"
+            },
+            {
+              "index": 4,
+              "numerator": 1,
+              "denominator": 3,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 3],
+              "result": 3,
+              "expression": "1/3: denominator = 3"
+            },
+            {
+              "index": 5,
+              "numerator": 2,
+              "denominator": 3,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [2, 3],
+              "result": 2,
+              "expression": "2/3: numerator = 2"
+            },
+            {
+              "index": 6,
+              "numerator": 2,
+              "denominator": 3,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [2, 3],
+              "result": 3,
+              "expression": "2/3: denominator = 3"
+            },
+            {
+              "index": 7,
+              "numerator": 1,
+              "denominator": 4,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 4],
+              "result": 1,
+              "expression": "1/4: numerator = 1"
+            },
+            {
+              "index": 8,
+              "numerator": 1,
+              "denominator": 4,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 4],
+              "result": 4,
+              "expression": "1/4: denominator = 4"
+            },
+            {
+              "index": 9,
+              "numerator": 3,
+              "denominator": 4,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [3, 4],
+              "result": 3,
+              "expression": "3/4: numerator = 3"
+            },
+            {
+              "index": 10,
+              "numerator": 3,
+              "denominator": 4,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [3, 4],
+              "result": 4,
+              "expression": "3/4: denominator = 4"
+            },
+            {
+              "index": 11,
+              "numerator": 1,
+              "denominator": 5,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 5],
+              "result": 1,
+              "expression": "1/5: numerator = 1"
+            },
+            {
+              "index": 12,
+              "numerator": 1,
+              "denominator": 5,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 5],
+              "result": 5,
+              "expression": "1/5: denominator = 5"
+            },
+            {
+              "index": 13,
+              "numerator": 2,
+              "denominator": 5,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [2, 5],
+              "result": 2,
+              "expression": "2/5: numerator = 2"
+            },
+            {
+              "index": 14,
+              "numerator": 2,
+              "denominator": 5,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [2, 5],
+              "result": 5,
+              "expression": "2/5: denominator = 5"
+            },
+            {
+              "index": 15,
+              "numerator": 3,
+              "denominator": 5,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [3, 5],
+              "result": 3,
+              "expression": "3/5: numerator = 3"
+            },
+            {
+              "index": 16,
+              "numerator": 3,
+              "denominator": 5,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [3, 5],
+              "result": 5,
+              "expression": "3/5: denominator = 5"
+            },
+            {
+              "index": 17,
+              "numerator": 4,
+              "denominator": 5,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [4, 5],
+              "result": 4,
+              "expression": "4/5: numerator = 4"
+            },
+            {
+              "index": 18,
+              "numerator": 4,
+              "denominator": 5,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [4, 5],
+              "result": 5,
+              "expression": "4/5: denominator = 5"
+            },
+            {
+              "index": 19,
+              "numerator": 1,
+              "denominator": 6,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 6],
+              "result": 1,
+              "expression": "1/6: numerator = 1"
+            },
+            {
+              "index": 20,
+              "numerator": 1,
+              "denominator": 6,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 6],
+              "result": 6,
+              "expression": "1/6: denominator = 6"
+            },
+            {
+              "index": 21,
+              "numerator": 5,
+              "denominator": 6,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [5, 6],
+              "result": 5,
+              "expression": "5/6: numerator = 5"
+            },
+            {
+              "index": 22,
+              "numerator": 5,
+              "denominator": 6,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [5, 6],
+              "result": 6,
+              "expression": "5/6: denominator = 6"
+            },
+            {
+              "index": 23,
+              "numerator": 1,
+              "denominator": 8,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 8],
+              "result": 1,
+              "expression": "1/8: numerator = 1"
+            },
+            {
+              "index": 24,
+              "numerator": 1,
+              "denominator": 8,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 8],
+              "result": 8,
+              "expression": "1/8: denominator = 8"
+            },
+            {
+              "index": 25,
+              "numerator": 3,
+              "denominator": 8,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [3, 8],
+              "result": 3,
+              "expression": "3/8: numerator = 3"
+            },
+            {
+              "index": 26,
+              "numerator": 3,
+              "denominator": 8,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [3, 8],
+              "result": 8,
+              "expression": "3/8: denominator = 8"
+            },
+            {
+              "index": 27,
+              "numerator": 5,
+              "denominator": 8,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [5, 8],
+              "result": 5,
+              "expression": "5/8: numerator = 5"
+            },
+            {
+              "index": 28,
+              "numerator": 5,
+              "denominator": 8,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [5, 8],
+              "result": 8,
+              "expression": "5/8: denominator = 8"
+            },
+            {
+              "index": 29,
+              "numerator": 7,
+              "denominator": 8,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [7, 8],
+              "result": 7,
+              "expression": "7/8: numerator = 7"
+            },
+            {
+              "index": 30,
+              "numerator": 7,
+              "denominator": 8,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [7, 8],
+              "result": 8,
+              "expression": "7/8: denominator = 8"
+            },
+            {
+              "index": 31,
+              "numerator": 1,
+              "denominator": 10,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 10],
+              "result": 1,
+              "expression": "1/10: numerator = 1"
+            },
+            {
+              "index": 32,
+              "numerator": 1,
+              "denominator": 10,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [1, 10],
+              "result": 10,
+              "expression": "1/10: denominator = 10"
+            },
+            {
+              "index": 33,
+              "numerator": 3,
+              "denominator": 10,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [3, 10],
+              "result": 3,
+              "expression": "3/10: numerator = 3"
+            },
+            {
+              "index": 34,
+              "numerator": 3,
+              "denominator": 10,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [3, 10],
+              "result": 10,
+              "expression": "3/10: denominator = 10"
+            },
+            {
+              "index": 35,
+              "numerator": 7,
+              "denominator": 10,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [7, 10],
+              "result": 7,
+              "expression": "7/10: numerator = 7"
+            },
+            {
+              "index": 36,
+              "numerator": 7,
+              "denominator": 10,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [7, 10],
+              "result": 10,
+              "expression": "7/10: denominator = 10"
+            },
+            {
+              "index": 37,
+              "numerator": 9,
+              "denominator": 10,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [9, 10],
+              "result": 9,
+              "expression": "9/10: numerator = 9"
+            },
+            {
+              "index": 38,
+              "numerator": 9,
+              "denominator": 10,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [9, 10],
+              "result": 10,
+              "expression": "9/10: denominator = 10"
+            },
+            {
+              "index": 39,
+              "numerator": 2,
+              "denominator": 7,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [2, 7],
+              "result": 2,
+              "expression": "2/7: numerator = 2"
+            },
+            {
+              "index": 40,
+              "numerator": 2,
+              "denominator": 7,
+              "problem_type": "fraction_identify",
+              "operator": "fraction",
+              "operands": [2, 7],
+              "result": 7,
+              "expression": "2/7: denominator = 7"
+            }
+          ]
+        }
+      }
     }
   },
   "metadata": {

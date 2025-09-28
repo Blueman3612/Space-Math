@@ -44,7 +44,7 @@ const menu_below_screen = Vector2(0, 1144)
 const menu_on_screen = Vector2(0, 0)
 
 # Track progression mapping (button index to track number, ordered by difficulty)
-const track_progression = [12, 9, 6, 10, 8, 11, 7, 5]
+const track_progression = [12, 9, 6, 10, 8, 11, 7, 5, 13]
 
 # Position variables
 var primary_position = Vector2(416, 476)  # Main problem position
@@ -189,6 +189,42 @@ func _ready():
 
 func _input(event):
 	if event is InputEventKey and event.pressed:
+		# DEBUG: Press F9 to unlock all levels for testing
+		if event.keycode == KEY_F9 and current_state == GameState.MENU:
+			print("DEBUG: Unlocking all levels with 3 stars!")
+			for level in range(1, 10):
+				var level_key = str(level)
+				if not save_data.levels.has(level_key):
+					save_data.levels[level_key] = {
+						"highest_stars": 0,
+						"best_accuracy": 0,
+						"best_time": 999999.0,
+						"best_cqpm": 0.0
+					}
+				save_data.levels[level_key].highest_stars = 3  # Give 3 stars to all levels
+				save_data.levels[level_key].best_accuracy = 40  # Perfect score
+				save_data.levels[level_key].best_time = 60.0  # Good time
+				save_data.levels[level_key].best_cqpm = 40.0  # Good CQPM
+			save_save_data()
+			update_menu_stars()
+			update_level_availability()
+			# Play a confirmation sound
+			AudioManager.play_correct()
+			print("All 9 levels unlocked with 3 stars each!")
+			return
+		
+		# DEBUG: Press F10 to reset progression (only level 1 available)
+		if event.keycode == KEY_F10 and current_state == GameState.MENU:
+			print("DEBUG: Resetting level progression!")
+			save_data = get_default_save_data()
+			save_save_data()
+			update_menu_stars()
+			update_level_availability()
+			# Play a confirmation sound
+			AudioManager.play_close()
+			print("Progression reset - only Level 1 is now available!")
+			return
+		
 		# Handle number input and negative sign (only during PLAY state and if not submitted)
 		if current_state == GameState.PLAY and not answer_submitted:
 			if event.keycode >= KEY_0 and event.keycode <= KEY_9:
@@ -303,14 +339,26 @@ func generate_new_question():
 
 func update_problem_display():
 	if current_problem_label and current_question:
-		var base_text = current_question.question + " = "
-		var display_text = base_text + user_answer
-		
-		# Add blinking underscore only if not submitted
-		if not answer_submitted and underscore_visible:
-			display_text += "_"
-		
-		current_problem_label.text = display_text
+		# For fraction problems, show "numerator = " or "denominator = " with the answer
+		if current_question.has("problem_type") and current_question.problem_type == "fraction_identify":
+			var base_text = current_question.asking_for + " = "
+			var display_text = base_text + user_answer
+			
+			# Add blinking underscore only if not submitted
+			if not answer_submitted and underscore_visible:
+				display_text += "_"
+			
+			current_problem_label.text = display_text
+		else:
+			# Regular problem display
+			var base_text = current_question.question + " = "
+			var display_text = base_text + user_answer
+			
+			# Add blinking underscore only if not submitted
+			if not answer_submitted and underscore_visible:
+				display_text += "_"
+			
+			current_problem_label.text = display_text
 
 func submit_answer():
 	if user_answer == "" or user_answer == "-" or answer_submitted:
@@ -383,14 +431,19 @@ func submit_answer():
 	if space_bg and space_bg.has_method("boost_scroll_speed"):
 		space_bg.boost_scroll_speed(scroll_boost_multiplier, animation_duration * 2.0)
 	
-	# Move current label up and off screen (fire and forget)
+	# Move current label/container up and off screen (fire and forget)
 	if current_problem_label:
 		var old_label = current_problem_label
+		# Check if this is a fraction problem (has parent container)
+		var to_animate = old_label
+		if old_label.has_meta("parent_container"):
+			to_animate = old_label.get_meta("parent_container")
+		
 		var tween = create_tween()
 		tween.set_ease(Tween.EASE_OUT)
 		tween.set_trans(Tween.TRANS_EXPO)
-		tween.tween_property(old_label, "position", off_screen_top, animation_duration)
-		tween.tween_callback(old_label.queue_free)
+		tween.tween_property(to_animate, "position", off_screen_top, animation_duration)
+		tween.tween_callback(to_animate.queue_free)
 	
 	# Increment problems completed
 	problems_completed += 1
@@ -430,30 +483,88 @@ func submit_answer():
 				level_start_time = Time.get_time_dict_from_system()["hour"] * 3600 + Time.get_time_dict_from_system()["minute"] * 60 + Time.get_time_dict_from_system()["second"]
 		
 		# Create new problem - continue playing
-		create_new_problem_label()
-		generate_new_question()
+		generate_new_question()  # Generate question first so we know what type it is
+		create_new_problem_label()  # Then create the appropriate label/display
 
 func create_new_problem_label():
-	# Create new label
-	var new_label = Label.new()
-	new_label.label_settings = label_settings_resource
-	new_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	new_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	new_label.position = off_screen_bottom
-	new_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	new_label.self_modulate = Color(1, 1, 1)  # Reset to white color
+	# Check if this is a fraction problem
+	if current_question and current_question.has("problem_type") and current_question.problem_type == "fraction_identify":
+		create_fraction_problem_label()
+	else:
+		# Create regular label for non-fraction problems
+		var new_label = Label.new()
+		new_label.label_settings = label_settings_resource
+		new_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		new_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		new_label.position = off_screen_bottom
+		new_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		new_label.self_modulate = Color(1, 1, 1)  # Reset to white color
+		
+		# Add to Play node so it renders behind Play UI elements
+		play_node.add_child(new_label)
+		
+		# Set as current problem label IMMEDIATELY
+		current_problem_label = new_label
+		
+		# Animate to center position (fire and forget)
+		var tween = create_tween()
+		tween.set_ease(Tween.EASE_OUT)
+		tween.set_trans(Tween.TRANS_EXPO)
+		tween.tween_property(new_label, "position", primary_position, animation_duration)
+		
+		# Start timing this question when animation completes
+		tween.tween_callback(start_question_timing)
+
+func create_fraction_problem_label():
+	# Simple approach: show fraction as text (e.g., "1/3") above the question
+	# Create container for organizing the display
+	var container = Control.new()
+	container.position = off_screen_bottom
+	container.name = "FractionProblem"
 	
-	# Add to Play node so it renders behind Play UI elements
-	play_node.add_child(new_label)
+	# Create fraction display label (shows "1/3")
+	var fraction_label = Label.new()
+	fraction_label.text = str(int(current_question.numerator)) + "/" + str(int(current_question.denominator))
+	fraction_label.label_settings = label_settings_resource
+	fraction_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	fraction_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	fraction_label.position = Vector2(0, -150)  # Higher up with more separation
+	fraction_label.anchor_left = 0.5
+	fraction_label.anchor_right = 0.5
+	fraction_label.size = Vector2(800, 100)
+	fraction_label.position.x = -400  # Center horizontally (half of width)
 	
-	# Set as current problem label IMMEDIATELY
-	current_problem_label = new_label
+	# Create the question label (numerator = _ or denominator = _)
+	var question_label = Label.new()
+	question_label.label_settings = label_settings_resource
+	question_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	question_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	question_label.position = Vector2(0, 50)  # Much lower, with good separation
+	question_label.anchor_left = 0.5
+	question_label.anchor_right = 0.5
+	question_label.size = Vector2(800, 100)
+	question_label.position.x = -400  # Center horizontally (half of width)
+	question_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	question_label.self_modulate = Color(1, 1, 1)
 	
-	# Animate to center position (fire and forget)
+	# Add both labels to container
+	container.add_child(fraction_label)
+	container.add_child(question_label)
+	
+	# Add container to Play node
+	play_node.add_child(container)
+	
+	# Set the question label as the current problem label (for input display)
+	current_problem_label = question_label
+	
+	# Store reference to container for cleanup later
+	current_problem_label.set_meta("parent_container", container)
+	
+	# Animate the entire container to center position
 	var tween = create_tween()
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_EXPO)
-	tween.tween_property(new_label, "position", primary_position, animation_duration)
+	tween.tween_property(container, "position", primary_position, animation_duration)
 	
 	# Start timing this question when animation completes
 	tween.tween_callback(start_question_timing)
@@ -575,6 +686,27 @@ func get_math_question(track = null, grade = null, operator = null, no_zeroes = 
 		return null
 	
 	var random_question = questions[rng.randi() % questions.size()]
+	
+	# Check if this is a fraction identification problem
+	if random_question.has("problem_type") and random_question.problem_type == "fraction_identify":
+		# Randomly decide whether to ask for numerator or denominator
+		var ask_numerator = rng.randf() > 0.5
+		var asking_for = "numerator" if ask_numerator else "denominator"
+		var result = int(random_question.numerator) if ask_numerator else int(random_question.denominator)
+		
+		return {
+			"numerator": int(random_question.numerator),
+			"denominator": int(random_question.denominator),
+			"problem_type": "fraction_identify",
+			"asking_for": asking_for,
+			"operands": random_question.operands,
+			"operator": random_question.operator,
+			"result": result,
+			"expression": str(int(random_question.numerator)) + "/" + str(int(random_question.denominator)) + ": " + asking_for + " = " + str(result),
+			"question": asking_for,
+			"title": question_title,
+			"grade": question_grade
+		}
 	
 	# Generate question without answer (format integers without decimals)
 	var operand1 = int(random_question.operands[0]) if random_question.operands[0] == int(random_question.operands[0]) else random_question.operands[0]
@@ -722,8 +854,8 @@ func _on_button_click():
 
 func connect_menu_buttons():
 	"""Connect all menu buttons to their respective functions"""
-	# Connect level buttons (1-8)
-	for i in range(1, 9):
+	# Connect level buttons (1-9)
+	for i in range(1, 10):
 		var button_name = "LevelButton" + str(i)
 		var level_button = main_menu_node.get_node(button_name)
 		if level_button:
@@ -828,9 +960,9 @@ func start_play_state():
 	# Initialize weighted question system for this track
 	initialize_question_weights_for_track(current_track)
 	
-	# Create first problem label and generate question
-	create_new_problem_label()
-	generate_new_question()
+	# Generate first question and create problem label
+	generate_new_question()  # Generate question first so we know what type it is
+	create_new_problem_label()  # Then create the appropriate label/display
 
 func go_to_game_over():
 	"""Transition from PLAY to GAME_OVER state"""
@@ -1109,6 +1241,9 @@ func cleanup_problem_labels():
 			# Only remove dynamically created labels, not the Timer, Accuracy, or ProgressLine
 			if child is Label and child != current_problem_label and child != timer_label and child != accuracy_label:
 				child.queue_free()
+			# Clean up fraction containers
+			elif child is Control and child.name == "FractionProblem":
+				child.queue_free()
 	current_problem_label = null
 
 # Save System Functions
@@ -1131,8 +1266,8 @@ func get_default_save_data():
 		"questions": {}
 	}
 	
-	# Initialize level data for all 8 levels
-	for level in range(1, 9):
+	# Initialize level data for all 9 levels
+	for level in range(1, 10):
 		default_data.levels[str(level)] = {
 			"highest_stars": 0,
 			"best_accuracy": 0,
@@ -1199,8 +1334,8 @@ func migrate_save_data():
 		if not save_data.has("questions"):
 			save_data.questions = {}
 		
-		# Ensure all 8 levels have data
-		for level in range(1, 9):
+		# Ensure all 9 levels have data
+		for level in range(1, 10):
 			var level_key = str(level)
 			if not save_data.levels.has(level_key):
 				save_data.levels[level_key] = {
@@ -1410,9 +1545,13 @@ func initialize_question_weights_for_track(track):
 		question_weights[question_key] = weight_result.weight
 		
 		# Format question display
-		var operand1 = int(question.operands[0]) if question.operands[0] == int(question.operands[0]) else question.operands[0]
-		var operand2 = int(question.operands[1]) if question.operands[1] == int(question.operands[1]) else question.operands[1]
-		var question_text = str(operand1) + " " + question.operator + " " + str(operand2) + " = " + str(question.result)
+		var question_text = ""
+		if question.has("problem_type") and question.problem_type == "fraction_identify":
+			question_text = str(question.numerator) + "/" + str(question.denominator) + " (fraction identification)"
+		else:
+			var operand1 = int(question.operands[0]) if question.operands[0] == int(question.operands[0]) else question.operands[0]
+			var operand2 = int(question.operands[1]) if question.operands[1] == int(question.operands[1]) else question.operands[1]
+			question_text = str(operand1) + " " + question.operator + " " + str(operand2) + " = " + str(question.result)
 		
 		print("Question: ", question_text)
 		print("- Base weight: 1.0")
@@ -1470,24 +1609,47 @@ func get_weighted_random_question():
 			# Find the actual question data from math_facts
 			var selected_question = find_question_by_key(selected_key)
 			if selected_question:
-				# Console output for question selection
-				var operand1 = int(selected_question.operands[0]) if selected_question.operands[0] == int(selected_question.operands[0]) else selected_question.operands[0]
-				var operand2 = int(selected_question.operands[1]) if selected_question.operands[1] == int(selected_question.operands[1]) else selected_question.operands[1]
-				var question_text = str(operand1) + " " + selected_question.operator + " " + str(operand2) + " = " + str(selected_question.result)
-				print("Selected question: ", question_text, " (weight: %.3f)" % selected_weight)
-				
-				# Format the question for display (without answer)
-				var display_text = str(operand1) + " " + selected_question.operator + " " + str(operand2)
-				
-				return {
-					"operands": selected_question.operands,
-					"operator": selected_question.operator,
-					"result": selected_question.result,
-					"expression": selected_question.expression,
-					"question": display_text,
-					"title": "",  # Will be filled by caller if needed
-					"grade": ""   # Will be filled by caller if needed
-				}
+				# Check if this is a fraction identification problem
+				if selected_question.has("problem_type") and selected_question.problem_type == "fraction_identify":
+					# Randomly decide whether to ask for numerator or denominator
+					var ask_numerator = rng.randf() > 0.5
+					var asking_for = "numerator" if ask_numerator else "denominator"
+					var result = int(selected_question.numerator) if ask_numerator else int(selected_question.denominator)
+					
+					print("Selected fraction question: ", str(selected_question.numerator) + "/" + str(selected_question.denominator) + ": " + asking_for + " = " + str(result), " (weight: %.3f)" % selected_weight)
+					
+					return {
+						"numerator": int(selected_question.numerator),
+						"denominator": int(selected_question.denominator),
+						"problem_type": "fraction_identify",
+						"asking_for": asking_for,
+						"operands": selected_question.operands,
+						"operator": selected_question.operator,
+						"result": result,
+						"expression": str(int(selected_question.numerator)) + "/" + str(int(selected_question.denominator)) + ": " + asking_for + " = " + str(result),
+						"question": asking_for,
+						"title": "",  # Will be filled by caller if needed
+						"grade": ""   # Will be filled by caller if needed
+					}
+				else:
+					# Regular math problem
+					var operand1 = int(selected_question.operands[0]) if selected_question.operands[0] == int(selected_question.operands[0]) else selected_question.operands[0]
+					var operand2 = int(selected_question.operands[1]) if selected_question.operands[1] == int(selected_question.operands[1]) else selected_question.operands[1]
+					var question_text = str(operand1) + " " + selected_question.operator + " " + str(operand2) + " = " + str(selected_question.result)
+					print("Selected question: ", question_text, " (weight: %.3f)" % selected_weight)
+					
+					# Format the question for display (without answer)
+					var display_text = str(operand1) + " " + selected_question.operator + " " + str(operand2)
+					
+					return {
+						"operands": selected_question.operands,
+						"operator": selected_question.operator,
+						"result": selected_question.result,
+						"expression": selected_question.expression,
+						"question": display_text,
+						"title": "",  # Will be filled by caller if needed
+						"grade": ""   # Will be filled by caller if needed
+					}
 			else:
 				print("Error: Could not find question data for key: ", selected_key)
 				return null
@@ -1527,7 +1689,7 @@ func get_level_number_from_track(track):
 
 func update_menu_stars():
 	"""Update the star display on menu level buttons based on save data"""
-	for level in range(1, 9):
+	for level in range(1, 10):
 		var level_key = str(level)
 		var button_name = "LevelButton" + str(level)
 		var level_button = main_menu_node.get_node(button_name)
@@ -1544,7 +1706,7 @@ func update_menu_stars():
 
 func update_level_availability():
 	"""Update level button availability based on progression"""
-	for level in range(1, 9):
+	for level in range(1, 10):
 		var button_name = "LevelButton" + str(level)
 		var level_button = main_menu_node.get_node(button_name)
 		

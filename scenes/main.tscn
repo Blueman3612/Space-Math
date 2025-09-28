@@ -526,6 +526,58 @@ scale = Vector2(2, 2)
 texture = ExtResource("7_o6xl0")
 hframes = 2
 
+[node name="LevelButton9" type="Button" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -880.0
+offset_top = 192.0
+offset_right = -688.0
+offset_bottom = 384.0
+grow_horizontal = 2
+grow_vertical = 2
+tooltip_text = "Fraction Identification"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Contents" type="Control" parent="MainMenu/LevelButton9"]
+anchors_preset = 0
+offset_right = 192.0
+offset_bottom = 192.0
+mouse_filter = 2
+
+[node name="Number" type="Label" parent="MainMenu/LevelButton9/Contents"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = -32.0
+offset_right = 196.0
+offset_bottom = 160.0
+text = "9"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Star1" type="Sprite2D" parent="MainMenu/LevelButton9/Contents"]
+position = Vector2(44, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star2" type="Sprite2D" parent="MainMenu/LevelButton9/Contents"]
+position = Vector2(96, 144)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Star3" type="Sprite2D" parent="MainMenu/LevelButton9/Contents"]
+position = Vector2(148, 136)
+scale = Vector2(2, 2)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
 [node name="VersionLabel" type="Label" parent="MainMenu"]
 layout_mode = 1
 anchors_preset = 2
