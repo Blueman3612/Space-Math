@@ -258,8 +258,9 @@ func _process(delta):
 		# Update timer only if active (whether during grace period or after)
 		if timer_active:
 			if is_drill_mode:
-				# Drill mode: countdown timer
+				# Drill mode: countdown timer and elapsed time tracking
 				drill_timer_remaining -= delta
+				current_level_time += delta  # Also track elapsed time for CQPM calculation
 				if drill_timer_remaining <= 0.0:
 					drill_timer_remaining = 0.0
 					# Timer hit 0, end drill mode immediately
@@ -347,7 +348,7 @@ func submit_answer():
 	# Calculate time taken for this question
 	var question_time = 0.0
 	if current_question_start_time > 0:
-		question_time = Time.get_unix_time_from_system() - current_question_start_time
+		question_time = (Time.get_ticks_msec() / 1000.0) - current_question_start_time
 	
 	# Check if answer is correct
 	var user_answer_int = int(user_answer)
@@ -1255,7 +1256,7 @@ func cleanup_problem_labels():
 
 func start_question_timing():
 	"""Start timing the current question"""
-	current_question_start_time = Time.get_unix_time_from_system()
+	current_question_start_time = Time.get_ticks_msec() / 1000.0  # Convert to seconds with millisecond precision
 
 func initialize_save_system():
 	"""Initialize the save system and load existing save data"""
@@ -1831,8 +1832,15 @@ func update_drill_mode_game_over_labels():
 	
 	# Update CQPM display for drill mode
 	if cqpm_label:
-		var drill_time_elapsed = drill_mode_duration - drill_timer_remaining
-		var cqpm = calculate_cqpm(correct_answers, drill_time_elapsed)
+		# Calculate drill mode CQPM: correct answers divided by total drill time
+		# Subtract time spent on the last unanswered question (if any)
+		var drill_time_used = drill_mode_duration
+		if current_question_start_time > 0:
+			# Subtract time spent on current unanswered question
+			var time_on_current_question = (Time.get_ticks_msec() / 1000.0) - current_question_start_time
+			drill_time_used -= time_on_current_question
+		
+		var cqpm = calculate_cqpm(correct_answers, drill_time_used)
 		cqpm_label.text = "%.2f" % cqpm
 
 func update_drill_mode_game_over_ui_visibility():
