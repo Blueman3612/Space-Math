@@ -39,6 +39,10 @@ var star3_requirements = {"accuracy": 35, "time": 80.0}   # 1:20
 var title_bounce_speed = 2.0  # Speed of the sin wave animation
 var title_bounce_distance = 16.0  # Distance of the bounce in pixels
 
+# Drill mode score animation variables
+var drill_score_bounce_speed = 2.0  # Speed of the sin wave animation for drill score
+var drill_score_bounce_distance = 16.0  # Distance of the bounce in pixels for drill score
+
 # Menu position constants
 const menu_above_screen = Vector2(0, -1144)
 const menu_below_screen = Vector2(0, 1144)
@@ -73,6 +77,8 @@ var play_node: Control  # Reference to the Play node
 var title_sprite: Sprite2D  # Reference to the Title sprite
 var title_base_position: Vector2  # Store the original position of the title
 var title_animation_time = 0.0  # Track time for sin wave animation
+var drill_score_base_position: Vector2  # Store the original position of the drill score label
+var drill_score_animation_time = 0.0  # Track time for drill score sin wave animation
 
 # Save system variables
 var save_data = {}
@@ -119,9 +125,11 @@ var is_drill_mode = false  # Whether we're currently in drill mode
 var drill_timer_remaining = 0.0  # Time remaining in drill mode
 var drill_score = 0  # Current drill mode score
 var drill_streak = 0  # Current correct answer streak in drill mode
+var drill_total_answered = 0  # Total questions answered in drill mode (correct + incorrect)
 var drill_timer_label: Label  # Reference to the DrillTimer label
 var drill_score_label: Label  # Reference to the DrillScore label
 var drill_mode_score_label: Label  # Reference to the DrillModeScore label in GameOver
+var drill_accuracy_label: Label  # Reference to the DrillAccuracy label in GameOver
 
 func _ready():
 	# Load and parse the math facts JSON
@@ -167,6 +175,7 @@ func _ready():
 	continue_button = game_over_node.get_node("ContinueButton")
 	cqpm_label = game_over_node.get_node("CQPM")
 	drill_mode_score_label = game_over_node.get_node("DrillModeScore")
+	drill_accuracy_label = game_over_node.get_node("DrillAccuracy")
 	
 	# Get reference to version label and set it to project version
 	var version_label = main_menu_node.get_node("VersionLabel")
@@ -192,6 +201,10 @@ func _ready():
 	# Store the original position of the title for animation
 	if title_sprite:
 		title_base_position = title_sprite.position
+	
+	# Store the original position of the drill score label for animation
+	if drill_mode_score_label:
+		drill_score_base_position = drill_mode_score_label.position
 	
 	# Initialize save system
 	initialize_save_system()
@@ -242,6 +255,12 @@ func _process(delta):
 		title_animation_time += delta * title_bounce_speed
 		var bounce_offset = sin(title_animation_time) * title_bounce_distance
 		title_sprite.position = title_base_position + Vector2(0, bounce_offset)
+	
+	# Animate drill mode score during GAME_OVER state (only if drill mode)
+	if current_state == GameState.GAME_OVER and is_drill_mode and drill_mode_score_label and drill_mode_score_label.visible:
+		drill_score_animation_time += delta * drill_score_bounce_speed
+		var drill_bounce_offset = sin(drill_score_animation_time) * drill_score_bounce_distance
+		drill_mode_score_label.position = drill_score_base_position + Vector2(0, drill_bounce_offset)
 	
 	# Only process game logic during PLAY or DRILL_PLAY state
 	if current_state == GameState.PLAY or current_state == GameState.DRILL_PLAY:
@@ -359,6 +378,9 @@ func submit_answer():
 		save_question_data(current_question, user_answer_int, question_time)
 	
 	# Track correct answers and drill mode scoring
+	if is_drill_mode:
+		drill_total_answered += 1  # Track total questions answered in drill mode
+	
 	if is_correct:
 		correct_answers += 1
 		if is_drill_mode:
@@ -833,6 +855,7 @@ func start_drill_mode():
 	correct_answers = 0
 	drill_score = 0
 	drill_streak = 0
+	drill_total_answered = 0
 	drill_timer_remaining = drill_mode_duration
 	
 	# Clean up any existing problem labels before starting
@@ -991,6 +1014,7 @@ func return_to_menu():
 	"""Transition from GAME_OVER to MENU state"""
 	current_state = GameState.MENU
 	is_drill_mode = false  # Reset drill mode flag
+	drill_score_animation_time = 0.0  # Reset drill score animation
 	
 	# Update menu display with new save data
 	update_menu_stars()
@@ -1830,6 +1854,11 @@ func update_drill_mode_game_over_labels():
 	if drill_mode_score_label:
 		drill_mode_score_label.text = str(int(drill_score))
 	
+	# Update drill mode accuracy display
+	if drill_accuracy_label:
+		var accuracy_string = "%d/%d" % [correct_answers, drill_total_answered]
+		drill_accuracy_label.text = accuracy_string
+	
 	# Update CQPM display for drill mode
 	if cqpm_label:
 		# Calculate drill mode CQPM: correct answers divided by total drill time
@@ -1867,6 +1896,13 @@ func update_drill_mode_game_over_ui_visibility():
 	if drill_mode_score_label:
 		drill_mode_score_label.visible = true
 	
+	var drill_accuracy_title = game_over_node.get_node("DrillAccuracyTitle")
+	if drill_accuracy_title:
+		drill_accuracy_title.visible = true
+	
+	if drill_accuracy_label:
+		drill_accuracy_label.visible = true
+	
 	# Hide all other nodes
 	var nodes_to_hide = ["CorrectTitle", "TimeTitle", "You", "PlayerAccuracy", "PlayerTime", "Star1", "Star2", "Star3"]
 	for node_name in nodes_to_hide:
@@ -1891,9 +1927,16 @@ func update_normal_mode_game_over_ui_visibility():
 	if cqpm_label:
 		cqpm_label.visible = true
 	
-	# Hide drill mode score
+	# Hide drill mode elements
 	if drill_mode_score_label:
 		drill_mode_score_label.visible = false
+	
+	var drill_accuracy_title = game_over_node.get_node("DrillAccuracyTitle")
+	if drill_accuracy_title:
+		drill_accuracy_title.visible = false
+	
+	if drill_accuracy_label:
+		drill_accuracy_label.visible = false
 
 func update_drill_mode_high_score_display():
 	"""Update the drill mode high score display in the main menu"""

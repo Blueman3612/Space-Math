@@ -913,6 +913,37 @@ label_settings = ExtResource("13_trceg")
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="DrillAccuracyTitle" type="Label" parent="GameOver"]
+self_modulate = Color(0.5019608, 0.5019608, 0.5019608, 1)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -880.0
+offset_top = 816.0
+offset_right = -572.0
+offset_bottom = 880.0
+grow_horizontal = 2
+text = "ACCURACY"
+label_settings = ExtResource("9_85g3d")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DrillAccuracy" type="Label" parent="GameOver"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -960.0
+offset_top = 896.0
+offset_right = -492.0
+offset_bottom = 960.0
+grow_horizontal = 2
+text = "69/69"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Play" type="Control" parent="."]
 anchors_preset = 0
 offset_top = -1144.0
