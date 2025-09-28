@@ -137,6 +137,7 @@ label_settings = ExtResource("7_eb6dy")
 horizontal_alignment = 2
 
 [node name="ResetDataButton" type="Button" parent="MainMenu"]
+visible = false
 self_modulate = Color(1, 1, 0, 1)
 layout_mode = 1
 anchors_preset = 8
@@ -940,6 +941,25 @@ offset_right = -492.0
 offset_bottom = 960.0
 grow_horizontal = 2
 text = "69/69"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HighScoreText" type="Label" parent="GameOver"]
+self_modulate = Color(0, 0, 1, 1)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -384.0
+offset_top = -252.0
+offset_right = 384.0
+offset_bottom = -188.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "NEW HIGH SCORE"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1

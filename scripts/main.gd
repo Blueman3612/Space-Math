@@ -40,8 +40,22 @@ var title_bounce_speed = 2.0  # Speed of the sin wave animation
 var title_bounce_distance = 16.0  # Distance of the bounce in pixels
 
 # Drill mode score animation variables
-var drill_score_bounce_speed = 2.0  # Speed of the sin wave animation for drill score
+var drill_score_bounce_speed = 3.0  # Speed of the sin wave animation for drill score
 var drill_score_bounce_distance = 16.0  # Distance of the bounce in pixels for drill score
+
+# Drill mode score enhancement variables
+var flying_score_move_distance = 320.0  # Distance flying score labels move down in pixels
+var flying_score_move_duration = 2.0  # Duration for flying score movement animation
+var flying_score_fade_duration = 0.5  # Duration for flying score fade out animation
+var drill_score_expand_scale = 2.0  # Scale factor for drill score expansion
+var drill_score_expand_duration = 0.1  # Duration for drill score expansion
+var drill_score_shrink_duration = 0.9  # Duration for drill score shrink back to normal
+
+# High score celebration variables
+var high_score_pop_scale = 8.0  # Scale factor for high score text pop effect
+var high_score_expand_duration = 0.1  # Duration for high score text expansion
+var high_score_shrink_duration = 0.25  # Duration for high score text shrink back to normal
+var high_score_flicker_speed = 12.0  # Speed of color flickering between blue and turquoise
 
 # Menu position constants
 const menu_above_screen = Vector2(0, -1144)
@@ -79,6 +93,9 @@ var title_base_position: Vector2  # Store the original position of the title
 var title_animation_time = 0.0  # Track time for sin wave animation
 var drill_score_base_position: Vector2  # Store the original position of the drill score label
 var drill_score_animation_time = 0.0  # Track time for drill score sin wave animation
+var high_score_text_label: Label  # Reference to the HighScoreText label
+var is_celebrating_high_score = false  # Whether we're currently celebrating a new high score
+var high_score_flicker_time = 0.0  # Track time for color flickering animation
 
 # Save system variables
 var save_data = {}
@@ -126,6 +143,8 @@ var drill_timer_remaining = 0.0  # Time remaining in drill mode
 var drill_score = 0  # Current drill mode score
 var drill_streak = 0  # Current correct answer streak in drill mode
 var drill_total_answered = 0  # Total questions answered in drill mode (correct + incorrect)
+var drill_score_display_value = 0.0  # Current displayed score value for smooth animation
+var drill_score_target_value = 0  # Target score value for smooth animation
 var drill_timer_label: Label  # Reference to the DrillTimer label
 var drill_score_label: Label  # Reference to the DrillScore label
 var drill_mode_score_label: Label  # Reference to the DrillModeScore label in GameOver
@@ -176,6 +195,7 @@ func _ready():
 	cqpm_label = game_over_node.get_node("CQPM")
 	drill_mode_score_label = game_over_node.get_node("DrillModeScore")
 	drill_accuracy_label = game_over_node.get_node("DrillAccuracy")
+	high_score_text_label = game_over_node.get_node("HighScoreText")
 	
 	# Get reference to version label and set it to project version
 	var version_label = main_menu_node.get_node("VersionLabel")
@@ -205,6 +225,10 @@ func _ready():
 	# Store the original position of the drill score label for animation
 	if drill_mode_score_label:
 		drill_score_base_position = drill_mode_score_label.position
+	
+	# Initially hide the high score text
+	if high_score_text_label:
+		high_score_text_label.visible = false
 	
 	# Initialize save system
 	initialize_save_system()
@@ -261,6 +285,17 @@ func _process(delta):
 		drill_score_animation_time += delta * drill_score_bounce_speed
 		var drill_bounce_offset = sin(drill_score_animation_time) * drill_score_bounce_distance
 		drill_mode_score_label.position = drill_score_base_position + Vector2(0, drill_bounce_offset)
+	
+	# Animate high score text color gradient during celebration
+	if is_celebrating_high_score and high_score_text_label and high_score_text_label.visible:
+		high_score_flicker_time += delta * high_score_flicker_speed
+		var flicker_value = sin(high_score_flicker_time)
+		# Convert sin wave (-1 to 1) to interpolation value (0 to 1)
+		var lerp_value = (flicker_value + 1.0) / 2.0
+		# Smooth gradient between blue (0, 0, 1) and turquoise (0, 1, 1)
+		var blue_color = Color(0, 0, 1, 1)
+		var turquoise_color = Color(0, 1, 1, 1)
+		high_score_text_label.self_modulate = blue_color.lerp(turquoise_color, lerp_value)
 	
 	# Only process game logic during PLAY or DRILL_PLAY state
 	if current_state == GameState.PLAY or current_state == GameState.DRILL_PLAY:
@@ -328,7 +363,7 @@ func _process(delta):
 		update_problem_display()
 		
 		# Update UI labels
-		update_play_ui()
+		update_play_ui(delta)
 
 func generate_new_question():
 	user_answer = ""
@@ -389,7 +424,12 @@ func submit_answer():
 			var difficulty = calculate_question_difficulty(current_question)
 			var points_earned = difficulty + drill_streak
 			drill_score += points_earned
+			drill_score_target_value = drill_score
 			print("Drill mode: +", points_earned, " points (", difficulty, " difficulty + ", drill_streak, " streak)")
+			
+			# Trigger score animations
+			create_flying_score_label(points_earned)
+			animate_drill_score_scale()
 	else:
 		if is_drill_mode:
 			drill_streak = 0  # Reset streak on incorrect answer
@@ -802,7 +842,14 @@ func connect_menu_buttons():
 	var drill_mode_button = main_menu_node.get_node("DrillModeButton")
 	if drill_mode_button:
 		drill_mode_button.pressed.connect(_on_drill_mode_button_pressed)
+		drill_mode_button.mouse_entered.connect(_on_drill_mode_button_hover_enter)
+		drill_mode_button.mouse_exited.connect(_on_drill_mode_button_hover_exit)
 		connect_button_sounds(drill_mode_button)
+		
+		# Initially hide unlock requirements
+		var unlock_requirements = drill_mode_button.get_node("UnlockRequirements")
+		if unlock_requirements:
+			unlock_requirements.visible = false
 
 func _on_level_button_pressed(level: int):
 	"""Handle level button press - only respond during MENU state"""
@@ -847,6 +894,22 @@ func _on_drill_mode_button_pressed():
 	
 	start_drill_mode()
 
+func _on_drill_mode_button_hover_enter():
+	"""Handle drill mode button hover enter - show unlock requirements if disabled"""
+	var drill_mode_button = main_menu_node.get_node("DrillModeButton")
+	if drill_mode_button and drill_mode_button.disabled:
+		var unlock_requirements = drill_mode_button.get_node("UnlockRequirements")
+		if unlock_requirements:
+			unlock_requirements.visible = true
+
+func _on_drill_mode_button_hover_exit():
+	"""Handle drill mode button hover exit - hide unlock requirements"""
+	var drill_mode_button = main_menu_node.get_node("DrillModeButton")
+	if drill_mode_button:
+		var unlock_requirements = drill_mode_button.get_node("UnlockRequirements")
+		if unlock_requirements:
+			unlock_requirements.visible = false
+
 func start_drill_mode():
 	"""Transition from MENU to DRILL_PLAY state"""
 	current_state = GameState.DRILL_PLAY
@@ -856,7 +919,15 @@ func start_drill_mode():
 	drill_score = 0
 	drill_streak = 0
 	drill_total_answered = 0
+	drill_score_display_value = 0.0
+	drill_score_target_value = 0
 	drill_timer_remaining = drill_mode_duration
+	
+	# Reset celebration state and hide high score text
+	is_celebrating_high_score = false
+	high_score_flicker_time = 0.0
+	if high_score_text_label:
+		high_score_text_label.visible = false
 	
 	# Clean up any existing problem labels before starting
 	cleanup_problem_labels()
@@ -910,6 +981,12 @@ func start_play_state():
 	is_drill_mode = false
 	problems_completed = 0
 	correct_answers = 0
+	
+	# Reset celebration state and hide high score text
+	is_celebrating_high_score = false
+	high_score_flicker_time = 0.0
+	if high_score_text_label:
+		high_score_text_label.visible = false
 	
 	# Clean up any existing problem labels before starting
 	cleanup_problem_labels()
@@ -976,6 +1053,10 @@ func go_to_game_over():
 	# Stop the timer (should already be stopped, but ensure it)
 	timer_active = false
 	
+	# Always hide high score text for normal levels
+	if high_score_text_label:
+		high_score_text_label.visible = false
+	
 	# Calculate and save level performance data
 	var stars_earned = evaluate_stars().size()
 	var level_number = get_level_number_from_track(current_track)
@@ -1015,6 +1096,8 @@ func return_to_menu():
 	current_state = GameState.MENU
 	is_drill_mode = false  # Reset drill mode flag
 	drill_score_animation_time = 0.0  # Reset drill score animation
+	is_celebrating_high_score = false  # Reset high score celebration
+	high_score_flicker_time = 0.0  # Reset flicker animation
 	
 	# Update menu display with new save data
 	update_menu_stars()
@@ -1049,7 +1132,7 @@ func _on_continue_button_pressed():
 	
 	return_to_menu()
 
-func update_play_ui():
+func update_play_ui(delta: float):
 	"""Update the Timer and Accuracy labels during gameplay"""
 	if is_drill_mode:
 		# Update drill mode UI
@@ -1066,7 +1149,11 @@ func update_play_ui():
 			drill_timer_label.text = time_string
 		
 		if drill_score_label:
-			drill_score_label.text = str(int(drill_score))
+			# Smoothly animate score towards target
+			if drill_score_display_value < drill_score_target_value:
+				var animation_speed = (drill_score_target_value - drill_score_display_value) * delta * 8.0  # Adjust speed as needed
+				drill_score_display_value = min(drill_score_display_value + animation_speed, drill_score_target_value)
+			drill_score_label.text = str(int(drill_score_display_value))
 	else:
 		# Update normal mode UI
 		if not timer_label or not accuracy_label:
@@ -1805,7 +1892,11 @@ func go_to_drill_mode_game_over():
 	# Stop the timer
 	timer_active = false
 	
-	# Update drill mode high score if needed
+	# Initially hide high score text (will be shown by celebration if new high score)
+	if high_score_text_label:
+		high_score_text_label.visible = false
+	
+	# Update drill mode high score if needed (this may trigger celebration)
 	update_drill_mode_high_score()
 	
 	# Update GameOver labels with drill mode performance
@@ -1834,14 +1925,51 @@ func go_to_drill_mode_game_over():
 	continue_button.visible = true
 
 func update_drill_mode_high_score():
-	"""Update drill mode high score in save data"""
+	"""Update drill mode high score in save data and trigger celebration if new high score"""
 	if not save_data.has("drill_mode"):
 		save_data.drill_mode = {"high_score": 0}
 	
-	if drill_score > save_data.drill_mode.high_score:
+	var is_new_high_score = drill_score > save_data.drill_mode.high_score
+	
+	if is_new_high_score:
 		save_data.drill_mode.high_score = drill_score
 		save_save_data()
 		print("New drill mode high score: ", drill_score)
+		
+		# Trigger high score celebration
+		start_high_score_celebration()
+	
+	return is_new_high_score
+
+func start_high_score_celebration():
+	"""Start the high score celebration animation"""
+	if not high_score_text_label:
+		return
+	
+	# Wait for animation_duration before showing the celebration
+	await get_tree().create_timer(animation_duration).timeout
+	
+	# Make the label visible and start celebration
+	high_score_text_label.visible = true
+	is_celebrating_high_score = true
+	high_score_flicker_time = 0.0
+	
+	# Set pivot to center for scaling animation
+	high_score_text_label.pivot_offset = high_score_text_label.size / 2.0
+	
+	# Play the Get sound effect
+	AudioManager.play_get()
+	
+	# Create the pop animation
+	var pop_tween = create_tween()
+	pop_tween.set_ease(Tween.EASE_OUT)
+	pop_tween.set_trans(Tween.TRANS_EXPO)
+	
+	# Phase 1: Expand to large scale
+	pop_tween.tween_property(high_score_text_label, "scale", Vector2(high_score_pop_scale, high_score_pop_scale), high_score_expand_duration)
+	
+	# Phase 2: Shrink back to normal
+	pop_tween.tween_property(high_score_text_label, "scale", Vector2(1.0, 1.0), high_score_shrink_duration)
 
 func update_drill_mode_game_over_labels():
 	"""Update GameOver labels for drill mode"""
@@ -1903,6 +2031,8 @@ func update_drill_mode_game_over_ui_visibility():
 	if drill_accuracy_label:
 		drill_accuracy_label.visible = true
 	
+	# HighScoreText visibility is handled by the celebration system, not here
+	
 	# Hide all other nodes
 	var nodes_to_hide = ["CorrectTitle", "TimeTitle", "You", "PlayerAccuracy", "PlayerTime", "Star1", "Star2", "Star3"]
 	for node_name in nodes_to_hide:
@@ -1937,6 +2067,10 @@ func update_normal_mode_game_over_ui_visibility():
 	
 	if drill_accuracy_label:
 		drill_accuracy_label.visible = false
+	
+	# Always hide high score text in normal mode
+	if high_score_text_label:
+		high_score_text_label.visible = false
 
 func update_drill_mode_high_score_display():
 	"""Update the drill mode high score display in the main menu"""
@@ -1946,6 +2080,57 @@ func update_drill_mode_high_score_display():
 		if save_data.has("drill_mode") and save_data.drill_mode.has("high_score"):
 			high_score = save_data.drill_mode.high_score
 		high_score_label.text = str(int(high_score))  # Ensure integer display
+
+func create_flying_score_label(points_earned: int):
+	"""Create a flying score label that moves down and fades out simultaneously"""
+	if not drill_score_label or not play_node:
+		return
+	
+	# Create new flying score label
+	var flying_label = Label.new()
+	var label_settings_64 = load("res://assets/label settings/GravityBold64.tres")
+	flying_label.label_settings = label_settings_64
+	flying_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	flying_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	flying_label.text = "+" + str(points_earned)
+	flying_label.self_modulate = Color(1, 0, 1, 1)  # Fuchsia color
+	flying_label.position = drill_score_label.position  # Start at drill score position (top-left aligned)
+	
+	# Add to play node
+	play_node.add_child(flying_label)
+	
+	# Create parallel animations
+	var move_tween = create_tween()
+	var fade_tween = create_tween()
+	
+	move_tween.set_ease(Tween.EASE_OUT)
+	move_tween.set_trans(Tween.TRANS_EXPO)
+	fade_tween.set_ease(Tween.EASE_OUT)
+	fade_tween.set_trans(Tween.TRANS_EXPO)
+	
+	# Move down and fade out simultaneously over the same duration
+	var target_position = flying_label.position + Vector2(0, flying_score_move_distance)
+	move_tween.tween_property(flying_label, "position", target_position, flying_score_move_duration)
+	fade_tween.tween_property(flying_label, "self_modulate:a", 0.0, flying_score_move_duration)
+	
+	# Clean up after animation completes
+	fade_tween.tween_callback(flying_label.queue_free)
+
+func animate_drill_score_scale():
+	"""Animate the drill score label scaling up and back down"""
+	if not drill_score_label:
+		return
+	
+	# Create scale animation tween
+	var scale_tween = create_tween()
+	scale_tween.set_ease(Tween.EASE_OUT)
+	scale_tween.set_trans(Tween.TRANS_EXPO)
+	
+	# Phase 1: Expand to larger scale
+	scale_tween.tween_property(drill_score_label, "scale", Vector2(drill_score_expand_scale, drill_score_expand_scale), drill_score_expand_duration)
+	
+	# Phase 2: Shrink back to normal
+	scale_tween.tween_property(drill_score_label, "scale", Vector2(1.0, 1.0), drill_score_shrink_duration)
 
 func update_level_availability():
 	"""Update level button availability based on progression"""
@@ -1976,3 +2161,39 @@ func update_level_availability():
 					contents.modulate = Color(1, 1, 1, 1)  # Fully opaque
 				else:
 					contents.modulate = Color(1, 1, 1, 0.5)  # Half transparent
+	
+	# Update drill mode button availability
+	update_drill_mode_availability()
+
+func update_drill_mode_availability():
+	"""Update drill mode button availability based on level completion"""
+	var drill_mode_button = main_menu_node.get_node("DrillModeButton")
+	if not drill_mode_button:
+		return
+	
+	# Check if all levels (1-8) have at least 1 star
+	var all_levels_completed = true
+	for level in range(1, 9):
+		var level_key = str(level)
+		if not save_data.levels.has(level_key):
+			all_levels_completed = false
+			break
+		var stars = save_data.levels[level_key].highest_stars
+		if stars < 1:
+			all_levels_completed = false
+			break
+	
+	# Set button state
+	drill_mode_button.disabled = not all_levels_completed
+	
+	# Update visual state
+	if all_levels_completed:
+		drill_mode_button.modulate = Color(1, 1, 1, 1)  # Fully opaque
+	else:
+		drill_mode_button.modulate = Color(1, 1, 1, 0.5)  # Half transparent
+	
+	# Hide unlock requirements when drill mode becomes available
+	var unlock_requirements = drill_mode_button.get_node("UnlockRequirements")
+	if unlock_requirements:
+		if all_levels_completed:
+			unlock_requirements.visible = false
