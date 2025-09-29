@@ -1,0 +1,54 @@
+{
+    "levels": [
+        {
+            "id": "TRACK12",
+            "title": "Addition Within 10 (Sums up to 10)",
+            "factCount": 69,
+            "facts": [
+                {
+                    "index": 1,
+                    "type": "addition",
+                    "operands": [0, 0],
+                    "operator": "+",
+                    "result": 0,
+                    "expression": "0 + 0 = 0"
+                }
+            ]
+        },
+        {
+            "id": "",
+            "title": "Visual ID of Fractions",
+            "factCount": 69,
+            "facts": [
+                {
+                    "index": 1,
+                    "type": "identify_numerator",
+                    "operands": [
+                      11,
+                      3
+                    ],
+                    "operator": "identify",
+                    "result": 11,
+                    "expression": "11/3: numerator = 11"
+                },
+                {
+                    "index": 2,
+                    "type": "subtract_like_denominators",
+                    "operands": [
+                      [
+                        7,
+                        8
+                      ],
+                      [
+                        1,
+                        2
+                      ]
+                    ],
+                    "operator": "-",
+                    "result": "3/8",
+                    "expression": "7/8 - 1/2 = 3/8"
+                }
+            ]
+        }
+    ]
+}

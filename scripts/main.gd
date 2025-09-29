@@ -152,7 +152,7 @@ var drill_accuracy_label: Label  # Reference to the DrillAccuracy label in GameO
 
 func _ready():
 	# Load and parse the math facts JSON
-	var file = FileAccess.open("res://tools/math-facts.json", FileAccess.READ)
+	var file = FileAccess.open("res://tools/all_problems.json", FileAccess.READ)
 	if file:
 		var json_string = file.get_as_text()
 		file.close()
@@ -165,7 +165,7 @@ func _ready():
 		else:
 			print("Error parsing JSON: ", json.get_error_message())
 	else:
-		print("Could not open math-facts.json")
+		print("Could not open all_problems.json")
 	
 	# Initialize random number generator
 	rng.randomize()
@@ -559,7 +559,7 @@ func create_new_problem_label():
 
 
 func get_math_question(track = null, grade = null, operator = null, no_zeroes = false):
-	if not math_facts.has("grades"):
+	if not math_facts.has("levels"):
 		return null
 	
 	var questions = []
@@ -570,89 +570,62 @@ func get_math_question(track = null, grade = null, operator = null, no_zeroes = 
 	if track != null:
 		# Find questions from specific track
 		var track_key = "TRACK" + str(track)
-		for grade_key in math_facts.grades:
-			var grade_data = math_facts.grades[grade_key]
-			if grade_data.has("tracks") and grade_data.tracks.has(track_key):
-				questions = grade_data.tracks[track_key].facts
-				question_title = grade_data.tracks[track_key].title
-				question_grade = grade_data.name
+		for level in math_facts.levels:
+			if level.id == track_key:
+				questions = level.facts
+				question_title = level.title
+				question_grade = ""  # No grade info in all_problems.json
 				break
 		
 		# If track not found, pick random existing track
 		if questions.is_empty():
-			var available_tracks = []
-			for grade_key in math_facts.grades:
-				var grade_data = math_facts.grades[grade_key]
-				if grade_data.has("tracks"):
-					for available_track_key in grade_data.tracks:
-						if available_track_key not in available_tracks:
-							available_tracks.append(available_track_key)
-			
-			if not available_tracks.is_empty():
-				var random_track_key = available_tracks[rng.randi() % available_tracks.size()]
-				for grade_key in math_facts.grades:
-					var grade_data = math_facts.grades[grade_key]
-					if grade_data.has("tracks") and grade_data.tracks.has(random_track_key):
-						questions = grade_data.tracks[random_track_key].facts
-						question_title = grade_data.tracks[random_track_key].title
-						question_grade = grade_data.name
-						break
+			if not math_facts.levels.is_empty():
+				var random_level = math_facts.levels[rng.randi() % math_facts.levels.size()]
+				questions = random_level.facts
+				question_title = random_level.title
+				question_grade = ""
 	
 	elif grade != null:
-		# Handle grade selection
-		var grade_key = ""
-		if grade >= 5:
-			grade_key = "grade-5"  # "Grades 5 and Above"
-		else:
-			grade_key = "grade-" + str(grade)
+		# Handle grade selection - collect all questions from all levels (since no grade grouping)
+		question_grade = "Grade " + str(grade)
 		
-		if math_facts.grades.has(grade_key):
-			var grade_data = math_facts.grades[grade_key]
-			question_grade = grade_data.name
+		# If operator is also specified, try to find questions with that operator
+		if operator != null:
+			var operator_str = get_operator_string(operator)
+			var matching_questions = []
+			var matching_title = ""
 			
-			# If operator is also specified, try to find questions with that operator
-			if operator != null:
-				var operator_str = get_operator_string(operator)
-				var matching_questions = []
-				var matching_title = ""
-				
-				for grade_track_key in grade_data.tracks:
-					var track_data = grade_data.tracks[grade_track_key]
-					for fact in track_data.facts:
-						if fact.operator == operator_str:
-							matching_questions.append(fact)
-							if matching_title == "":
-								matching_title = track_data.title
-				
-				if not matching_questions.is_empty():
-					questions = matching_questions
-					question_title = matching_title
-				else:
-					# Fallback: find closest grade with that operator
-					var closest_result = find_closest_grade_with_operator(grade, operator)
-					if not closest_result.questions.is_empty():
-						questions = closest_result.questions
-						question_title = "Closest grade match"
-						question_grade = closest_result.grade_name
+			for level in math_facts.levels:
+				for fact in level.facts:
+					if fact.operator == operator_str:
+						matching_questions.append(fact)
+						if matching_title == "":
+							matching_title = level.title
+			
+			if not matching_questions.is_empty():
+				questions = matching_questions
+				question_title = matching_title
 			else:
-				# Get all questions from the grade
-				for grade_track_key in grade_data.tracks:
-					var track_data = grade_data.tracks[grade_track_key]
-					questions.append_array(track_data.facts)
-					if question_title == "":
-						question_title = grade_data.name
+				# Fallback: find closest grade with that operator
+				var closest_result = find_closest_grade_with_operator(grade, operator)
+				if not closest_result.questions.is_empty():
+					questions = closest_result.questions
+					question_title = "Closest grade match"
+					question_grade = closest_result.grade_name
+		else:
+			# Get all questions from all levels
+			for level in math_facts.levels:
+				questions.append_array(level.facts)
+				if question_title == "":
+					question_title = question_grade
 	
 	elif operator != null:
 		# Get all questions with specific operator
 		var operator_str = get_operator_string(operator)
-		for grade_key in math_facts.grades:
-			var grade_data = math_facts.grades[grade_key]
-			if grade_data.has("tracks"):
-				for op_track_key in grade_data.tracks:
-					var track_data = grade_data.tracks[op_track_key]
-					for fact in track_data.facts:
-						if fact.operator == operator_str:
-							questions.append(fact)
+		for level in math_facts.levels:
+			for fact in level.facts:
+				if fact.operator == operator_str:
+					questions.append(fact)
 		question_title = "Operator: " + operator_str
 		question_grade = "Mixed"
 	
@@ -700,57 +673,17 @@ func get_operator_string(operator_int):
 
 func find_closest_grade_with_operator(target_grade, operator):
 	var operator_str = get_operator_string(operator)
-	var grade_distances = []
-	
-	# Check all grades for the operator
-	for i in range(1, 6):  # grades 1-5
-		var grade_key_to_find = ""
-		if i >= 5:
-			grade_key_to_find = "grade-5"
-		else:
-			grade_key_to_find = "grade-" + str(i)
-		
-		if math_facts.grades.has(grade_key_to_find):
-			var grade_data_to_find = math_facts.grades[grade_key_to_find]
-			var found_operator = false
-			
-			for closest_track_key in grade_data_to_find.tracks:
-				var track_data = grade_data_to_find.tracks[closest_track_key]
-				for fact in track_data.facts:
-					if fact.operator == operator_str:
-						found_operator = true
-						break
-				if found_operator:
-					break
-			
-			if found_operator:
-				var distance = abs(target_grade - i)
-				grade_distances.append({"grade": i, "distance": distance})
-	
-	# Sort by distance and get closest
-	grade_distances.sort_custom(func(a, b): return a.distance < b.distance)
-	
-	if grade_distances.is_empty():
-		return []
-	
-	var closest_grade = grade_distances[0].grade
-	var grade_key = ""
-	if closest_grade >= 5:
-		grade_key = "grade-5"
-	else:
-		grade_key = "grade-" + str(closest_grade)
-	
 	var questions = []
-	var grade_data = math_facts.grades[grade_key]
-	for final_track_key in grade_data.tracks:
-		var track_data = grade_data.tracks[final_track_key]
-		for fact in track_data.facts:
+	
+	# Collect all questions with the operator from all levels
+	for level in math_facts.levels:
+		for fact in level.facts:
 			if fact.operator == operator_str:
 				questions.append(fact)
 	
 	return {
 		"questions": questions,
-		"grade_name": grade_data.name
+		"grade_name": "Grade " + str(target_grade)
 	}
 
 func create_incorrect_answer_label():
@@ -1623,7 +1556,7 @@ func initialize_question_weights_for_track(track):
 	available_questions.clear()
 	
 	# Get all questions for this track (similar logic to get_math_question)
-	if not math_facts.has("grades"):
+	if not math_facts.has("levels"):
 		print("No math facts data available")
 		return
 	
@@ -1631,29 +1564,16 @@ func initialize_question_weights_for_track(track):
 	var questions = []
 	
 	# Find questions from specific track
-	for grade_key in math_facts.grades:
-		var grade_data = math_facts.grades[grade_key]
-		if grade_data.has("tracks") and grade_data.tracks.has(track_key):
-			questions = grade_data.tracks[track_key].facts
+	for level in math_facts.levels:
+		if level.id == track_key:
+			questions = level.facts
 			break
 	
 	# If track not found, pick random existing track (fallback)
 	if questions.is_empty():
-		var available_tracks = []
-		for grade_key in math_facts.grades:
-			var grade_data = math_facts.grades[grade_key]
-			if grade_data.has("tracks"):
-				for available_track_key in grade_data.tracks:
-					if available_track_key not in available_tracks:
-						available_tracks.append(available_track_key)
-		
-		if not available_tracks.is_empty():
-			var random_track_key = available_tracks[rng.randi() % available_tracks.size()]
-			for grade_key in math_facts.grades:
-				var grade_data = math_facts.grades[grade_key]
-				if grade_data.has("tracks") and grade_data.tracks.has(random_track_key):
-					questions = grade_data.tracks[random_track_key].facts
-					break
+		if not math_facts.levels.is_empty():
+			var random_level = math_facts.levels[rng.randi() % math_facts.levels.size()]
+			questions = random_level.facts
 	
 	print("=== Question Weight Calculations for Track ", track, " ===")
 	
@@ -1762,15 +1682,11 @@ func find_question_by_key(question_key):
 	var operator = parts[1]
 	var operand2 = float(parts[2])
 	
-	# Search through all grades and tracks
-	for grade_key in math_facts.grades:
-		var grade_data = math_facts.grades[grade_key]
-		if grade_data.has("tracks"):
-			for track_key in grade_data.tracks:
-				var track_data = grade_data.tracks[track_key]
-				for question in track_data.facts:
-					if question.operands[0] == operand1 and question.operator == operator and question.operands[1] == operand2:
-						return question
+	# Search through all levels
+	for level in math_facts.levels:
+		for question in level.facts:
+			if question.operands[0] == operand1 and question.operator == operator and question.operands[1] == operand2:
+				return question
 	
 	return null
 
@@ -1801,23 +1717,19 @@ func update_menu_stars():
 func calculate_question_difficulty(question_data):
 	"""Calculate the difficulty of a question based on its track"""
 	# Find which track this question belongs to
-	for grade_key in math_facts.grades:
-		var grade_data = math_facts.grades[grade_key]
-		if grade_data.has("tracks"):
-			for track_key in grade_data.tracks:
-				var track_data = grade_data.tracks[track_key]
-				for fact in track_data.facts:
-					if (fact.operands[0] == question_data.operands[0] and 
-						fact.operator == question_data.operator and 
-						fact.operands[1] == question_data.operands[1]):
-						# Extract track number from track_key (e.g., "TRACK12" -> 12)
-						var track_number = int(track_key.substr(5))  # Remove "TRACK" prefix
-						# Find index in track_progression
-						for i in range(track_progression.size()):
-							if track_progression[i] == track_number:
-								return (i + 1) * 2  # (index + 1) * 2
-						# If not found in track_progression, return default difficulty
-						return 2
+	for level in math_facts.levels:
+		for fact in level.facts:
+			if (fact.operands[0] == question_data.operands[0] and 
+				fact.operator == question_data.operator and 
+				fact.operands[1] == question_data.operands[1]):
+				# Extract track number from level.id (e.g., "TRACK12" -> 12)
+				var track_number = int(level.id.substr(5))  # Remove "TRACK" prefix
+				# Find index in track_progression
+				for i in range(track_progression.size()):
+					if track_progression[i] == track_number:
+						return (i + 1) * 2  # (index + 1) * 2
+				# If not found in track_progression, return default difficulty
+				return 2
 	# Default difficulty if track not found
 	return 2
 
@@ -1862,10 +1774,9 @@ func initialize_question_weights_for_all_tracks():
 		var questions = []
 		
 		# Find questions from this track
-		for grade_key in math_facts.grades:
-			var grade_data = math_facts.grades[grade_key]
-			if grade_data.has("tracks") and grade_data.tracks.has(track_key):
-				questions = grade_data.tracks[track_key].facts
+		for level in math_facts.levels:
+			if level.id == track_key:
+				questions = level.facts
 				break
 		
 		print("Processing Track ", track, " (", questions.size(), " questions)")
