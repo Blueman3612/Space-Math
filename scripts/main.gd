@@ -241,32 +241,25 @@ func _ready():
 	connect_game_over_buttons()
 
 func _input(event):
-	if event is InputEventKey and event.pressed:
-		# Handle number input and negative sign (only during PLAY or DRILL_PLAY state and if not submitted)
-		if (current_state == GameState.PLAY or current_state == GameState.DRILL_PLAY) and not answer_submitted:
-			if event.keycode >= KEY_0 and event.keycode <= KEY_9:
-				var digit = str(event.keycode - KEY_0)
+	# Handle number input and negative sign (only during PLAY or DRILL_PLAY state and if not submitted)
+	if (current_state == GameState.PLAY or current_state == GameState.DRILL_PLAY) and not answer_submitted:
+		# Check each digit input action
+		var digit_actions = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
+		for i in range(digit_actions.size()):
+			if Input.is_action_just_pressed(digit_actions[i]):
+				var digit = str(i)
 				var effective_length = user_answer.length()
 				if user_answer.begins_with("-"):
 					effective_length -= 1  # Don't count negative sign toward limit
 				if effective_length < max_answer_chars:
 					user_answer += digit
 					AudioManager.play_tick()  # Play tick sound on digit input
-			
-			# Handle negative sign (only at the beginning)
-			elif event.keycode == KEY_MINUS and user_answer == "":
-				user_answer = "-"
-				AudioManager.play_tick()  # Play tick sound on minus input
-			
-			# Handle keypad numbers
-			elif event.keycode >= KEY_KP_0 and event.keycode <= KEY_KP_9:
-				var digit = str(event.keycode - KEY_KP_0)
-				var effective_length = user_answer.length()
-				if user_answer.begins_with("-"):
-					effective_length -= 1  # Don't count negative sign toward limit
-				if effective_length < max_answer_chars:
-					user_answer += digit
-					AudioManager.play_tick()  # Play tick sound on keypad digit input
+				break
+		
+		# Handle negative sign (only at the beginning)
+		if Input.is_action_just_pressed("Negative") and user_answer == "":
+			user_answer = "-"
+			AudioManager.play_tick()  # Play tick sound on minus input
 	
 	# Handle immediate backspace press detection (only during PLAY or DRILL_PLAY state)
 	if Input.is_action_just_pressed("Backspace") and (current_state == GameState.PLAY or current_state == GameState.DRILL_PLAY) and not answer_submitted:
