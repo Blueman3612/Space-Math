@@ -23,6 +23,10 @@ config/icon="res://icon.svg"
 AudioManager="*res://scripts/audio_manager.gd"
 PlaycademySdk="*res://addons/playcademy/sdk/playcademy_sdk.gd"
 
+[debug]
+
+gdscript/warnings/integer_division=0
+
 [display]
 
 window/size/viewport_width=1920

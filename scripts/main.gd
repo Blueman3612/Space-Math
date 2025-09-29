@@ -65,6 +65,12 @@ const menu_on_screen = Vector2(0, 0)
 # Track progression mapping (button index to track number, ordered by difficulty)
 const track_progression = [12, 9, 6, 10, 8, 11, 7, 5]
 
+# Level button creation configuration
+var level_button_start_position = Vector2(-880, -32)  # Starting position for first button
+var level_button_spacing = Vector2(224, 224)  # Horizontal and vertical spacing between buttons
+var level_buttons_per_row = 8  # Number of buttons per row
+var level_button_size = Vector2(192, 192)  # Size of each level button
+
 # Position variables
 var primary_position = Vector2(416, 476)  # Main problem position
 var off_screen_top = Vector2(416, 1276)   # Off-screen top position
@@ -96,6 +102,11 @@ var drill_score_animation_time = 0.0  # Track time for drill score sin wave anim
 var high_score_text_label: Label  # Reference to the HighScoreText label
 var is_celebrating_high_score = false  # Whether we're currently celebrating a new high score
 var high_score_flicker_time = 0.0  # Track time for color flickering animation
+
+# Dynamic level button references
+var level_buttons = []  # Array to store dynamically created level buttons
+var label_settings_64: LabelSettings  # Label settings for button numbers
+var star_icon_texture: Texture2D  # Texture for star icons
 
 # Save system variables
 var save_data = {}
@@ -172,6 +183,8 @@ func _ready():
 	
 	# Load label settings resource
 	label_settings_resource = load("res://assets/label settings/GravityBold128.tres")
+	label_settings_64 = load("res://assets/label settings/GravityBold64.tres")
+	star_icon_texture = load("res://assets/sprites/Star Icon.png")
 	
 	# Get reference to feedback color overlay, main menu, game over, and play
 	feedback_color_rect = get_node("FeedbackColor")
@@ -233,6 +246,9 @@ func _ready():
 	# Initialize save system
 	initialize_save_system()
 	
+	# Create dynamic level buttons
+	create_level_buttons()
+	
 	# Connect Playcademy Scores API signals if available
 	connect_playcademy_signals()
 	
@@ -240,7 +256,7 @@ func _ready():
 	connect_menu_buttons()
 	connect_game_over_buttons()
 
-func _input(event):
+func _input(_event):
 	# Handle number input and negative sign (only during PLAY or DRILL_PLAY state and if not submitted)
 	if (current_state == GameState.PLAY or current_state == GameState.DRILL_PLAY) and not answer_submitted:
 		# Check each digit input action
@@ -745,15 +761,89 @@ func _on_button_click():
 	"""Play click sound when any button is pressed down"""
 	AudioManager.play_select()
 
+func create_level_buttons():
+	"""Dynamically create level buttons 1-8 in a grid layout"""
+	for level in range(1, 9):
+		# Calculate grid position
+		var row = int((level - 1) / level_buttons_per_row)
+		var col = (level - 1) % level_buttons_per_row
+		
+		# Calculate button position
+		var button_position = level_button_start_position + Vector2(
+			col * level_button_spacing.x,
+			row * level_button_spacing.y
+		)
+		
+		# Create the button
+		var button = Button.new()
+		button.name = "LevelButton" + str(level)
+		button.custom_minimum_size = level_button_size
+		button.focus_mode = Control.FOCUS_NONE
+		button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		
+		# Set anchors and position (center anchored)
+		button.anchor_left = 0.5
+		button.anchor_top = 0.5
+		button.anchor_right = 0.5
+		button.anchor_bottom = 0.5
+		button.offset_left = button_position.x
+		button.offset_top = button_position.y
+		button.offset_right = button_position.x + level_button_size.x
+		button.offset_bottom = button_position.y + level_button_size.y
+		button.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		button.grow_vertical = Control.GROW_DIRECTION_BOTH
+		
+		# Get tooltip from track data
+		var track = track_progression[level - 1]
+		var question_data = get_math_question(track)
+		if question_data and question_data.has("title"):
+			button.tooltip_text = question_data.title
+		
+		# Create Contents control
+		var contents = Control.new()
+		contents.name = "Contents"
+		contents.set_anchors_preset(Control.PRESET_FULL_RECT)
+		contents.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.add_child(contents)
+		
+		# Create Number label
+		var number_label = Label.new()
+		number_label.name = "Number"
+		number_label.text = str(level)
+		number_label.label_settings = label_settings_64
+		number_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		number_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		number_label.position = Vector2(4, -32)
+		number_label.size = Vector2(192, 192)
+		contents.add_child(number_label)
+		
+		# Create star sprites
+		var star_positions = [Vector2(44, 136), Vector2(96, 144), Vector2(148, 136)]
+		for i in range(3):
+			var star = Sprite2D.new()
+			star.name = "Star" + str(i + 1)
+			star.texture = star_icon_texture
+			star.hframes = 2
+			star.frame = 0  # Start with unearned star
+			star.scale = Vector2(2, 2)
+			star.position = star_positions[i]
+			contents.add_child(star)
+		
+		# Add button to main menu
+		main_menu_node.add_child(button)
+		level_buttons.append(button)
+		
+		# Connect button press and sounds
+		button.pressed.connect(_on_level_button_pressed.bind(level))
+		connect_button_sounds(button)
+	
+	# Update stars based on save data
+	update_menu_stars()
+	update_level_availability()
+
 func connect_menu_buttons():
 	"""Connect all menu buttons to their respective functions"""
-	# Connect level buttons (1-8)
-	for i in range(1, 9):
-		var button_name = "LevelButton" + str(i)
-		var level_button = main_menu_node.get_node(button_name)
-		if level_button:
-			level_button.pressed.connect(_on_level_button_pressed.bind(i))
-			connect_button_sounds(level_button)
+	# Note: Level buttons are now created and connected dynamically in create_level_buttons()
 	
 	# Connect exit button
 	var exit_button = main_menu_node.get_node("ExitButton")
@@ -1301,9 +1391,8 @@ func start_question_timing():
 func initialize_save_system():
 	"""Initialize the save system and load existing save data"""
 	load_save_data()
-	update_menu_stars()
-	update_level_availability()
 	update_drill_mode_high_score_display()
+	# Note: update_menu_stars() and update_level_availability() are now called after create_level_buttons()
 
 func get_default_save_data():
 	"""Return the default save data structure"""
@@ -1998,8 +2087,8 @@ func create_flying_score_label(points_earned: int):
 	
 	# Create new flying score label
 	var flying_label = Label.new()
-	var label_settings_64 = load("res://assets/label settings/GravityBold64.tres")
-	flying_label.label_settings = label_settings_64
+	var label_settings_gb64 = load("res://assets/label settings/GravityBold64.tres")
+	flying_label.label_settings = label_settings_gb64
 	flying_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	flying_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	flying_label.text = "+" + str(points_earned)
