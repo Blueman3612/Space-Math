@@ -2223,3 +2223,24 @@ func attempt_playcademy_auto_submit():
 		# Submit without blocking; ignore result (signals still wired for logging)
 		print("Submitting drill mode score to Playcademy: ", drill_score)
 		PlaycademySdk.scores.submit(drill_score, {})
+
+func create_fraction(position: Vector2, numerator: int = 1, denominator: int = 1, parent: Node = null) -> Control:
+	"""Create a fraction instance at the given position with the specified numerator and denominator"""
+	# Load the fraction scene
+	var fraction_scene = load("res://scenes/fraction.tscn")
+	var fraction_instance = fraction_scene.instantiate()
+	
+	# Set the position
+	fraction_instance.position = position
+	
+	# Add to the specified parent, or to self if no parent specified
+	if parent == null:
+		add_child(fraction_instance)
+	else:
+		parent.add_child(fraction_instance)
+	
+	# Set the fraction values (this will trigger automatic resizing)
+	fraction_instance.set_fraction(numerator, denominator)
+	
+	# Return the instance for further manipulation if needed
+	return fraction_instance

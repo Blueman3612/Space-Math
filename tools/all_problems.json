@@ -19907,6 +19907,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 20,
       "facts": [
         {
           "index": 1,
@@ -20147,133 +20148,12 @@
           "expression": "5/3: denominator = 3",
           "type": "identify_denominator",
           "prompt": "In the fraction 5/3, what is the denominator?"
-        },
-        {
-          "index": 21,
-          "operands": [
-            2,
-            8
-          ],
-          "operator": "unit_fraction_check",
-          "result": 0,
-          "expression": "2/8: is unit fraction = no",
-          "type": "is_unit_fraction",
-          "prompt": "Is 2/8 a unit fraction? (yes/no)"
-        },
-        {
-          "index": 22,
-          "operands": [
-            5,
-            9
-          ],
-          "operator": "unit_fraction_check",
-          "result": 0,
-          "expression": "5/9: is unit fraction = no",
-          "type": "is_unit_fraction",
-          "prompt": "Is 5/9 a unit fraction? (yes/no)"
-        },
-        {
-          "index": 23,
-          "operands": [
-            6,
-            4
-          ],
-          "operator": "unit_fraction_check",
-          "result": 0,
-          "expression": "6/4: is unit fraction = no",
-          "type": "is_unit_fraction",
-          "prompt": "Is 6/4 a unit fraction? (yes/no)"
-        },
-        {
-          "index": 24,
-          "operands": [
-            6,
-            7
-          ],
-          "operator": "unit_fraction_check",
-          "result": 0,
-          "expression": "6/7: is unit fraction = no",
-          "type": "is_unit_fraction",
-          "prompt": "Is 6/7 a unit fraction? (yes/no)"
-        },
-        {
-          "index": 25,
-          "operands": [
-            4,
-            12
-          ],
-          "operator": "unit_fraction_check",
-          "result": 0,
-          "expression": "4/12: is unit fraction = no",
-          "type": "is_unit_fraction",
-          "prompt": "Is 4/12 a unit fraction? (yes/no)"
-        },
-        {
-          "index": 26,
-          "operands": [
-            5,
-            12
-          ],
-          "operator": "unit_fraction_check",
-          "result": 0,
-          "expression": "5/12: is unit fraction = no",
-          "type": "is_unit_fraction",
-          "prompt": "Is 5/12 a unit fraction? (yes/no)"
-        },
-        {
-          "index": 27,
-          "operands": [
-            2,
-            11
-          ],
-          "operator": "unit_fraction_check",
-          "result": 0,
-          "expression": "2/11: is unit fraction = no",
-          "type": "is_unit_fraction",
-          "prompt": "Is 2/11 a unit fraction? (yes/no)"
-        },
-        {
-          "index": 28,
-          "operands": [
-            3,
-            10
-          ],
-          "operator": "unit_fraction_check",
-          "result": 0,
-          "expression": "3/10: is unit fraction = no",
-          "type": "is_unit_fraction",
-          "prompt": "Is 3/10 a unit fraction? (yes/no)"
-        },
-        {
-          "index": 29,
-          "operands": [
-            4,
-            4
-          ],
-          "operator": "unit_fraction_check",
-          "result": 0,
-          "expression": "4/4: is unit fraction = no",
-          "type": "is_unit_fraction",
-          "prompt": "Is 4/4 a unit fraction? (yes/no)"
-        },
-        {
-          "index": 30,
-          "operands": [
-            8,
-            8
-          ],
-          "operator": "unit_fraction_check",
-          "result": 0,
-          "expression": "8/8: is unit fraction = no",
-          "type": "is_unit_fraction",
-          "prompt": "Is 8/8 a unit fraction? (yes/no)"
         }
-      ],
-      "factCount": 30
+      ]
     },
     {
       "id": "FRAC-02",
-      "title": "Benchmarks & Comparison",
+      "title": "Benchmarks & Comparison of Fractions",
       "objective": "Compare fractions to 1/2 and to each other using number line reasoning.",
       "standards": [
         "3.NF.3d",
@@ -20284,6 +20164,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 36,
       "facts": [
         {
           "index": 1,
@@ -20296,7 +20177,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "5/6 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 5/6 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20310,7 +20191,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "3/5 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 3/5 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20324,7 +20205,7 @@
           "operator": "compare",
           "result": "=",
           "expression": "1/2 ? 1/2 = =",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 1/2 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20338,7 +20219,7 @@
           "operator": "compare",
           "result": "=",
           "expression": "1/2 ? 1/2 = =",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 1/2 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20352,7 +20233,7 @@
           "operator": "compare",
           "result": "<",
           "expression": "3/8 ? 1/2 = <",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 3/8 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20366,7 +20247,7 @@
           "operator": "compare",
           "result": "<",
           "expression": "1/3 ? 1/2 = <",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 1/3 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20380,7 +20261,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "6/11 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 6/11 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20394,7 +20275,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "4/5 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 4/5 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20408,7 +20289,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "6/8 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 6/8 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20422,7 +20303,7 @@
           "operator": "compare",
           "result": "<",
           "expression": "3/9 ? 1/2 = <",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 3/9 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20436,7 +20317,7 @@
           "operator": "compare",
           "result": "<",
           "expression": "2/6 ? 1/2 = <",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 2/6 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20450,7 +20331,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "3/5 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 3/5 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20464,7 +20345,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "7/11 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 7/11 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20478,7 +20359,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "7/11 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 7/11 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20492,7 +20373,7 @@
           "operator": "compare",
           "result": "<",
           "expression": "2/7 ? 1/2 = <",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 2/7 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20506,7 +20387,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "3/4 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 3/4 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20520,7 +20401,7 @@
           "operator": "compare",
           "result": "<",
           "expression": "2/9 ? 1/2 = <",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 2/9 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20534,7 +20415,7 @@
           "operator": "compare",
           "result": "=",
           "expression": "1/2 ? 1/2 = =",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 1/2 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20548,7 +20429,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "3/4 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 3/4 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20562,7 +20443,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "3/4 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 3/4 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20576,7 +20457,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "5/8 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 5/8 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20590,7 +20471,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "2/3 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 2/3 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20604,7 +20485,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "5/8 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 5/8 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20618,7 +20499,7 @@
           "operator": "compare",
           "result": ">",
           "expression": "5/9 ? 1/2 = >",
-          "type": "compare_to_half",
+          "type": "compare_two_fractions",
           "prompt": "Compare 5/9 to 1/2 (answer with <, >, or =)."
         },
         {
@@ -20789,8 +20670,7 @@
           "type": "compare_two_fractions",
           "prompt": "Which is larger: 2/4 or 9/12? (answer with <, >, or = where 2/4 < 9/12)"
         }
-      ],
-      "factCount": 36
+      ]
     },
     {
       "id": "FRAC-03",
@@ -20805,6 +20685,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 32,
       "facts": [
         {
           "index": 1,
@@ -21234,8 +21115,7 @@
           "type": "equivalent_true_false",
           "prompt": "Are these equivalent? 1/4 and 3/16 (yes/no)"
         }
-      ],
-      "factCount": 32
+      ]
     },
     {
       "id": "FRAC-04",
@@ -21250,6 +21130,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 32,
       "facts": [
         {
           "index": 1,
@@ -21635,12 +21516,11 @@
           "type": "simplify_fraction",
           "prompt": "Simplify 10/13."
         }
-      ],
-      "factCount": 32
+      ]
     },
     {
       "id": "FRAC-05",
-      "title": "Multiples & LCM",
+      "title": "Multiples & Lowest Common Denominator",
       "objective": "List multiples and find least common multiples to prepare for addition/subtraction.",
       "standards": [
         "4.OA.4",
@@ -21651,6 +21531,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 32,
       "facts": [
         {
           "index": 1,
@@ -22120,8 +22001,7 @@
           "type": "find_lcm",
           "prompt": "Find LCM(6, 10)."
         }
-      ],
-      "factCount": 32
+      ]
     },
     {
       "id": "FRAC-06",
@@ -22136,6 +22016,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 32,
       "facts": [
         {
           "index": 1,
@@ -22537,8 +22418,7 @@
           "type": "mixed_to_improper",
           "prompt": "Convert 3 8/9 to an improper fraction."
         }
-      ],
-      "factCount": 32
+      ]
     },
     {
       "id": "FRAC-07",
@@ -22553,6 +22433,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 28,
       "facts": [
         {
           "index": 1,
@@ -23058,8 +22939,7 @@
           "type": "add_like_denominators",
           "prompt": "4/7 + 3/7 = ? (simplest form)"
         }
-      ],
-      "factCount": 28
+      ]
     },
     {
       "id": "FRAC-08",
@@ -23074,6 +22954,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 28,
       "facts": [
         {
           "index": 1,
@@ -23579,8 +23460,7 @@
           "type": "subtract_like_denominators",
           "prompt": "10/11 - 7/11 = ? (simplest form)"
         }
-      ],
-      "factCount": 28
+      ]
     },
     {
       "id": "FRAC-09",
@@ -23595,6 +23475,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 26,
       "facts": [
         {
           "index": 1,
@@ -24064,8 +23945,7 @@
           "type": "add_unlike_multiple",
           "prompt": "31/40 + 3/8 = ? (simplest form)"
         }
-      ],
-      "factCount": 26
+      ]
     },
     {
       "id": "FRAC-10",
@@ -24080,6 +23960,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 24,
       "facts": [
         {
           "index": 1,
@@ -24513,8 +24394,7 @@
           "type": "add_unlike_lcm",
           "prompt": "1/3 + 1/2 = ? (simplest form)"
         }
-      ],
-      "factCount": 24
+      ]
     },
     {
       "id": "FRAC-11",
@@ -24529,6 +24409,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 26,
       "facts": [
         {
           "index": 1,
@@ -24998,8 +24879,7 @@
           "type": "subtract_unlike_multiple",
           "prompt": "3/5 - 3/5 = ? (simplest form)"
         }
-      ],
-      "factCount": 26
+      ]
     },
     {
       "id": "FRAC-12",
@@ -25014,6 +24894,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 24,
       "facts": [
         {
           "index": 1,
@@ -25447,8 +25328,7 @@
           "type": "subtract_unlike_lcm",
           "prompt": "7/9 - 5/11 = ? (simplest form)"
         }
-      ],
-      "factCount": 24
+      ]
     },
     {
       "id": "FRAC-13",
@@ -25463,6 +25343,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 28,
       "facts": [
         {
           "index": 1,
@@ -25884,8 +25765,7 @@
           "type": "multiply_fraction_by_whole",
           "prompt": "2/12 × 9 = ? (simplest form)"
         }
-      ],
-      "factCount": 28
+      ]
     },
     {
       "id": "FRAC-14",
@@ -25900,6 +25780,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 28,
       "facts": [
         {
           "index": 1,
@@ -26405,8 +26286,7 @@
           "type": "multiply_fraction_by_fraction",
           "prompt": "7/10 × 4/5 = ? (simplest form)"
         }
-      ],
-      "factCount": 28
+      ]
     },
     {
       "id": "FRAC-15",
@@ -26421,6 +26301,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 32,
       "facts": [
         {
           "index": 1,
@@ -26902,8 +26783,7 @@
           "type": "whole_div_by_unit_fraction",
           "prompt": "12 ÷ (1/10) = ?"
         }
-      ],
-      "factCount": 32
+      ]
     },
     {
       "id": "FRAC-16",
@@ -26917,6 +26797,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
+      "factCount": 28,
       "facts": [
         {
           "index": 1,
@@ -27422,8 +27303,7 @@
           "type": "divide_fraction_by_fraction",
           "prompt": "1/2 ÷ 6/9 = ? (simplest form)"
         }
-      ],
-      "factCount": 28
+      ]
     }
   ]
 }

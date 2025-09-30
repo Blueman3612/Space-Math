@@ -373,8 +373,9 @@ def convert_json(input_data, include_all_optional=False):
             else:
                 stats['facts_skipped'] += 1
         
-        target_level['facts'] = target_facts
+        # Add factCount before facts for proper ordering
         target_level['factCount'] = len(target_facts)
+        target_level['facts'] = target_facts
         
         output_levels.append(target_level)
         stats['levels_processed'] += 1
@@ -420,8 +421,8 @@ def main():
     
     input_file = sys.argv[1]
     output_file = sys.argv[2]
-    include_all = '--include-all' in sys.argv
-    wipe_output = '--wipe-output-file' in sys.argv
+    include_all = '--include-all' in sys.argv or '--include_all' in sys.argv
+    wipe_output = '--wipe-output-file' in sys.argv or '--wipe_output_file' in sys.argv
     
     # Load input file
     print(f"\n📂 Loading input file: {input_file}")
