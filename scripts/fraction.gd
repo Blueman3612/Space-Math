@@ -10,6 +10,9 @@ var label_x_offset = 8.0
 var is_input_mode = false  # Whether this fraction is used for user input
 var show_underscore = false  # Whether to show blinking underscore in denominator
 
+# Layout tracking
+var current_divisor_width = 0.0  # Current width of the divisor line (for dynamic positioning)
+
 # Node references
 @onready var numerator_label: Label = $Numerator
 @onready var denominator_label: Label = $Denominator
@@ -46,6 +49,7 @@ func set_fraction(numerator: int = 1, denominator: int = 1):
 	
 	# Calculate divisor size (max width + padding)
 	var divisor_size = max_width + divisor_padding
+	current_divisor_width = divisor_size  # Store for external tracking
 	var half_size = divisor_size / 2.0
 	
 	# Update Divisor line points
@@ -110,6 +114,7 @@ func set_fraction_text(numerator_text: String, denominator_text: String, add_und
 	
 	# Calculate divisor size (max width + padding)
 	var divisor_size = max_width + divisor_padding
+	current_divisor_width = divisor_size  # Store for external tracking
 	var half_size = divisor_size / 2.0
 	
 	# Update Divisor line points
@@ -129,6 +134,6 @@ func set_input_mode(enabled: bool):
 	"""Enable or disable input mode for this fraction"""
 	is_input_mode = enabled
 
-func update_underscore(visible: bool):
+func update_underscore(underscore_visible: bool):
 	"""Update whether the underscore should be visible (for blinking effect)"""
-	show_underscore = visible
+	show_underscore = underscore_visible

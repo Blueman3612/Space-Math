@@ -15,6 +15,7 @@ var transition_delay = 0.1  # Delay before generating new question
 var transition_delay_incorrect = 1.5  # Delay for incorrect answers (1.5 seconds)
 var incorrect_label_animation_time = 0.25  # Time for incorrect label animation
 var incorrect_label_move_distance = 192.0  # Distance to move incorrect label down
+var incorrect_label_move_distance_fractions = 256.0  # Distance to move incorrect label down for fractions
 var backspace_hold_time = 0.15  # Time to hold backspace before it repeats
 var scroll_boost_multiplier = 80.0  # How much to boost background scroll speed on submission
 var feedback_max_alpha = 0.1  # Maximum alpha for feedback color overlay
@@ -26,6 +27,7 @@ var fraction_element_spacing = 96.0  # Spacing between fractions and operators
 var fraction_answer_offset = 0.0  # Horizontal offset for answer positioning
 var fraction_offset = Vector2(48, 64.0)  # Position offset for fraction elements (x, y)
 var operator_offset = Vector2(0, 0.0)  # Position offset for operators and equals sign (x, y)
+var fraction_problem_x_offset = 0.0  # Horizontal offset from primary_position for the entire fraction problem
 
 # Star animation variables
 var star_delay = 0.4  # Delay between each star animation in seconds
@@ -45,7 +47,7 @@ var level_configs = {
 	6: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
 	7: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
 	8: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
-	9: {"problems": 20, "star1": {"accuracy": 12, "time": 90.0}, "star2": {"accuracy": 15, "time": 75.0}, "star3": {"accuracy": 18, "time": 60.0}}
+	9: {"problems": 20, "star1": {"accuracy": 13, "time": 120.0}, "star2": {"accuracy": 15, "time": 100.0}, "star3": {"accuracy": 17, "time": 80.0}}
 }
 
 # Title animation variables
@@ -109,6 +111,9 @@ var is_fraction_input = false  # Whether the user's answer is currently in fract
 var current_level_number = 0  # Current level number (1-9)
 var current_problem_nodes = []  # Array of nodes (fractions, labels) for the current problem display
 var answer_fraction_node = null  # Reference to the fraction node used for answer input
+var answer_fraction_base_x = 0.0  # Base X position of answer fraction (before width adjustments)
+var answer_fraction_initial_width = 0.0  # Initial divisor width of answer fraction
+var correct_answer_nodes = []  # Array of nodes showing the correct answer for incorrect fraction problems
 var feedback_color_rect: ColorRect  # Reference to the feedback color overlay
 var main_menu_node: Control  # Reference to the MainMenu node
 var game_over_node: Control  # Reference to the GameOver node
@@ -275,49 +280,51 @@ func _ready():
 	connect_menu_buttons()
 	connect_game_over_buttons()
 
-func _input(_event):
+func _input(event):
 	# Handle number input and negative sign (only during PLAY or DRILL_PLAY state and if not submitted)
 	if (current_state == GameState.PLAY or current_state == GameState.DRILL_PLAY) and not answer_submitted:
-		# Check each digit input action
-		var digit_actions = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
-		for i in range(digit_actions.size()):
-			if Input.is_action_just_pressed(digit_actions[i]):
-				var digit = str(i)
-				
-				if is_fraction_input:
-					# Fraction input mode - add to denominator
-					var parts = user_answer.split("/")
-					if parts.size() == 2:
-						var denom = parts[1]
-						var effective_length = denom.length()
+		# Only process key events
+		if event is InputEventKey and event.pressed and not event.echo:
+			# Check each digit input action
+			var digit_actions = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
+			for i in range(digit_actions.size()):
+				if Input.is_action_just_pressed(digit_actions[i]):
+					var digit = str(i)
+					
+					if is_fraction_input:
+						# Fraction input mode - add to denominator
+						var parts = user_answer.split("/")
+						if parts.size() == 2:
+							var denom = parts[1]
+							var effective_length = denom.length()
+							if effective_length < max_answer_chars:
+								user_answer = parts[0] + "/" + denom + digit
+								AudioManager.play_tick()
+					else:
+						# Normal input mode
+						var effective_length = user_answer.length()
+						if user_answer.begins_with("-"):
+							effective_length -= 1  # Don't count negative sign toward limit
 						if effective_length < max_answer_chars:
-							user_answer = parts[0] + "/" + denom + digit
-							AudioManager.play_tick()
-				else:
-					# Normal input mode
-					var effective_length = user_answer.length()
-					if user_answer.begins_with("-"):
-						effective_length -= 1  # Don't count negative sign toward limit
-					if effective_length < max_answer_chars:
-						user_answer += digit
-						AudioManager.play_tick()  # Play tick sound on digit input
-				break
-		
-		# Handle negative sign (only at the beginning and only if not fraction input)
-		if Input.is_action_just_pressed("Negative") and user_answer == "" and not is_fraction_input:
-			user_answer = "-"
-			AudioManager.play_tick()  # Play tick sound on minus input
-		
-		# Handle Divide key - convert to fraction input (only for fraction-type questions)
-		if Input.is_action_just_pressed("Divide") and not is_fraction_input and current_question and current_question.get("type") == "add_like_denominators":
-			if user_answer != "" and user_answer != "-":
-				# Convert current answer to numerator of fraction
-				is_fraction_input = true
-				user_answer = user_answer + "/"
-				AudioManager.play_tick()
-				# Create answer fraction visual if needed
-				if answer_fraction_node == null:
-					create_answer_fraction()
+							user_answer += digit
+							AudioManager.play_tick()  # Play tick sound on digit input
+					break
+			
+			# Handle negative sign (only at the beginning and only if not fraction input)
+			if Input.is_action_just_pressed("Negative") and user_answer == "" and not is_fraction_input:
+				user_answer = "-"
+				AudioManager.play_tick()  # Play tick sound on minus input
+			
+			# Handle Divide key - convert to fraction input (only for fraction-type questions)
+			if Input.is_action_just_pressed("Divide") and not is_fraction_input and current_question and current_question.get("type") == "add_like_denominators":
+				if user_answer != "" and user_answer != "-":
+					# Convert current answer to numerator of fraction
+					is_fraction_input = true
+					user_answer = user_answer + "/"
+					AudioManager.play_tick()
+					# Create answer fraction visual if needed
+					if answer_fraction_node == null:
+						create_answer_fraction()
 	
 	# Handle immediate backspace press detection (only during PLAY or DRILL_PLAY state)
 	if Input.is_action_just_pressed("Backspace") and (current_state == GameState.PLAY or current_state == GameState.DRILL_PLAY) and not answer_submitted:
@@ -388,13 +395,16 @@ func _process(delta):
 		if backspace_just_pressed and not answer_submitted:
 			# Immediate backspace on first press
 			if user_answer.length() > 0:
+				# Check if we need to exit fraction mode BEFORE backspacing
+				# (if denominator is already empty, indicated by ending with "/")
+				var should_exit_fraction = is_fraction_input and user_answer.ends_with("/")
+				
 				user_answer = user_answer.substr(0, user_answer.length() - 1)
 				AudioManager.play_tick()
 				
-				# Check if we need to exit fraction mode (if denominator becomes empty)
-				if is_fraction_input and user_answer.ends_with("/"):
+				# Exit fraction mode if denominator was already empty
+				if should_exit_fraction:
 					is_fraction_input = false
-					user_answer = user_answer.substr(0, user_answer.length() - 1)  # Remove the "/"
 					# Clean up answer fraction visual
 					if answer_fraction_node:
 						answer_fraction_node.queue_free()
@@ -422,13 +432,16 @@ func _process(delta):
 				if backspace_timer >= 0.05:
 					backspace_timer = 0.0
 					if user_answer.length() > 0:
+						# Check if we need to exit fraction mode BEFORE backspacing
+						# (if denominator is already empty, indicated by ending with "/")
+						var should_exit_fraction = is_fraction_input and user_answer.ends_with("/")
+						
 						user_answer = user_answer.substr(0, user_answer.length() - 1)
 						AudioManager.play_tick()
 						
-						# Check if we need to exit fraction mode (if denominator becomes empty)
-						if is_fraction_input and user_answer.ends_with("/"):
+						# Exit fraction mode if denominator was already empty
+						if should_exit_fraction:
 							is_fraction_input = false
-							user_answer = user_answer.substr(0, user_answer.length() - 1)  # Remove the "/"
 							# Clean up answer fraction visual
 							if answer_fraction_node:
 								answer_fraction_node.queue_free()
@@ -456,6 +469,7 @@ func generate_new_question():
 	answer_submitted = false  # Reset submission state for new question
 	is_fraction_input = false  # Reset fraction input mode
 	answer_fraction_node = null  # Will be created by problem display if needed
+	correct_answer_nodes.clear()  # Clear any lingering correct answer nodes
 	
 	# Store current question for answer checking later
 	# Use the weighted system if we have weights initialized, otherwise fall back to old system
@@ -492,6 +506,11 @@ func update_fraction_problem_display():
 			var denominator = parts[1]
 			answer_fraction_node.set_fraction_text(numerator, denominator, true)
 			answer_fraction_node.update_underscore(underscore_visible and not answer_submitted)
+			
+			# Dynamically adjust position based on divisor width change
+			var width_diff = answer_fraction_node.current_divisor_width - answer_fraction_initial_width
+			var new_x = answer_fraction_base_x + (width_diff / 2.0)  # Shift right as it expands
+			answer_fraction_node.position.x = new_x
 		
 		# Hide the regular label
 		if current_problem_label:
@@ -585,20 +604,33 @@ func submit_answer():
 		delay_to_use = transition_delay_incorrect  # Longer delay for incorrect answers
 	
 	# Set color based on correctness, play sound, and show feedback overlay
+	var feedback_color = Color(0, 1, 0) if is_correct else Color(1, 0, 0)
+	
+	# Color all problem nodes (fractions, operators, equals, labels)
+	for node in current_problem_nodes:
+		if node:
+			# Use modulate for fractions (Control nodes), self_modulate for labels
+			if node is Control and not node is Label:
+				node.modulate = feedback_color
+			else:
+				node.self_modulate = feedback_color
+	
+	# Also color the regular problem label if it exists
 	if current_problem_label:
-		if is_correct:
-			current_problem_label.self_modulate = Color(0, 1, 0)  # Green for correct
-			AudioManager.play_correct()  # Play correct sound
-			show_feedback_flash(Color(0, 1, 0))  # Green feedback flash
-			print("✓ Correct! Answer was ", current_question.result)
-		else:
-			current_problem_label.self_modulate = Color(1, 0, 0)  # Red for incorrect
-			AudioManager.play_incorrect()  # Play incorrect sound
-			show_feedback_flash(Color(1, 0, 0))  # Red feedback flash
-			print("✗ Incorrect. Answer was ", current_question.result, ", you entered ", player_answer_value)
-			
-			# Create animated label showing correct answer for incorrect responses
-			create_incorrect_answer_label()
+		current_problem_label.self_modulate = feedback_color
+	
+	# Play sounds and show feedback
+	if is_correct:
+		AudioManager.play_correct()  # Play correct sound
+		show_feedback_flash(Color(0, 1, 0))  # Green feedback flash
+		print("✓ Correct! Answer was ", current_question.result)
+	else:
+		AudioManager.play_incorrect()  # Play incorrect sound
+		show_feedback_flash(Color(1, 0, 0))  # Red feedback flash
+		print("✗ Incorrect. Answer was ", current_question.result, ", you entered ", player_answer_value)
+		
+		# Create animated label showing correct answer for incorrect responses
+		create_incorrect_answer_label()
 	
 	# Wait for the full transition delay (timer remains paused during this time)
 	if delay_to_use > 0.0:
@@ -617,25 +649,63 @@ func submit_answer():
 		# Store references to the nodes we're animating out
 		var nodes_to_animate = current_problem_nodes.duplicate()
 		
-		# Clear current_problem_nodes immediately so new problem can populate it
+		# Determine if we need extra offset for fraction problems
+		var extra_offset = 0.0
+		if current_question and current_question.get("type") == "add_like_denominators" and not is_correct:
+			extra_offset = incorrect_label_move_distance_fractions
+		
+		# Also store correct answer nodes if they exist (for incorrect fraction problems)
+		var correct_nodes_to_animate = correct_answer_nodes.duplicate()
+		
+		# Clear current_problem_nodes and correct_answer_nodes immediately so new problem can populate it
 		current_problem_nodes.clear()
+		correct_answer_nodes.clear()
 		current_problem_label = null
 		answer_fraction_node = null
 		
-		# Animate all fraction problem nodes off-screen
+		# Animate all problem nodes off-screen
 		var tween = create_tween()
 		tween.set_ease(Tween.EASE_OUT)
 		tween.set_trans(Tween.TRANS_EXPO)
 		tween.set_parallel(true)  # Animate all simultaneously
 		
-		for node in nodes_to_animate:
-			if node:
-				var target_pos = Vector2(node.position.x, off_screen_top.y)
-				tween.tween_property(node, "position", target_pos, animation_duration)
+		# Calculate final off-screen position
+		var final_offscreen_y = off_screen_top.y
 		
-		# Clean up nodes after animation
+		# For incorrect fraction problems, need extra clearance and maintain vertical separation
+		if extra_offset > 0:
+			# Make it go farther off screen to ensure both displays are hidden
+			final_offscreen_y = off_screen_top.y * 1.5 - extra_offset
+			
+			# Animate incorrect problem nodes (currently at original_y - extra_offset)
+			# They go to the higher (more negative) off-screen position
+			for node in nodes_to_animate:
+				if node:
+					var target_pos = Vector2(node.position.x, final_offscreen_y - extra_offset)
+					tween.tween_property(node, "position", target_pos, animation_duration)
+			
+			# Animate correct answer nodes (currently at original_y + extra_offset)
+			# They go to a lower off-screen position, maintaining the 2*extra_offset gap
+			for node in correct_nodes_to_animate:
+				if node:
+					var target_pos = Vector2(node.position.x, final_offscreen_y + extra_offset)
+					tween.tween_property(node, "position", target_pos, animation_duration)
+		else:
+			# For correct answers or non-fraction problems, just animate to regular off-screen position
+			for node in nodes_to_animate:
+				if node:
+					var target_pos = Vector2(node.position.x, final_offscreen_y)
+					tween.tween_property(node, "position", target_pos, animation_duration)
+		
+		# Exit parallel mode before adding callback so it runs AFTER animations complete
+		tween.set_parallel(false)
+		
+		# Clean up all nodes after animation completes
 		tween.tween_callback(func():
 			for node in nodes_to_animate:
+				if node:
+					node.queue_free()
+			for node in correct_nodes_to_animate:
 				if node:
 					node.queue_free()
 		)
@@ -652,9 +722,10 @@ func submit_answer():
 	problems_completed += 1
 	
 	# Animate progress line after incrementing
+	var level_config = level_configs.get(current_level_number, level_configs[1])
+	
 	if progress_line and play_node:
 		var play_width = play_node.size.x
-		var level_config = level_configs.get(current_level_number, level_configs[1])
 		var progress_increment = play_width / level_config.problems
 		var new_x_position = progress_increment * problems_completed
 		
@@ -665,7 +736,6 @@ func submit_answer():
 		tween.tween_method(update_progress_line_point, progress_line.get_point_position(1).x, new_x_position, animation_duration)
 	
 	# Check if we've completed the required number of problems (only for normal mode)
-	var level_config = level_configs.get(current_level_number, level_configs[1])
 	if not is_drill_mode and problems_completed >= level_config.problems:
 		# Timer is already stopped above, keep it stopped for game over
 		
@@ -863,7 +933,16 @@ func find_closest_grade_with_operator(target_grade, operator):
 
 func create_incorrect_answer_label():
 	"""Create and animate a label showing the correct answer when user is incorrect"""
-	if not current_problem_label or not current_question:
+	if not current_question:
+		return
+	
+	# Check if this is a fraction problem - handle differently
+	if current_question.get("type") == "add_like_denominators":
+		create_incorrect_fraction_answer()
+		return
+	
+	# Regular problem - use the old method
+	if not current_problem_label:
 		return
 	
 	# Create new label as child of current problem label
@@ -879,13 +958,131 @@ func create_incorrect_answer_label():
 	# Add as child to current problem label
 	current_problem_label.add_child(incorrect_label)
 	
-	# Animate the label moving down 320 pixels over 0.25 seconds
+	# Animate the label moving down over incorrect_label_animation_time
 	var tween = create_tween()
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_EXPO)
 	tween.tween_property(incorrect_label, "position", Vector2(0, incorrect_label_move_distance), incorrect_label_animation_time)
 	
 	# The label will be cleaned up when the parent problem label is removed
+
+func create_incorrect_fraction_answer():
+	"""Create and animate fraction elements showing the correct answer for fraction problems"""
+	if not current_question or current_question.get("type") != "add_like_denominators":
+		return
+	
+	# Clear any existing correct answer nodes
+	for node in correct_answer_nodes:
+		if node:
+			node.queue_free()
+	correct_answer_nodes.clear()
+	
+	# Parse the correct answer from the result (e.g., "10/9")
+	var result_parts = current_question.result.split("/")
+	if result_parts.size() != 2:
+		print("Error: Invalid fraction result format: ", current_question.result)
+		return
+	
+	var correct_numerator = int(result_parts[0])
+	var correct_denominator = int(result_parts[1])
+	
+	# Create correct answer elements in dark green, positioned at the same locations as current problem
+	
+	# We need to recreate the problem structure, so let's get the operands
+	var operands = current_question.operands
+	if operands.size() < 2:
+		return
+	
+	var operand1 = operands[0]
+	var operand2 = operands[1]
+	
+	# Calculate the same positions as the original problem
+	var base_x = primary_position.x + fraction_problem_x_offset
+	var target_y = primary_position.y
+	var current_x = base_x
+	
+	# Create first fraction (correct answer for operand 1)
+	var fraction1_pos = Vector2(current_x, target_y) + fraction_offset
+	var fraction1 = create_fraction(fraction1_pos, operand1[0], operand1[1], play_node)
+	fraction1.modulate = Color(0, 0.5, 0)  # Dark green
+	correct_answer_nodes.append(fraction1)
+	current_x += fraction_element_spacing * 2
+	
+	# Create operator label
+	var operator_pos = Vector2(current_x, target_y) + operator_offset
+	var operator_label = Label.new()
+	operator_label.label_settings = label_settings_resource
+	operator_label.text = current_question.operator
+	operator_label.position = operator_pos
+	operator_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	operator_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	operator_label.self_modulate = Color(0, 0.5, 0)  # Dark green
+	play_node.add_child(operator_label)
+	correct_answer_nodes.append(operator_label)
+	current_x += fraction_element_spacing * 2
+	
+	# Create second fraction (correct answer for operand 2)
+	var fraction2_pos = Vector2(current_x, target_y) + fraction_offset
+	var fraction2 = create_fraction(fraction2_pos, operand2[0], operand2[1], play_node)
+	fraction2.modulate = Color(0, 0.5, 0)  # Dark green
+	correct_answer_nodes.append(fraction2)
+	current_x += fraction_element_spacing * 2
+	
+	# Create equals label
+	var equals_pos = Vector2(current_x, target_y) + operator_offset
+	var equals_label = Label.new()
+	equals_label.label_settings = label_settings_resource
+	equals_label.text = "="
+	equals_label.position = equals_pos
+	equals_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	equals_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	equals_label.self_modulate = Color(0, 0.5, 0)  # Dark green
+	play_node.add_child(equals_label)
+	correct_answer_nodes.append(equals_label)
+	current_x += fraction_element_spacing * 2 + fraction_answer_offset
+	
+	# Create answer fraction (the correct answer)
+	var answer_pos = Vector2(current_x, target_y) + fraction_offset
+	var answer_fraction = create_fraction(answer_pos, correct_numerator, correct_denominator, play_node)
+	answer_fraction.modulate = Color(0, 0.5, 0)  # Dark green
+	
+	# Apply dynamic X positioning based on divisor width (same as user input fraction)
+	# Get baseline width by creating a temporary 0/1 fraction
+	var temp_fraction = create_fraction(Vector2(0, 0), 0, 1, play_node)
+	var baseline_width = temp_fraction.current_divisor_width
+	temp_fraction.queue_free()
+	
+	# Calculate width difference and adjust position
+	var width_diff = answer_fraction.current_divisor_width - baseline_width
+	answer_fraction.position.x = answer_pos.x + (width_diff / 2.0)
+	
+	correct_answer_nodes.append(answer_fraction)
+	
+	# Create parallel tweens for animating everything
+	var correct_tween = create_tween()
+	var incorrect_tween = create_tween()
+	
+	correct_tween.set_ease(Tween.EASE_OUT)
+	correct_tween.set_trans(Tween.TRANS_EXPO)
+	correct_tween.set_parallel(true)
+	
+	incorrect_tween.set_ease(Tween.EASE_OUT)
+	incorrect_tween.set_trans(Tween.TRANS_EXPO)
+	incorrect_tween.set_parallel(true)
+	
+	# Animate correct answer elements DOWN
+	for node in correct_answer_nodes:
+		if node:
+			var target_pos = node.position + Vector2(0, incorrect_label_move_distance_fractions)
+			correct_tween.tween_property(node, "position", target_pos, incorrect_label_animation_time)
+	
+	# Animate incorrect problem nodes UP
+	for node in current_problem_nodes:
+		if node:
+			var target_pos = node.position - Vector2(0, incorrect_label_move_distance_fractions)
+			incorrect_tween.tween_property(node, "position", target_pos, incorrect_label_animation_time)
+	
+	# Correct answer nodes will be animated off screen and cleaned up by submit_answer()
 
 func update_progress_line_point(x_position: float):
 	"""Update the x position of point 1 in the progress line"""
@@ -1252,6 +1449,9 @@ func go_to_game_over():
 	# Update GameOver labels with player performance
 	update_game_over_labels()
 	
+	# Update star requirement labels to show actual level requirements
+	update_star_requirement_labels()
+	
 	# Set normal mode game over UI visibility
 	update_normal_mode_game_over_ui_visibility()
 	
@@ -1383,6 +1583,34 @@ func update_game_over_labels():
 	if cqpm_label:
 		var cqpm = calculate_cqpm(correct_answers, current_level_time)
 		cqpm_label.text = "%.2f" % cqpm
+
+func update_star_requirement_labels():
+	"""Update the star requirement labels to show actual level requirements"""
+	var level_config = level_configs.get(current_level_number, level_configs[1])
+	
+	# Helper function to format time as mm:ss
+	var format_time = func(time_seconds: float) -> String:
+		var minutes = int(time_seconds / 60)
+		var seconds = int(time_seconds) % 60
+		return "%2d:%02d" % [minutes, seconds]
+	
+	# Update Star 1 requirements
+	if star1_accuracy_label:
+		star1_accuracy_label.text = "%d/%d" % [level_config.star1.accuracy, level_config.problems]
+	if star1_time_label:
+		star1_time_label.text = format_time.call(level_config.star1.time)
+	
+	# Update Star 2 requirements
+	if star2_accuracy_label:
+		star2_accuracy_label.text = "%d/%d" % [level_config.star2.accuracy, level_config.problems]
+	if star2_time_label:
+		star2_time_label.text = format_time.call(level_config.star2.time)
+	
+	# Update Star 3 requirements
+	if star3_accuracy_label:
+		star3_accuracy_label.text = "%d/%d" % [level_config.star3.accuracy, level_config.problems]
+	if star3_time_label:
+		star3_time_label.text = format_time.call(level_config.star3.time)
 
 func evaluate_stars():
 	"""Evaluate which stars the player has earned"""
@@ -2007,7 +2235,8 @@ func find_question_by_key(question_key):
 func get_level_number_from_track(track):
 	"""Get the level number (1-9) from a track using track_progression mapping"""
 	for i in range(track_progression.size()):
-		if track_progression[i] == track:
+		# Convert both to strings for comparison to handle mixed int/string types
+		if str(track_progression[i]) == str(track):
 			return i + 1  # Convert 0-based index to 1-based level number
 	return 0  # Track not found
 
@@ -2481,16 +2710,14 @@ func attempt_playcademy_auto_submit():
 		print("Submitting drill mode score to Playcademy: ", drill_score)
 		PlaycademySdk.scores.submit(drill_score, {})
 
-func create_fraction(position: Vector2, numerator: int = 1, denominator: int = 1, parent: Node = null) -> Control:
+func create_fraction(fraction_position: Vector2, numerator: int = 1, denominator: int = 1, parent: Node = null) -> Control:
 	"""Create a fraction instance at the given position with the specified numerator and denominator"""
 	# Load the fraction scene
 	var fraction_scene = load("res://scenes/fraction.tscn")
 	var fraction_instance = fraction_scene.instantiate()
 	
-	print("Creating fraction ", numerator, "/", denominator, " at position ", position)
-	
 	# Set the position
-	fraction_instance.position = position
+	fraction_instance.position = fraction_position
 	
 	# Add to the specified parent, or to self if no parent specified
 	if parent == null:
@@ -2501,10 +2728,9 @@ func create_fraction(position: Vector2, numerator: int = 1, denominator: int = 1
 	# Set the fraction values (this will trigger automatic resizing)
 	fraction_instance.set_fraction(numerator, denominator)
 	
-	# Make sure it's visible
+	# Make sure it's visible and has default white color
 	fraction_instance.visible = true
-	
-	print("Fraction created and added to scene tree")
+	fraction_instance.modulate = Color(1, 1, 1)
 	
 	# Return the instance for further manipulation if needed
 	return fraction_instance
@@ -2527,58 +2753,53 @@ func create_fraction_problem():
 	var operand1 = operands[0]  # [num, denom]
 	var operand2 = operands[1]  # [num, denom]
 	
-	print("Creating fraction problem: ", operand1[0], "/", operand1[1], " + ", operand2[0], "/", operand2[1])
-	
 	# Calculate horizontal positions for the final layout
-	# Start further left to center the whole expression
-	var base_x = primary_position.x - 200
+	# Start with offset from primary position to center the whole expression
+	var base_x = primary_position.x + fraction_problem_x_offset
 	var target_y = primary_position.y
 	var start_y = off_screen_bottom.y  # Start off-screen at bottom
 	
 	var current_x = base_x
 	
 	# Create first fraction (start off-screen)
-	print("Creating fraction 1 at position: ", Vector2(current_x, start_y))
 	var fraction1 = create_fraction(Vector2(current_x, start_y), operand1[0], operand1[1], play_node)
 	current_problem_nodes.append(fraction1)
 	var fraction1_target = Vector2(current_x, target_y) + fraction_offset
 	current_x += fraction_element_spacing * 2
 	
 	# Create operator label (+, -, etc.) - start off-screen
-	print("Creating operator at position: ", Vector2(current_x, start_y))
 	var operator_label = Label.new()
 	operator_label.label_settings = label_settings_resource
 	operator_label.text = current_question.operator
 	operator_label.position = Vector2(current_x, start_y)
 	operator_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	operator_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	operator_label.self_modulate = Color(1, 1, 1)
 	play_node.add_child(operator_label)
 	current_problem_nodes.append(operator_label)
 	var operator_target = Vector2(current_x, target_y) + operator_offset
 	current_x += fraction_element_spacing * 2
 	
 	# Create second fraction - start off-screen
-	print("Creating fraction 2 at position: ", Vector2(current_x, start_y))
 	var fraction2 = create_fraction(Vector2(current_x, start_y), operand2[0], operand2[1], play_node)
 	current_problem_nodes.append(fraction2)
 	var fraction2_target = Vector2(current_x, target_y) + fraction_offset
 	current_x += fraction_element_spacing * 2
 	
 	# Create equals label - start off-screen
-	print("Creating equals at position: ", Vector2(current_x, start_y))
 	var equals_label = Label.new()
 	equals_label.label_settings = label_settings_resource
 	equals_label.text = "="
 	equals_label.position = Vector2(current_x, start_y)
 	equals_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	equals_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	equals_label.self_modulate = Color(1, 1, 1)
 	play_node.add_child(equals_label)
 	current_problem_nodes.append(equals_label)
 	var equals_target = Vector2(current_x, target_y) + operator_offset
 	current_x += fraction_element_spacing * 2 + fraction_answer_offset
 	
 	# Create answer label (will show underscore or typed number before fraction mode) - start off-screen
-	print("Creating answer label at position: ", Vector2(current_x, start_y))
 	current_problem_label = Label.new()
 	current_problem_label.label_settings = label_settings_resource
 	current_problem_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -2590,8 +2811,6 @@ func create_fraction_problem():
 	current_problem_nodes.append(current_problem_label)
 	var answer_target = Vector2(current_x, target_y) + operator_offset
 	
-	print("Fraction problem created successfully! Total nodes: ", current_problem_nodes.size())
-	
 	# Animate all elements to their target positions
 	var tween = create_tween()
 	tween.set_ease(Tween.EASE_OUT)
@@ -2602,6 +2821,9 @@ func create_fraction_problem():
 	tween.tween_property(fraction2, "position", fraction2_target, animation_duration)
 	tween.tween_property(equals_label, "position", equals_target, animation_duration)
 	tween.tween_property(current_problem_label, "position", answer_target, animation_duration)
+	
+	# Exit parallel mode before adding callback so it runs AFTER animations complete
+	tween.set_parallel(false)
 	
 	# Start timing this question when animation completes
 	tween.tween_callback(start_question_timing)
@@ -2622,6 +2844,10 @@ func create_answer_fraction():
 	answer_fraction_node = create_fraction(answer_pos, 0, 1, play_node)
 	answer_fraction_node.set_input_mode(true)
 	current_problem_nodes.append(answer_fraction_node)
+	
+	# Store initial position and width for dynamic positioning
+	answer_fraction_base_x = answer_pos.x
+	answer_fraction_initial_width = answer_fraction_node.current_divisor_width
 	
 	# Hide the label since we're now using the fraction node
 	if current_problem_label:
