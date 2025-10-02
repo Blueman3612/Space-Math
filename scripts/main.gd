@@ -980,14 +980,19 @@ func create_incorrect_fraction_answer():
 			node.queue_free()
 	correct_answer_nodes.clear()
 	
-	# Parse the correct answer from the result (e.g., "10/9")
+	# Parse the correct answer from the result (e.g., "10/9" or "1")
 	var result_parts = current_question.result.split("/")
-	if result_parts.size() != 2:
-		print("Error: Invalid fraction result format: ", current_question.result)
-		return
+	var is_fraction_result = result_parts.size() == 2
 	
-	var correct_numerator = int(result_parts[0])
-	var correct_denominator = int(result_parts[1])
+	var correct_numerator = 0
+	var correct_denominator = 0
+	
+	if is_fraction_result:
+		correct_numerator = int(result_parts[0])
+		correct_denominator = int(result_parts[1])
+	else:
+		# Result is a whole number, not a fraction
+		pass
 	
 	# Create correct answer elements in dark green, positioned at the same locations as current problem
 	
@@ -1006,7 +1011,11 @@ func create_incorrect_fraction_answer():
 	# Create fractions to measure their widths
 	var fraction1 = create_fraction(Vector2(0, 0), operand1[0], operand1[1], play_node)
 	var fraction2 = create_fraction(Vector2(0, 0), operand2[0], operand2[1], play_node)
-	var answer_fraction = create_fraction(Vector2(0, 0), correct_numerator, correct_denominator, play_node)
+	
+	# Only create answer fraction if result is a fraction
+	var answer_fraction = null
+	if is_fraction_result:
+		answer_fraction = create_fraction(Vector2(0, 0), correct_numerator, correct_denominator, play_node)
 	
 	# Get the actual widths of the fractions
 	var fraction1_half_width = fraction1.current_divisor_width / 2.0
@@ -1027,29 +1036,43 @@ func create_incorrect_fraction_answer():
 	
 	# Position answer area after equals sign
 	var answer_x = equals_x + fraction_element_spacing + fraction_answer_offset
+	var answer_number_x = answer_x + fraction_answer_number_offset
 	
 	# Position all the fractions
 	fraction1.position = Vector2(fraction1_x, target_y) + fraction_offset
 	fraction2.position = Vector2(fraction2_x, target_y) + fraction_offset
 	
-	# Apply dynamic X positioning to answer fraction based on divisor width
-	# Get baseline width by creating a temporary 0/1 fraction
-	var temp_fraction = create_fraction(Vector2(0, 0), 0, 1, play_node)
-	var baseline_width = temp_fraction.current_divisor_width
-	temp_fraction.queue_free()
-	
-	# Calculate width difference and adjust position (shift right as it expands)
-	var width_diff = answer_fraction.current_divisor_width - baseline_width
-	answer_fraction.position = Vector2(answer_x + (width_diff / 2.0), target_y) + fraction_offset
-	
 	# Apply dark green color
 	fraction1.modulate = Color(0, 0.5, 0)
 	fraction2.modulate = Color(0, 0.5, 0)
-	answer_fraction.modulate = Color(0, 0.5, 0)
 	
 	correct_answer_nodes.append(fraction1)
 	correct_answer_nodes.append(fraction2)
-	correct_answer_nodes.append(answer_fraction)
+	
+	# Create either answer fraction or answer label depending on result type
+	if is_fraction_result:
+		# Apply dynamic X positioning to answer fraction based on divisor width
+		# Get baseline width by creating a temporary 0/1 fraction
+		var temp_fraction = create_fraction(Vector2(0, 0), 0, 1, play_node)
+		var baseline_width = temp_fraction.current_divisor_width
+		temp_fraction.queue_free()
+		
+		# Calculate width difference and adjust position (shift right as it expands)
+		var width_diff = answer_fraction.current_divisor_width - baseline_width
+		answer_fraction.position = Vector2(answer_x + (width_diff / 2.0), target_y) + fraction_offset
+		answer_fraction.modulate = Color(0, 0.5, 0)
+		correct_answer_nodes.append(answer_fraction)
+	else:
+		# Create a label for the whole number answer
+		var answer_label = Label.new()
+		answer_label.label_settings = label_settings_resource
+		answer_label.text = current_question.result
+		answer_label.position = Vector2(answer_number_x, target_y) + operator_offset
+		answer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		answer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		answer_label.self_modulate = Color(0, 0.5, 0)  # Dark green
+		play_node.add_child(answer_label)
+		correct_answer_nodes.append(answer_label)
 	
 	# Create operator label as child of fraction1
 	var operator_label = Label.new()
