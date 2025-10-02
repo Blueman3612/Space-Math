@@ -915,7 +915,7 @@ func get_math_question(track = null, grade = null, operator = null, no_zeroes = 
 	var question_text = ""
 	
 	# Check if this is a fraction-type question (operands are arrays of arrays)
-	if random_question.has("type") and is_fraction_display_type(random_question.type):
+	if random_question.has("type") and is_fraction_display_type(random_question.get("type", "")):
 		# For fraction questions, use the expression as the question text
 		question_text = random_question.expression.split(" = ")[0] if random_question.expression else ""
 	else:
@@ -932,7 +932,7 @@ func get_math_question(track = null, grade = null, operator = null, no_zeroes = 
 		"question": question_text,
 		"title": question_title,
 		"grade": question_grade,
-		"type": random_question.get("type", null)  # Include type if it exists in the question data
+		"type": random_question.get("type", "")  # Include type if it exists in the question data (default to empty string)
 	}
 
 func get_operator_string(operator_int):
@@ -2246,7 +2246,7 @@ func get_weighted_random_question():
 					"question": display_text,
 					"title": "",  # Will be filled by caller if needed
 					"grade": "",  # Will be filled by caller if needed
-					"type": selected_question.get("type", null)  # Include type if it exists
+					"type": selected_question.get("type", "")  # Include type if it exists (default to empty string)
 				}
 			else:
 				print("Error: Could not find question data for key: ", selected_key)
