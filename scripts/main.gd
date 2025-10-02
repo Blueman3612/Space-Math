@@ -48,7 +48,14 @@ var level_configs = {
 	6: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
 	7: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
 	8: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
-	9: {"problems": 20, "star1": {"accuracy": 13, "time": 120.0}, "star2": {"accuracy": 15, "time": 100.0}, "star3": {"accuracy": 17, "time": 80.0}}
+	9: {"problems": 20, "star1": {"accuracy": 13, "time": 120.0}, "star2": {"accuracy": 15, "time": 100.0}, "star3": {"accuracy": 17, "time": 80.0}},
+	10: {"problems": 20, "star1": {"accuracy": 13, "time": 120.0}, "star2": {"accuracy": 15, "time": 100.0}, "star3": {"accuracy": 17, "time": 80.0}},
+	11: {"problems": 20, "star1": {"accuracy": 13, "time": 240.0}, "star2": {"accuracy": 15, "time": 200.0}, "star3": {"accuracy": 17, "time": 160.0}},
+	12: {"problems": 20, "star1": {"accuracy": 13, "time": 300.0}, "star2": {"accuracy": 15, "time": 240.0}, "star3": {"accuracy": 17, "time": 180.0}},
+	13: {"problems": 20, "star1": {"accuracy": 13, "time": 300.0}, "star2": {"accuracy": 15, "time": 240.0}, "star3": {"accuracy": 17, "time": 180.0}},
+	14: {"problems": 20, "star1": {"accuracy": 13, "time": 300.0}, "star2": {"accuracy": 15, "time": 240.0}, "star3": {"accuracy": 17, "time": 180.0}},
+	15: {"problems": 20, "star1": {"accuracy": 13, "time": 240.0}, "star2": {"accuracy": 15, "time": 200.0}, "star3": {"accuracy": 17, "time": 160.0}},
+	16: {"problems": 20, "star1": {"accuracy": 13, "time": 240.0}, "star2": {"accuracy": 15, "time": 200.0}, "star3": {"accuracy": 17, "time": 160.0}}
 }
 
 # Title animation variables
@@ -79,7 +86,20 @@ const menu_below_screen = Vector2(0, 1144)
 const menu_on_screen = Vector2(0, 0)
 
 # Track progression mapping (button index to track ID, ordered by difficulty)
-const track_progression = [12, 9, 6, 10, 8, 11, 7, 5, "FRAC-07"]
+const track_progression = [12, 9, 6, 10, 8, 11, 7, 5, "FRAC-07", "FRAC-08", "FRAC-09", "FRAC-10", "FRAC-11", "FRAC-12", "FRAC-14", "FRAC-16"]
+
+# Problem type display format mapping
+# Maps problem types to their display format ("fraction" or "standard")
+const PROBLEM_DISPLAY_FORMATS = {
+	"add_like_denominators": "fraction",
+	"subtract_like_denominators": "fraction",
+	"add_unlike_multiple": "fraction",
+	"add_unlike_lcm": "fraction",
+	"subtract_unlike_multiple": "fraction",
+	"subtract_unlike_lcm": "fraction",
+	"multiply_fraction_by_fraction": "fraction",
+	"divide_fraction_by_fraction": "fraction"
+}
 
 # Level button creation configuration
 var level_button_start_position = Vector2(-880, -32)  # Starting position for first button
@@ -317,7 +337,7 @@ func _input(event):
 				AudioManager.play_tick()  # Play tick sound on minus input
 			
 			# Handle Divide key - convert to fraction input (only for fraction-type questions)
-			if Input.is_action_just_pressed("Divide") and not is_fraction_input and current_question and current_question.get("type") == "add_like_denominators":
+			if Input.is_action_just_pressed("Divide") and not is_fraction_input and current_question and is_fraction_display_type(current_question.get("type", "")):
 				if user_answer != "" and user_answer != "-":
 					# Convert current answer to numerator of fraction
 					is_fraction_input = true
@@ -465,6 +485,10 @@ func _process(delta):
 		# Update UI labels
 		update_play_ui(delta)
 
+func is_fraction_display_type(question_type: String) -> bool:
+	"""Check if a question type should be displayed in fraction format"""
+	return PROBLEM_DISPLAY_FORMATS.get(question_type, "") == "fraction"
+
 func generate_new_question():
 	user_answer = ""
 	answer_submitted = false  # Reset submission state for new question
@@ -485,7 +509,7 @@ func generate_new_question():
 
 func update_problem_display():
 	# Handle fraction-type problems differently
-	if current_question and current_question.get("type") == "add_like_denominators":
+	if current_question and is_fraction_display_type(current_question.get("type", "")):
 		update_fraction_problem_display()
 	elif current_problem_label and current_question:
 		var base_text = current_question.question + " = "
@@ -552,7 +576,7 @@ func submit_answer():
 	var is_correct = false
 	var player_answer_value = null  # Can be int or string depending on question type
 	
-	if current_question.get("type") == "add_like_denominators":
+	if is_fraction_display_type(current_question.get("type", "")):
 		# For fraction questions, compare strings directly
 		player_answer_value = user_answer
 		is_correct = (user_answer == current_question.result)
@@ -652,7 +676,7 @@ func submit_answer():
 		
 		# Determine if we need extra offset for fraction problems
 		var extra_offset = 0.0
-		if current_question and current_question.get("type") == "add_like_denominators" and not is_correct:
+		if current_question and is_fraction_display_type(current_question.get("type", "")) and not is_correct:
 			extra_offset = incorrect_label_move_distance_fractions
 		
 		# Also store correct answer nodes if they exist (for incorrect fraction problems)
@@ -766,7 +790,7 @@ func submit_answer():
 
 func create_new_problem_label():
 	# Check if this is a fraction-type problem
-	if current_question and current_question.get("type") == "add_like_denominators":
+	if current_question and is_fraction_display_type(current_question.get("type", "")):
 		create_fraction_problem()
 		# Start timing this question immediately for fraction problems
 		start_question_timing()
@@ -891,7 +915,7 @@ func get_math_question(track = null, grade = null, operator = null, no_zeroes = 
 	var question_text = ""
 	
 	# Check if this is a fraction-type question (operands are arrays of arrays)
-	if random_question.has("type") and random_question.type == "add_like_denominators":
+	if random_question.has("type") and is_fraction_display_type(random_question.type):
 		# For fraction questions, use the expression as the question text
 		question_text = random_question.expression.split(" = ")[0] if random_question.expression else ""
 	else:
@@ -940,7 +964,7 @@ func create_incorrect_answer_label():
 		return
 	
 	# Check if this is a fraction problem - handle differently
-	if current_question.get("type") == "add_like_denominators":
+	if is_fraction_display_type(current_question.get("type", "")):
 		create_incorrect_fraction_answer()
 		return
 	
@@ -971,7 +995,7 @@ func create_incorrect_answer_label():
 
 func create_incorrect_fraction_answer():
 	"""Create and animate fraction elements showing the correct answer for fraction problems"""
-	if not current_question or current_question.get("type") != "add_like_denominators":
+	if not current_question or not is_fraction_display_type(current_question.get("type", "")):
 		return
 	
 	# Clear any existing correct answer nodes
@@ -1165,8 +1189,8 @@ func _on_button_click():
 	AudioManager.play_select()
 
 func create_level_buttons():
-	"""Dynamically create level buttons 1-9 in a grid layout"""
-	for level in range(1, 10):
+	"""Dynamically create level buttons based on track progression"""
+	for level in range(1, track_progression.size() + 1):
 		# Calculate grid position
 		var row = int((level - 1) / level_buttons_per_row)
 		var col = (level - 1) % level_buttons_per_row
@@ -1850,8 +1874,8 @@ func get_default_save_data():
 		"questions": {}
 	}
 	
-	# Initialize level data for all 9 levels
-	for level in range(1, 10):
+	# Initialize level data for all levels
+	for level in range(1, track_progression.size() + 1):
 		default_data.levels[str(level)] = {
 			"highest_stars": 0,
 			"best_accuracy": 0,
@@ -1918,8 +1942,8 @@ func migrate_save_data():
 		if not save_data.has("questions"):
 			save_data.questions = {}
 		
-		# Ensure all 9 levels have data
-		for level in range(1, 10):
+		# Ensure all levels have data
+		for level in range(1, track_progression.size() + 1):
 			var level_key = str(level)
 			if not save_data.levels.has(level_key):
 				save_data.levels[level_key] = {
@@ -2282,7 +2306,7 @@ func get_level_number_from_track(track):
 
 func update_menu_stars():
 	"""Update the star display on menu level buttons based on save data"""
-	for level in range(1, 10):
+	for level in range(1, track_progression.size() + 1):
 		var level_key = str(level)
 		var button_name = "LevelButton" + str(level)
 		var level_button = main_menu_node.get_node(button_name)
@@ -2659,7 +2683,7 @@ func animate_drill_score_scale():
 
 func update_level_availability():
 	"""Update level button availability based on progression"""
-	for level in range(1, 10):
+	for level in range(1, track_progression.size() + 1):
 		var button_name = "LevelButton" + str(level)
 		var level_button = main_menu_node.get_node(button_name)
 		
@@ -2696,9 +2720,9 @@ func update_drill_mode_availability():
 	if not drill_mode_button:
 		return
 	
-	# Check if all levels (1-9) have at least 1 star
+	# Check if all levels have at least 1 star
 	var all_levels_completed = true
-	for level in range(1, 10):
+	for level in range(1, track_progression.size() + 1):
 		var level_key = str(level)
 		if not save_data.levels.has(level_key):
 			all_levels_completed = false
@@ -2777,7 +2801,7 @@ func create_fraction(fraction_position: Vector2, numerator: int = 1, denominator
 
 func create_fraction_problem():
 	"""Create a fraction-type problem display with fractions, operator, equals sign, and answer area"""
-	if not current_question or current_question.get("type") != "add_like_denominators":
+	if not current_question or not is_fraction_display_type(current_question.get("type", "")):
 		return
 	
 	# Clean up any existing problem nodes
