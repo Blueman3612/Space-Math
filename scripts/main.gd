@@ -679,8 +679,9 @@ func submit_answer():
 			
 			# Animate incorrect problem nodes (currently at original_y - extra_offset)
 			# They go to the higher (more negative) off-screen position
+			# Note: Only animate top-level nodes; children move with their parents
 			for node in nodes_to_animate:
-				if node:
+				if node and node.get_parent() == play_node:
 					var target_pos = Vector2(node.position.x, final_offscreen_y - extra_offset)
 					tween.tween_property(node, "position", target_pos, animation_duration)
 			
@@ -692,8 +693,9 @@ func submit_answer():
 					tween.tween_property(node, "position", target_pos, animation_duration)
 		else:
 			# For correct answers or non-fraction problems, just animate to regular off-screen position
+			# Note: Only animate top-level nodes; children move with their parents
 			for node in nodes_to_animate:
-				if node:
+				if node and node.get_parent() == play_node:
 					var target_pos = Vector2(node.position.x, final_offscreen_y)
 					tween.tween_property(node, "position", target_pos, animation_duration)
 		
@@ -1077,8 +1079,9 @@ func create_incorrect_fraction_answer():
 			correct_tween.tween_property(node, "position", target_pos, incorrect_label_animation_time)
 	
 	# Animate incorrect problem nodes UP
+	# Note: Skip child nodes (operators/equals) since they move with their parents
 	for node in current_problem_nodes:
-		if node:
+		if node and node.get_parent() == play_node:  # Only animate top-level nodes
 			var target_pos = node.position - Vector2(0, incorrect_label_move_distance_fractions)
 			incorrect_tween.tween_property(node, "position", target_pos, incorrect_label_animation_time)
 	
@@ -2761,65 +2764,68 @@ func create_fraction_problem():
 	
 	var current_x = base_x
 	
-	# Create first fraction (start off-screen)
-	var fraction1 = create_fraction(Vector2(current_x, start_y), operand1[0], operand1[1], play_node)
+	# Create first fraction off-screen
+	var fraction1 = create_fraction(Vector2(current_x, start_y) + fraction_offset, operand1[0], operand1[1], play_node)
 	current_problem_nodes.append(fraction1)
-	var fraction1_target = Vector2(current_x, target_y) + fraction_offset
+	var fraction1_target_x = current_x
 	current_x += fraction_element_spacing * 2
 	
-	# Create operator label (+, -, etc.) - start off-screen
+	# Create operator label (+, -, etc.) - child of first fraction so it moves with it
 	var operator_label = Label.new()
 	operator_label.label_settings = label_settings_resource
 	operator_label.text = current_question.operator
-	operator_label.position = Vector2(current_x, start_y)
 	operator_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	operator_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	operator_label.self_modulate = Color(1, 1, 1)
-	play_node.add_child(operator_label)
+	# Position relative to fraction1
+	operator_label.position = Vector2(current_x - fraction1_target_x, 0) + operator_offset - fraction_offset
+	fraction1.add_child(operator_label)
 	current_problem_nodes.append(operator_label)
-	var operator_target = Vector2(current_x, target_y) + operator_offset
 	current_x += fraction_element_spacing * 2
 	
-	# Create second fraction - start off-screen
-	var fraction2 = create_fraction(Vector2(current_x, start_y), operand2[0], operand2[1], play_node)
+	# Create second fraction off-screen
+	var fraction2 = create_fraction(Vector2(current_x, start_y) + fraction_offset, operand2[0], operand2[1], play_node)
 	current_problem_nodes.append(fraction2)
-	var fraction2_target = Vector2(current_x, target_y) + fraction_offset
+	var fraction2_target_x = current_x
 	current_x += fraction_element_spacing * 2
 	
-	# Create equals label - start off-screen
+	# Create equals label - child of second fraction so it moves with it
 	var equals_label = Label.new()
 	equals_label.label_settings = label_settings_resource
 	equals_label.text = "="
-	equals_label.position = Vector2(current_x, start_y)
 	equals_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	equals_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	equals_label.self_modulate = Color(1, 1, 1)
-	play_node.add_child(equals_label)
+	# Position relative to fraction2
+	equals_label.position = Vector2(current_x - fraction2_target_x, 0) + operator_offset - fraction_offset
+	fraction2.add_child(equals_label)
 	current_problem_nodes.append(equals_label)
-	var equals_target = Vector2(current_x, target_y) + operator_offset
 	current_x += fraction_element_spacing * 2 + fraction_answer_offset
 	
-	# Create answer label (will show underscore or typed number before fraction mode) - start off-screen
+	# Create answer label (will show underscore or typed number before fraction mode)
 	current_problem_label = Label.new()
 	current_problem_label.label_settings = label_settings_resource
 	current_problem_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	current_problem_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	current_problem_label.position = Vector2(current_x, start_y)
+	current_problem_label.position = Vector2(current_x, start_y) + operator_offset
 	current_problem_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	current_problem_label.self_modulate = Color(1, 1, 1)
 	play_node.add_child(current_problem_label)
 	current_problem_nodes.append(current_problem_label)
+	
+	# Calculate target positions
+	var fraction1_target = Vector2(fraction1_target_x, target_y) + fraction_offset
+	var fraction2_target = Vector2(fraction2_target_x, target_y) + fraction_offset
 	var answer_target = Vector2(current_x, target_y) + operator_offset
 	
 	# Animate all elements to their target positions
+	# Note: operator_label and equals_label are children of fractions, so they move automatically
 	var tween = create_tween()
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_EXPO)
 	tween.set_parallel(true)  # Animate all elements simultaneously
 	tween.tween_property(fraction1, "position", fraction1_target, animation_duration)
-	tween.tween_property(operator_label, "position", operator_target, animation_duration)
 	tween.tween_property(fraction2, "position", fraction2_target, animation_duration)
-	tween.tween_property(equals_label, "position", equals_target, animation_duration)
 	tween.tween_property(current_problem_label, "position", answer_target, animation_duration)
 	
 	# Exit parallel mode before adding callback so it runs AFTER animations complete
