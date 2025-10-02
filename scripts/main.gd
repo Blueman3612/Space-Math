@@ -23,11 +23,12 @@ var timer_grace_period = 0.5  # Grace period before timer starts in seconds
 var drill_mode_duration = 60.0  # Duration for drill mode in seconds (1 minute)
 
 # Fraction problem layout variables
-var fraction_element_spacing = 96.0  # Spacing between fractions and operators
-var fraction_answer_offset = 0.0  # Horizontal offset for answer positioning
+var fraction_element_spacing = 112.0  # Spacing between fractions and operators
+var fraction_answer_offset = 88.0  # Horizontal offset for answer positioning (fraction mode)
+var fraction_answer_number_offset = -40.0  # Additional leftward offset for non-fractionalized answers
 var fraction_offset = Vector2(48, 64.0)  # Position offset for fraction elements (x, y)
 var operator_offset = Vector2(0, 0.0)  # Position offset for operators and equals sign (x, y)
-var fraction_problem_x_offset = 0.0  # Horizontal offset from primary_position for the entire fraction problem
+var fraction_problem_x_offset = -64.0  # Horizontal offset from primary_position for the entire fraction problem
 
 # Star animation variables
 var star_delay = 0.4  # Delay between each star animation in seconds
@@ -1001,64 +1002,76 @@ func create_incorrect_fraction_answer():
 	# Calculate the same positions as the original problem
 	var base_x = primary_position.x + fraction_problem_x_offset
 	var target_y = primary_position.y
-	var current_x = base_x
 	
-	# Create first fraction (correct answer for operand 1)
-	var fraction1_pos = Vector2(current_x, target_y) + fraction_offset
-	var fraction1 = create_fraction(fraction1_pos, operand1[0], operand1[1], play_node)
-	fraction1.modulate = Color(0, 0.5, 0)  # Dark green
-	correct_answer_nodes.append(fraction1)
-	current_x += fraction_element_spacing * 2
+	# Create fractions to measure their widths
+	var fraction1 = create_fraction(Vector2(0, 0), operand1[0], operand1[1], play_node)
+	var fraction2 = create_fraction(Vector2(0, 0), operand2[0], operand2[1], play_node)
+	var answer_fraction = create_fraction(Vector2(0, 0), correct_numerator, correct_denominator, play_node)
 	
-	# Create operator label
-	var operator_pos = Vector2(current_x, target_y) + operator_offset
-	var operator_label = Label.new()
-	operator_label.label_settings = label_settings_resource
-	operator_label.text = current_question.operator
-	operator_label.position = operator_pos
-	operator_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	operator_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	operator_label.self_modulate = Color(0, 0.5, 0)  # Dark green
-	play_node.add_child(operator_label)
-	correct_answer_nodes.append(operator_label)
-	current_x += fraction_element_spacing * 2
+	# Get the actual widths of the fractions
+	var fraction1_half_width = fraction1.current_divisor_width / 2.0
+	var fraction2_half_width = fraction2.current_divisor_width / 2.0
 	
-	# Create second fraction (correct answer for operand 2)
-	var fraction2_pos = Vector2(current_x, target_y) + fraction_offset
-	var fraction2 = create_fraction(fraction2_pos, operand2[0], operand2[1], play_node)
-	fraction2.modulate = Color(0, 0.5, 0)  # Dark green
-	correct_answer_nodes.append(fraction2)
-	current_x += fraction_element_spacing * 2
+	# Position the equals sign at a fixed location (same as in create_fraction_problem)
+	var equals_x = base_x + 672.0
 	
-	# Create equals label
-	var equals_pos = Vector2(current_x, target_y) + operator_offset
-	var equals_label = Label.new()
-	equals_label.label_settings = label_settings_resource
-	equals_label.text = "="
-	equals_label.position = equals_pos
-	equals_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	equals_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	equals_label.self_modulate = Color(0, 0.5, 0)  # Dark green
-	play_node.add_child(equals_label)
-	correct_answer_nodes.append(equals_label)
-	current_x += fraction_element_spacing * 2 + fraction_answer_offset
+	# Work backwards from equals sign to position fraction2
+	# Each fraction takes up: fraction_element_spacing + its half width on each side
+	var fraction2_x = equals_x - fraction_element_spacing - fraction2_half_width
 	
-	# Create answer fraction (the correct answer)
-	var answer_pos = Vector2(current_x, target_y) + fraction_offset
-	var answer_fraction = create_fraction(answer_pos, correct_numerator, correct_denominator, play_node)
-	answer_fraction.modulate = Color(0, 0.5, 0)  # Dark green
+	# Position operator between fraction2 and fraction1
+	var operator_x = fraction2_x - fraction2_half_width - fraction_element_spacing
 	
-	# Apply dynamic X positioning based on divisor width (same as user input fraction)
+	# Position fraction1
+	var fraction1_x = operator_x - fraction_element_spacing - fraction1_half_width
+	
+	# Position answer area after equals sign
+	var answer_x = equals_x + fraction_element_spacing + fraction_answer_offset
+	
+	# Position all the fractions
+	fraction1.position = Vector2(fraction1_x, target_y) + fraction_offset
+	fraction2.position = Vector2(fraction2_x, target_y) + fraction_offset
+	
+	# Apply dynamic X positioning to answer fraction based on divisor width
 	# Get baseline width by creating a temporary 0/1 fraction
 	var temp_fraction = create_fraction(Vector2(0, 0), 0, 1, play_node)
 	var baseline_width = temp_fraction.current_divisor_width
 	temp_fraction.queue_free()
 	
-	# Calculate width difference and adjust position
+	# Calculate width difference and adjust position (shift right as it expands)
 	var width_diff = answer_fraction.current_divisor_width - baseline_width
-	answer_fraction.position.x = answer_pos.x + (width_diff / 2.0)
+	answer_fraction.position = Vector2(answer_x + (width_diff / 2.0), target_y) + fraction_offset
 	
+	# Apply dark green color
+	fraction1.modulate = Color(0, 0.5, 0)
+	fraction2.modulate = Color(0, 0.5, 0)
+	answer_fraction.modulate = Color(0, 0.5, 0)
+	
+	correct_answer_nodes.append(fraction1)
+	correct_answer_nodes.append(fraction2)
 	correct_answer_nodes.append(answer_fraction)
+	
+	# Create operator label as child of fraction1
+	var operator_label = Label.new()
+	operator_label.label_settings = label_settings_resource
+	operator_label.text = current_question.operator
+	operator_label.position = Vector2(operator_x - fraction1_x, 0) + operator_offset - fraction_offset
+	operator_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	operator_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# Don't set self_modulate - inherit dark green from parent fraction
+	fraction1.add_child(operator_label)
+	correct_answer_nodes.append(operator_label)
+	
+	# Create equals label as child of fraction2
+	var equals_label = Label.new()
+	equals_label.label_settings = label_settings_resource
+	equals_label.text = "="
+	equals_label.position = Vector2(equals_x - fraction2_x, 0) + operator_offset - fraction_offset
+	equals_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	equals_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# Don't set self_modulate - inherit dark green from parent fraction
+	fraction2.add_child(equals_label)
+	correct_answer_nodes.append(equals_label)
 	
 	# Create parallel tweens for animating everything
 	var correct_tween = create_tween()
@@ -1073,8 +1086,9 @@ func create_incorrect_fraction_answer():
 	incorrect_tween.set_parallel(true)
 	
 	# Animate correct answer elements DOWN
+	# Note: Skip child nodes (operators/equals) since they move with their parents
 	for node in correct_answer_nodes:
-		if node:
+		if node and node.get_parent() == play_node:  # Only animate top-level nodes
 			var target_pos = node.position + Vector2(0, incorrect_label_move_distance_fractions)
 			correct_tween.tween_property(node, "position", target_pos, incorrect_label_animation_time)
 	
@@ -2762,13 +2776,37 @@ func create_fraction_problem():
 	var target_y = primary_position.y
 	var start_y = off_screen_bottom.y  # Start off-screen at bottom
 	
-	var current_x = base_x
+	# Create fractions temporarily to measure their widths
+	var fraction1 = create_fraction(Vector2(0, 0), operand1[0], operand1[1], play_node)
+	var fraction2 = create_fraction(Vector2(0, 0), operand2[0], operand2[1], play_node)
 	
-	# Create first fraction off-screen
-	var fraction1 = create_fraction(Vector2(current_x, start_y) + fraction_offset, operand1[0], operand1[1], play_node)
+	# Get the actual widths of the fractions
+	var fraction1_half_width = fraction1.current_divisor_width / 2.0
+	var fraction2_half_width = fraction2.current_divisor_width / 2.0
+	
+	# Position the equals sign at a fixed location relative to base_x
+	# This ensures the equals sign is always in the same position
+	var equals_x = base_x + 672.0  # Fixed position for equals sign (adjust as needed)
+	
+	# Work backwards from equals sign to position fraction2
+	# Each fraction takes up: fraction_element_spacing + its half width on each side
+	var fraction2_x = equals_x - fraction_element_spacing - fraction2_half_width
+	
+	# Position operator between fraction2 and fraction1
+	var operator_x = fraction2_x - fraction2_half_width - fraction_element_spacing
+	
+	# Position fraction1
+	var fraction1_x = operator_x - fraction_element_spacing - fraction1_half_width
+	
+	# Position answer area after equals sign
+	var answer_x = equals_x + fraction_element_spacing + fraction_answer_offset
+	var answer_number_x = answer_x + fraction_answer_number_offset  # Position for non-fractionalized answer
+	
+	# Now position all the fractions at their calculated positions (off-screen initially)
+	fraction1.position = Vector2(fraction1_x, start_y) + fraction_offset
+	fraction2.position = Vector2(fraction2_x, start_y) + fraction_offset
 	current_problem_nodes.append(fraction1)
-	var fraction1_target_x = current_x
-	current_x += fraction_element_spacing * 2
+	current_problem_nodes.append(fraction2)
 	
 	# Create operator label (+, -, etc.) - child of first fraction so it moves with it
 	var operator_label = Label.new()
@@ -2778,16 +2816,9 @@ func create_fraction_problem():
 	operator_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	operator_label.self_modulate = Color(1, 1, 1)
 	# Position relative to fraction1
-	operator_label.position = Vector2(current_x - fraction1_target_x, 0) + operator_offset - fraction_offset
+	operator_label.position = Vector2(operator_x - fraction1_x, 0) + operator_offset - fraction_offset
 	fraction1.add_child(operator_label)
 	current_problem_nodes.append(operator_label)
-	current_x += fraction_element_spacing * 2
-	
-	# Create second fraction off-screen
-	var fraction2 = create_fraction(Vector2(current_x, start_y) + fraction_offset, operand2[0], operand2[1], play_node)
-	current_problem_nodes.append(fraction2)
-	var fraction2_target_x = current_x
-	current_x += fraction_element_spacing * 2
 	
 	# Create equals label - child of second fraction so it moves with it
 	var equals_label = Label.new()
@@ -2797,26 +2828,25 @@ func create_fraction_problem():
 	equals_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	equals_label.self_modulate = Color(1, 1, 1)
 	# Position relative to fraction2
-	equals_label.position = Vector2(current_x - fraction2_target_x, 0) + operator_offset - fraction_offset
+	equals_label.position = Vector2(equals_x - fraction2_x, 0) + operator_offset - fraction_offset
 	fraction2.add_child(equals_label)
 	current_problem_nodes.append(equals_label)
-	current_x += fraction_element_spacing * 2 + fraction_answer_offset
 	
 	# Create answer label (will show underscore or typed number before fraction mode)
 	current_problem_label = Label.new()
 	current_problem_label.label_settings = label_settings_resource
 	current_problem_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	current_problem_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	current_problem_label.position = Vector2(current_x, start_y) + operator_offset
+	current_problem_label.position = Vector2(answer_number_x, start_y) + operator_offset  # Use number position
 	current_problem_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	current_problem_label.self_modulate = Color(1, 1, 1)
 	play_node.add_child(current_problem_label)
 	current_problem_nodes.append(current_problem_label)
 	
 	# Calculate target positions
-	var fraction1_target = Vector2(fraction1_target_x, target_y) + fraction_offset
-	var fraction2_target = Vector2(fraction2_target_x, target_y) + fraction_offset
-	var answer_target = Vector2(current_x, target_y) + operator_offset
+	var fraction1_target = Vector2(fraction1_x, target_y) + fraction_offset
+	var fraction2_target = Vector2(fraction2_x, target_y) + fraction_offset
+	var answer_target = Vector2(answer_number_x, target_y) + operator_offset  # Use number position
 	
 	# Animate all elements to their target positions
 	# Note: operator_label and equals_label are children of fractions, so they move automatically
@@ -2844,7 +2874,8 @@ func create_answer_fraction():
 	# Use the position of the current_problem_label (the answer label) but apply fraction_offset
 	var base_pos = current_problem_label.position if current_problem_label else primary_position
 	# Subtract operator_offset and add fraction_offset to align with other fractions
-	var answer_pos = base_pos - operator_offset + fraction_offset
+	# Also subtract the number offset since we want the fraction at the normal fraction position
+	var answer_pos = base_pos - operator_offset + fraction_offset - Vector2(fraction_answer_number_offset, 0)
 	
 	# Create the answer fraction at the aligned position
 	answer_fraction_node = create_fraction(answer_pos, 0, 1, play_node)
