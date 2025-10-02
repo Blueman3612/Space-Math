@@ -18,9 +18,14 @@ var incorrect_label_move_distance = 192.0  # Distance to move incorrect label do
 var backspace_hold_time = 0.15  # Time to hold backspace before it repeats
 var scroll_boost_multiplier = 80.0  # How much to boost background scroll speed on submission
 var feedback_max_alpha = 0.1  # Maximum alpha for feedback color overlay
-var problems_per_level = 40  # Number of problems to complete before returning to menu
 var timer_grace_period = 0.5  # Grace period before timer starts in seconds
 var drill_mode_duration = 60.0  # Duration for drill mode in seconds (1 minute)
+
+# Fraction problem layout variables
+var fraction_element_spacing = 96.0  # Spacing between fractions and operators
+var fraction_answer_offset = 0.0  # Horizontal offset for answer positioning
+var fraction_offset = Vector2(48, 64.0)  # Position offset for fraction elements (x, y)
+var operator_offset = Vector2(0, 0.0)  # Position offset for operators and equals sign (x, y)
 
 # Star animation variables
 var star_delay = 0.4  # Delay between each star animation in seconds
@@ -30,10 +35,18 @@ var star_max_scale = 32.0  # Maximum scale during star animation
 var star_final_scale = 8.0  # Final scale for earned stars
 var label_fade_time = 0.5  # Time for star labels to fade in
 
-# Star requirements (accuracy, time in seconds)
-var star1_requirements = {"accuracy": 25, "time": 120.0}  # 2:00
-var star2_requirements = {"accuracy": 30, "time": 100.0}  # 1:40
-var star3_requirements = {"accuracy": 35, "time": 80.0}   # 1:20
+# Per-level configuration (level number -> config dict)
+var level_configs = {
+	1: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	2: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	3: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	4: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	5: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	6: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	7: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	8: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	9: {"problems": 20, "star1": {"accuracy": 12, "time": 90.0}, "star2": {"accuracy": 15, "time": 75.0}, "star3": {"accuracy": 18, "time": 60.0}}
+}
 
 # Title animation variables
 var title_bounce_speed = 2.0  # Speed of the sin wave animation
@@ -62,8 +75,8 @@ const menu_above_screen = Vector2(0, -1144)
 const menu_below_screen = Vector2(0, 1144)
 const menu_on_screen = Vector2(0, 0)
 
-# Track progression mapping (button index to track number, ordered by difficulty)
-const track_progression = [12, 9, 6, 10, 8, 11, 7, 5]
+# Track progression mapping (button index to track ID, ordered by difficulty)
+const track_progression = [12, 9, 6, 10, 8, 11, 7, 5, "FRAC-07"]
 
 # Level button creation configuration
 var level_button_start_position = Vector2(-880, -32)  # Starting position for first button
@@ -90,6 +103,12 @@ var answer_submitted = false  # Track if current problem has been submitted
 var backspace_timer = 0.0  # Timer for backspace hold functionality
 var backspace_held = false  # Track if backspace is being held
 var backspace_just_pressed = false  # Track if backspace was just pressed this frame
+
+# Fraction input state variables
+var is_fraction_input = false  # Whether the user's answer is currently in fraction format
+var current_level_number = 0  # Current level number (1-9)
+var current_problem_nodes = []  # Array of nodes (fractions, labels) for the current problem display
+var answer_fraction_node = null  # Reference to the fraction node used for answer input
 var feedback_color_rect: ColorRect  # Reference to the feedback color overlay
 var main_menu_node: Control  # Reference to the MainMenu node
 var game_over_node: Control  # Reference to the GameOver node
@@ -264,18 +283,41 @@ func _input(_event):
 		for i in range(digit_actions.size()):
 			if Input.is_action_just_pressed(digit_actions[i]):
 				var digit = str(i)
-				var effective_length = user_answer.length()
-				if user_answer.begins_with("-"):
-					effective_length -= 1  # Don't count negative sign toward limit
-				if effective_length < max_answer_chars:
-					user_answer += digit
-					AudioManager.play_tick()  # Play tick sound on digit input
+				
+				if is_fraction_input:
+					# Fraction input mode - add to denominator
+					var parts = user_answer.split("/")
+					if parts.size() == 2:
+						var denom = parts[1]
+						var effective_length = denom.length()
+						if effective_length < max_answer_chars:
+							user_answer = parts[0] + "/" + denom + digit
+							AudioManager.play_tick()
+				else:
+					# Normal input mode
+					var effective_length = user_answer.length()
+					if user_answer.begins_with("-"):
+						effective_length -= 1  # Don't count negative sign toward limit
+					if effective_length < max_answer_chars:
+						user_answer += digit
+						AudioManager.play_tick()  # Play tick sound on digit input
 				break
 		
-		# Handle negative sign (only at the beginning)
-		if Input.is_action_just_pressed("Negative") and user_answer == "":
+		# Handle negative sign (only at the beginning and only if not fraction input)
+		if Input.is_action_just_pressed("Negative") and user_answer == "" and not is_fraction_input:
 			user_answer = "-"
 			AudioManager.play_tick()  # Play tick sound on minus input
+		
+		# Handle Divide key - convert to fraction input (only for fraction-type questions)
+		if Input.is_action_just_pressed("Divide") and not is_fraction_input and current_question and current_question.get("type") == "add_like_denominators":
+			if user_answer != "" and user_answer != "-":
+				# Convert current answer to numerator of fraction
+				is_fraction_input = true
+				user_answer = user_answer + "/"
+				AudioManager.play_tick()
+				# Create answer fraction visual if needed
+				if answer_fraction_node == null:
+					create_answer_fraction()
 	
 	# Handle immediate backspace press detection (only during PLAY or DRILL_PLAY state)
 	if Input.is_action_just_pressed("Backspace") and (current_state == GameState.PLAY or current_state == GameState.DRILL_PLAY) and not answer_submitted:
@@ -348,6 +390,22 @@ func _process(delta):
 			if user_answer.length() > 0:
 				user_answer = user_answer.substr(0, user_answer.length() - 1)
 				AudioManager.play_tick()
+				
+				# Check if we need to exit fraction mode (if denominator becomes empty)
+				if is_fraction_input and user_answer.ends_with("/"):
+					is_fraction_input = false
+					user_answer = user_answer.substr(0, user_answer.length() - 1)  # Remove the "/"
+					# Clean up answer fraction visual
+					if answer_fraction_node:
+						answer_fraction_node.queue_free()
+						# Remove from current_problem_nodes array
+						var idx = current_problem_nodes.find(answer_fraction_node)
+						if idx != -1:
+							current_problem_nodes.remove_at(idx)
+						answer_fraction_node = null
+					# Show the regular label again
+					if current_problem_label:
+						current_problem_label.visible = true
 			backspace_just_pressed = false
 			backspace_timer = 0.0
 		
@@ -366,6 +424,22 @@ func _process(delta):
 					if user_answer.length() > 0:
 						user_answer = user_answer.substr(0, user_answer.length() - 1)
 						AudioManager.play_tick()
+						
+						# Check if we need to exit fraction mode (if denominator becomes empty)
+						if is_fraction_input and user_answer.ends_with("/"):
+							is_fraction_input = false
+							user_answer = user_answer.substr(0, user_answer.length() - 1)  # Remove the "/"
+							# Clean up answer fraction visual
+							if answer_fraction_node:
+								answer_fraction_node.queue_free()
+								# Remove from current_problem_nodes array
+								var idx = current_problem_nodes.find(answer_fraction_node)
+								if idx != -1:
+									current_problem_nodes.remove_at(idx)
+								answer_fraction_node = null
+							# Show the regular label again
+							if current_problem_label:
+								current_problem_label.visible = true
 		else:
 			# Reset hold state when backspace is released
 			backspace_held = false
@@ -380,6 +454,9 @@ func _process(delta):
 func generate_new_question():
 	user_answer = ""
 	answer_submitted = false  # Reset submission state for new question
+	is_fraction_input = false  # Reset fraction input mode
+	answer_fraction_node = null  # Will be created by problem display if needed
+	
 	# Store current question for answer checking later
 	# Use the weighted system if we have weights initialized, otherwise fall back to old system
 	if not question_weights.is_empty():
@@ -392,7 +469,10 @@ func generate_new_question():
 		print("Failed to generate question for track ", current_track)
 
 func update_problem_display():
-	if current_problem_label and current_question:
+	# Handle fraction-type problems differently
+	if current_question and current_question.get("type") == "add_like_denominators":
+		update_fraction_problem_display()
+	elif current_problem_label and current_question:
 		var base_text = current_question.question + " = "
 		var display_text = base_text + user_answer
 		
@@ -402,9 +482,41 @@ func update_problem_display():
 		
 		current_problem_label.text = display_text
 
+func update_fraction_problem_display():
+	"""Update the display for fraction-type problems"""
+	if is_fraction_input and answer_fraction_node:
+		# In fraction mode - use the fraction node to display answer
+		var parts = user_answer.split("/")
+		if parts.size() == 2:
+			var numerator = parts[0]
+			var denominator = parts[1]
+			answer_fraction_node.set_fraction_text(numerator, denominator, true)
+			answer_fraction_node.update_underscore(underscore_visible and not answer_submitted)
+		
+		# Hide the regular label
+		if current_problem_label:
+			current_problem_label.visible = false
+	else:
+		# Not in fraction mode yet - use regular label to show answer with underscore
+		if current_problem_label:
+			var display_text = user_answer
+			
+			# Add blinking underscore only if not submitted
+			if not answer_submitted and underscore_visible:
+				display_text += "_"
+			
+			current_problem_label.text = display_text
+			current_problem_label.visible = true
+
 func submit_answer():
 	if user_answer == "" or user_answer == "-" or answer_submitted:
 		return  # Don't submit empty answers, just minus sign, or already submitted
+	
+	# Don't submit fractions with empty denominator
+	if is_fraction_input:
+		var parts = user_answer.split("/")
+		if parts.size() != 2 or parts[1] == "":
+			return
 	
 	print("Submitting answer: ", user_answer)
 	
@@ -417,12 +529,21 @@ func submit_answer():
 		question_time = (Time.get_ticks_msec() / 1000.0) - current_question_start_time
 	
 	# Check if answer is correct
-	var user_answer_int = int(user_answer)
-	var is_correct = (user_answer_int == current_question.result)
+	var is_correct = false
+	var player_answer_value = null  # Can be int or string depending on question type
+	
+	if current_question.get("type") == "add_like_denominators":
+		# For fraction questions, compare strings directly
+		player_answer_value = user_answer
+		is_correct = (user_answer == current_question.result)
+	else:
+		# For integer questions, compare as integers
+		player_answer_value = int(user_answer)
+		is_correct = (player_answer_value == current_question.result)
 	
 	# Save question data
 	if current_question:
-		save_question_data(current_question, user_answer_int, question_time)
+		save_question_data(current_question, player_answer_value, question_time)
 	
 	# Track correct answers and drill mode scoring
 	if is_drill_mode:
@@ -474,7 +595,7 @@ func submit_answer():
 			current_problem_label.self_modulate = Color(1, 0, 0)  # Red for incorrect
 			AudioManager.play_incorrect()  # Play incorrect sound
 			show_feedback_flash(Color(1, 0, 0))  # Red feedback flash
-			print("✗ Incorrect. Answer was ", current_question.result, ", you entered ", user_answer_int)
+			print("✗ Incorrect. Answer was ", current_question.result, ", you entered ", player_answer_value)
 			
 			# Create animated label showing correct answer for incorrect responses
 			create_incorrect_answer_label()
@@ -491,8 +612,35 @@ func submit_answer():
 	if space_bg and space_bg.has_method("boost_scroll_speed"):
 		space_bg.boost_scroll_speed(scroll_boost_multiplier, animation_duration * 2.0)
 	
-	# Move current label up and off screen (fire and forget)
-	if current_problem_label:
+	# Move current problem nodes up and off screen (fire and forget)
+	if not current_problem_nodes.is_empty():
+		# Store references to the nodes we're animating out
+		var nodes_to_animate = current_problem_nodes.duplicate()
+		
+		# Clear current_problem_nodes immediately so new problem can populate it
+		current_problem_nodes.clear()
+		current_problem_label = null
+		answer_fraction_node = null
+		
+		# Animate all fraction problem nodes off-screen
+		var tween = create_tween()
+		tween.set_ease(Tween.EASE_OUT)
+		tween.set_trans(Tween.TRANS_EXPO)
+		tween.set_parallel(true)  # Animate all simultaneously
+		
+		for node in nodes_to_animate:
+			if node:
+				var target_pos = Vector2(node.position.x, off_screen_top.y)
+				tween.tween_property(node, "position", target_pos, animation_duration)
+		
+		# Clean up nodes after animation
+		tween.tween_callback(func():
+			for node in nodes_to_animate:
+				if node:
+					node.queue_free()
+		)
+	elif current_problem_label:
+		# Fallback for regular label problems
 		var old_label = current_problem_label
 		var tween = create_tween()
 		tween.set_ease(Tween.EASE_OUT)
@@ -506,7 +654,8 @@ func submit_answer():
 	# Animate progress line after incrementing
 	if progress_line and play_node:
 		var play_width = play_node.size.x
-		var progress_increment = play_width / problems_per_level
+		var level_config = level_configs.get(current_level_number, level_configs[1])
+		var progress_increment = play_width / level_config.problems
 		var new_x_position = progress_increment * problems_completed
 		
 		# Animate point 1 to the new x position
@@ -516,7 +665,8 @@ func submit_answer():
 		tween.tween_method(update_progress_line_point, progress_line.get_point_position(1).x, new_x_position, animation_duration)
 	
 	# Check if we've completed the required number of problems (only for normal mode)
-	if not is_drill_mode and problems_completed >= problems_per_level:
+	var level_config = level_configs.get(current_level_number, level_configs[1])
+	if not is_drill_mode and problems_completed >= level_config.problems:
 		# Timer is already stopped above, keep it stopped for game over
 		
 		# Hide play UI labels when play state ends
@@ -538,11 +688,18 @@ func submit_answer():
 				level_start_time = Time.get_time_dict_from_system()["hour"] * 3600 + Time.get_time_dict_from_system()["minute"] * 60 + Time.get_time_dict_from_system()["second"]
 		
 		# Create new problem - continue playing
-		create_new_problem_label()
 		generate_new_question()
+		create_new_problem_label()
 
 func create_new_problem_label():
-	# Create new label
+	# Check if this is a fraction-type problem
+	if current_question and current_question.get("type") == "add_like_denominators":
+		create_fraction_problem()
+		# Start timing this question immediately for fraction problems
+		start_question_timing()
+		return
+	
+	# Create new label for normal (non-fraction) problems
 	var new_label = Label.new()
 	new_label.label_settings = label_settings_resource
 	new_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -578,7 +735,7 @@ func get_math_question(track = null, grade = null, operator = null, no_zeroes = 
 	# Priority: track > grade > operator
 	if track != null:
 		# Find questions from specific track
-		var track_key = "TRACK" + str(track)
+		var track_key = str(track) if typeof(track) == TYPE_STRING else "TRACK" + str(track)
 		for level in math_facts.levels:
 			if level.id == track_key:
 				questions = level.facts
@@ -657,10 +814,18 @@ func get_math_question(track = null, grade = null, operator = null, no_zeroes = 
 	
 	var random_question = questions[rng.randi() % questions.size()]
 	
-	# Generate question without answer (format integers without decimals)
-	var operand1 = int(random_question.operands[0]) if random_question.operands[0] == int(random_question.operands[0]) else random_question.operands[0]
-	var operand2 = int(random_question.operands[1]) if random_question.operands[1] == int(random_question.operands[1]) else random_question.operands[1]
-	var question_text = str(operand1) + " " + random_question.operator + " " + str(operand2)
+	# Generate question text
+	var question_text = ""
+	
+	# Check if this is a fraction-type question (operands are arrays of arrays)
+	if random_question.has("type") and random_question.type == "add_like_denominators":
+		# For fraction questions, use the expression as the question text
+		question_text = random_question.expression.split(" = ")[0] if random_question.expression else ""
+	else:
+		# For regular questions, format integers without decimals
+		var operand1 = int(random_question.operands[0]) if random_question.operands[0] == int(random_question.operands[0]) else random_question.operands[0]
+		var operand2 = int(random_question.operands[1]) if random_question.operands[1] == int(random_question.operands[1]) else random_question.operands[1]
+		question_text = str(operand1) + " " + random_question.operator + " " + str(operand2)
 	
 	return {
 		"operands": random_question.operands,
@@ -669,7 +834,8 @@ func get_math_question(track = null, grade = null, operator = null, no_zeroes = 
 		"expression": random_question.expression,
 		"question": question_text,
 		"title": question_title,
-		"grade": question_grade
+		"grade": question_grade,
+		"type": random_question.get("type", null)  # Include type if it exists in the question data
 	}
 
 func get_operator_string(operator_int):
@@ -762,8 +928,8 @@ func _on_button_click():
 	AudioManager.play_select()
 
 func create_level_buttons():
-	"""Dynamically create level buttons 1-8 in a grid layout"""
-	for level in range(1, 9):
+	"""Dynamically create level buttons 1-9 in a grid layout"""
+	for level in range(1, 10):
 		# Calculate grid position
 		var row = int((level - 1) / level_buttons_per_row)
 		var col = (level - 1) % level_buttons_per_row
@@ -875,7 +1041,8 @@ func _on_level_button_pressed(level: int):
 	if current_state != GameState.MENU:
 		return
 	
-	# Set the track based on the level button pressed
+	# Set the track and level based on the level button pressed
+	current_level_number = level
 	current_track = track_progression[level - 1]  # Convert 1-based to 0-based index
 	start_play_state()
 
@@ -990,9 +1157,9 @@ func start_drill_mode():
 	# Initialize weighted question system for all tracks
 	initialize_question_weights_for_all_tracks()
 	
-	# Create first problem label and generate question
-	create_new_problem_label()
+	# Generate question first, then create the problem display
 	generate_new_question()
+	create_new_problem_label()
 
 func start_play_state():
 	"""Transition from MENU to PLAY state"""
@@ -1061,9 +1228,9 @@ func start_play_state():
 	# Initialize weighted question system for this track
 	initialize_question_weights_for_track(current_track)
 	
-	# Create first problem label and generate question
-	create_new_problem_label()
+	# Generate question first, then create the problem display
 	generate_new_question()
+	create_new_problem_label()
 
 func go_to_game_over():
 	"""Transition from PLAY to GAME_OVER state"""
@@ -1191,7 +1358,8 @@ func update_play_ui(delta: float):
 		timer_label.text = time_string
 		
 		# Update accuracy display (correct/total format)
-		var accuracy_string = "%d/%d" % [correct_answers, problems_per_level]
+		var level_config = level_configs.get(current_level_number, level_configs[1])
+		var accuracy_string = "%d/%d" % [correct_answers, level_config.problems]
 		accuracy_label.text = accuracy_string
 
 func update_game_over_labels():
@@ -1207,7 +1375,8 @@ func update_game_over_labels():
 	player_time_label.text = time_string
 	
 	# Update player accuracy display (correct/total format)
-	var accuracy_string = "%d/%d" % [correct_answers, problems_per_level]
+	var level_config = level_configs.get(current_level_number, level_configs[1])
+	var accuracy_string = "%d/%d" % [correct_answers, level_config.problems]
 	player_accuracy_label.text = accuracy_string
 	
 	# Update CQPM display
@@ -1218,28 +1387,30 @@ func update_game_over_labels():
 func evaluate_stars():
 	"""Evaluate which stars the player has earned"""
 	var stars_earned = []
+	var level_config = level_configs.get(current_level_number, level_configs[1])
 	
 	# Check Star 1
-	if correct_answers >= star1_requirements.accuracy and current_level_time <= star1_requirements.time:
+	if correct_answers >= level_config.star1.accuracy and current_level_time <= level_config.star1.time:
 		stars_earned.append(1)
 	
 	# Check Star 2
-	if correct_answers >= star2_requirements.accuracy and current_level_time <= star2_requirements.time:
+	if correct_answers >= level_config.star2.accuracy and current_level_time <= level_config.star2.time:
 		stars_earned.append(2)
 	
 	# Check Star 3
-	if correct_answers >= star3_requirements.accuracy and current_level_time <= star3_requirements.time:
+	if correct_answers >= level_config.star3.accuracy and current_level_time <= level_config.star3.time:
 		stars_earned.append(3)
 	
 	return stars_earned
 
 func check_star_requirement(star_num: int, requirement_type: String) -> bool:
 	"""Check if a specific requirement for a star has been met"""
+	var level_config = level_configs.get(current_level_number, level_configs[1])
 	var requirements
 	match star_num:
-		1: requirements = star1_requirements
-		2: requirements = star2_requirements
-		3: requirements = star3_requirements
+		1: requirements = level_config.star1
+		2: requirements = level_config.star2
+		3: requirements = level_config.star3
 		_: return false
 	
 	match requirement_type:
@@ -1371,6 +1542,13 @@ func animate_star_labels(star_num: int, star_accuracy_label: Label, time_label: 
 
 func cleanup_problem_labels():
 	"""Remove any remaining problem labels from the Play node"""
+	# Clean up fraction problem nodes
+	for node in current_problem_nodes:
+		if node:
+			node.queue_free()
+	current_problem_nodes.clear()
+	
+	# Clean up regular problem labels
 	if play_node:
 		for child in play_node.get_children():
 			# Only remove dynamically created labels, not the static UI elements
@@ -1380,7 +1558,9 @@ func cleanup_problem_labels():
 				child != drill_timer_label and 
 				child != drill_score_label):
 				child.queue_free()
+	
 	current_problem_label = null
+	answer_fraction_node = null
 
 # Save System Functions
 
@@ -1402,8 +1582,8 @@ func get_default_save_data():
 		"questions": {}
 	}
 	
-	# Initialize level data for all 8 levels
-	for level in range(1, 9):
+	# Initialize level data for all 9 levels
+	for level in range(1, 10):
 		default_data.levels[str(level)] = {
 			"highest_stars": 0,
 			"best_accuracy": 0,
@@ -1470,8 +1650,8 @@ func migrate_save_data():
 		if not save_data.has("questions"):
 			save_data.questions = {}
 		
-		# Ensure all 8 levels have data
-		for level in range(1, 9):
+		# Ensure all 9 levels have data
+		for level in range(1, 10):
 			var level_key = str(level)
 			if not save_data.levels.has(level_key):
 				save_data.levels[level_key] = {
@@ -1492,7 +1672,20 @@ func migrate_save_data():
 
 func get_question_key(question_data):
 	"""Generate a unique key for a question based on its operands and operator"""
-	return str(question_data.operands[0]) + "_" + question_data.operator + "_" + str(question_data.operands[1])
+	# Handle fraction questions (operands are arrays) vs regular questions (operands are numbers)
+	var op1_str = ""
+	var op2_str = ""
+	
+	if typeof(question_data.operands[0]) == TYPE_ARRAY:
+		# Fraction question - format as "num/denom"
+		op1_str = str(question_data.operands[0][0]) + "/" + str(question_data.operands[0][1])
+		op2_str = str(question_data.operands[1][0]) + "/" + str(question_data.operands[1][1])
+	else:
+		# Regular question - use numbers directly
+		op1_str = str(question_data.operands[0])
+		op2_str = str(question_data.operands[1])
+	
+	return op1_str + "_" + question_data.operator + "_" + op2_str
 
 func save_question_data(question_data, player_answer, time_taken):
 	"""Save data for a completed question"""
@@ -1642,7 +1835,8 @@ func initialize_question_weights_for_track(track):
 		print("No math facts data available")
 		return
 	
-	var track_key = "TRACK" + str(track)
+	# Handle both string track IDs (like "FRAC-07") and numeric track IDs
+	var track_key = str(track) if typeof(track) == TYPE_STRING else "TRACK" + str(track)
 	var questions = []
 	
 	# Find questions from specific track
@@ -1668,9 +1862,15 @@ func initialize_question_weights_for_track(track):
 		question_weights[question_key] = weight_result.weight
 		
 		# Format question display
-		var operand1 = int(question.operands[0]) if question.operands[0] == int(question.operands[0]) else question.operands[0]
-		var operand2 = int(question.operands[1]) if question.operands[1] == int(question.operands[1]) else question.operands[1]
-		var question_text = str(operand1) + " " + question.operator + " " + str(operand2) + " = " + str(question.result)
+		var question_text = ""
+		if typeof(question.operands[0]) == TYPE_ARRAY:
+			# Fraction question
+			question_text = question.expression if question.has("expression") else ""
+		else:
+			# Regular question
+			var operand1 = int(question.operands[0]) if question.operands[0] == int(question.operands[0]) else question.operands[0]
+			var operand2 = int(question.operands[1]) if question.operands[1] == int(question.operands[1]) else question.operands[1]
+			question_text = str(operand1) + " " + question.operator + " " + str(operand2) + " = " + str(question.result)
 		
 		print("Question: ", question_text)
 		print("- Base weight: 1.0")
@@ -1729,13 +1929,22 @@ func get_weighted_random_question():
 			var selected_question = find_question_by_key(selected_key)
 			if selected_question:
 				# Console output for question selection
-				var operand1 = int(selected_question.operands[0]) if selected_question.operands[0] == int(selected_question.operands[0]) else selected_question.operands[0]
-				var operand2 = int(selected_question.operands[1]) if selected_question.operands[1] == int(selected_question.operands[1]) else selected_question.operands[1]
-				var question_text = str(operand1) + " " + selected_question.operator + " " + str(operand2) + " = " + str(selected_question.result)
-				print("Selected question: ", question_text, " (weight: %.3f)" % selected_weight)
+				var question_text = ""
+				var display_text = ""
 				
-				# Format the question for display (without answer)
-				var display_text = str(operand1) + " " + selected_question.operator + " " + str(operand2)
+				# Check if this is a fraction question (operands are arrays)
+				if typeof(selected_question.operands[0]) == TYPE_ARRAY:
+					# Fraction question - use expression
+					question_text = selected_question.expression if selected_question.has("expression") else ""
+					display_text = question_text.split(" = ")[0] if question_text else ""
+				else:
+					# Regular question - format integers
+					var operand1 = int(selected_question.operands[0]) if selected_question.operands[0] == int(selected_question.operands[0]) else selected_question.operands[0]
+					var operand2 = int(selected_question.operands[1]) if selected_question.operands[1] == int(selected_question.operands[1]) else selected_question.operands[1]
+					question_text = str(operand1) + " " + selected_question.operator + " " + str(operand2) + " = " + str(selected_question.result)
+					display_text = str(operand1) + " " + selected_question.operator + " " + str(operand2)
+				
+				print("Selected question: ", question_text, " (weight: %.3f)" % selected_weight)
 				
 				return {
 					"operands": selected_question.operands,
@@ -1744,7 +1953,8 @@ func get_weighted_random_question():
 					"expression": selected_question.expression,
 					"question": display_text,
 					"title": "",  # Will be filled by caller if needed
-					"grade": ""   # Will be filled by caller if needed
+					"grade": "",  # Will be filled by caller if needed
+					"type": selected_question.get("type", null)  # Include type if it exists
 				}
 			else:
 				print("Error: Could not find question data for key: ", selected_key)
@@ -1760,20 +1970,42 @@ func find_question_by_key(question_key):
 	if parts.size() != 3:
 		return null
 	
-	var operand1 = float(parts[0])
 	var operator = parts[1]
-	var operand2 = float(parts[2])
+	
+	# Check if this is a fraction question (operands contain "/")
+	var is_fraction = parts[0].contains("/")
 	
 	# Search through all levels
 	for level in math_facts.levels:
 		for question in level.facts:
-			if question.operands[0] == operand1 and question.operator == operator and question.operands[1] == operand2:
+			if question.operator != operator:
+				continue
+			
+			var operands_match = false
+			if is_fraction:
+				# Fraction question - parse "num/denom" format
+				var op1_parts = parts[0].split("/")
+				var op2_parts = parts[2].split("/")
+				if op1_parts.size() == 2 and op2_parts.size() == 2:
+					if typeof(question.operands[0]) == TYPE_ARRAY:
+						operands_match = (question.operands[0][0] == float(op1_parts[0]) and 
+										  question.operands[0][1] == float(op1_parts[1]) and
+										  question.operands[1][0] == float(op2_parts[0]) and
+										  question.operands[1][1] == float(op2_parts[1]))
+			else:
+				# Regular question - parse as numbers
+				var operand1 = float(parts[0])
+				var operand2 = float(parts[2])
+				if typeof(question.operands[0]) != TYPE_ARRAY:
+					operands_match = (question.operands[0] == operand1 and question.operands[1] == operand2)
+			
+			if operands_match:
 				return question
 	
 	return null
 
 func get_level_number_from_track(track):
-	"""Get the level number (1-8) from a track number using track_progression mapping"""
+	"""Get the level number (1-9) from a track using track_progression mapping"""
 	for i in range(track_progression.size()):
 		if track_progression[i] == track:
 			return i + 1  # Convert 0-based index to 1-based level number
@@ -1781,7 +2013,7 @@ func get_level_number_from_track(track):
 
 func update_menu_stars():
 	"""Update the star display on menu level buttons based on save data"""
-	for level in range(1, 9):
+	for level in range(1, 10):
 		var level_key = str(level)
 		var button_name = "LevelButton" + str(level)
 		var level_button = main_menu_node.get_node(button_name)
@@ -1801,14 +2033,33 @@ func calculate_question_difficulty(question_data):
 	# Find which track this question belongs to
 	for level in math_facts.levels:
 		for fact in level.facts:
-			if (fact.operands[0] == question_data.operands[0] and 
-				fact.operator == question_data.operator and 
-				fact.operands[1] == question_data.operands[1]):
-				# Extract track number from level.id (e.g., "TRACK12" -> 12)
-				var track_number = int(level.id.substr(5))  # Remove "TRACK" prefix
+			# For fraction questions, operands are arrays, so we need to compare differently
+			var operands_match = false
+			if typeof(fact.operands[0]) == TYPE_ARRAY and typeof(question_data.operands[0]) == TYPE_ARRAY:
+				# Fraction question - compare arrays
+				operands_match = (fact.operands[0] == question_data.operands[0] and 
+								  fact.operands[1] == question_data.operands[1])
+			else:
+				# Regular question - compare numbers
+				operands_match = (fact.operands[0] == question_data.operands[0] and 
+								  fact.operands[1] == question_data.operands[1])
+			
+			if operands_match and fact.operator == question_data.operator:
+				# Get the track ID (could be "TRACK12" or "FRAC-07")
+				var track_id = level.id
+				
 				# Find index in track_progression
 				for i in range(track_progression.size()):
-					if track_progression[i] == track_number:
+					var track_entry = track_progression[i]
+					# Handle both numeric and string track IDs
+					var matches = false
+					if typeof(track_entry) == TYPE_STRING:
+						matches = (track_entry == track_id)
+					else:
+						# Numeric track, need to compare with "TRACK#" format
+						matches = (track_id == "TRACK" + str(track_entry))
+					
+					if matches:
 						return (i + 1) * 2  # (index + 1) * 2
 				# If not found in track_progression, return default difficulty
 				return 2
@@ -1872,9 +2123,15 @@ func initialize_question_weights_for_all_tracks():
 			question_weights[question_key] = weight_result.weight
 			
 			# Format question display for debug
-			var operand1 = int(question.operands[0]) if question.operands[0] == int(question.operands[0]) else question.operands[0]
-			var operand2 = int(question.operands[1]) if question.operands[1] == int(question.operands[1]) else question.operands[1]
-			var question_text = str(operand1) + " " + question.operator + " " + str(operand2) + " = " + str(question.result)
+			var question_text = ""
+			if typeof(question.operands[0]) == TYPE_ARRAY:
+				# Fraction question
+				question_text = question.expression if question.has("expression") else ""
+			else:
+				# Regular question
+				var operand1 = int(question.operands[0]) if question.operands[0] == int(question.operands[0]) else question.operands[0]
+				var operand2 = int(question.operands[1]) if question.operands[1] == int(question.operands[1]) else question.operands[1]
+				question_text = str(operand1) + " " + question.operator + " " + str(operand2) + " = " + str(question.result)
 			
 			print("  Question: ", question_text, " (weight: %.3f)" % weight_result.weight)
 	
@@ -2133,7 +2390,7 @@ func animate_drill_score_scale():
 
 func update_level_availability():
 	"""Update level button availability based on progression"""
-	for level in range(1, 9):
+	for level in range(1, 10):
 		var button_name = "LevelButton" + str(level)
 		var level_button = main_menu_node.get_node(button_name)
 		
@@ -2170,9 +2427,9 @@ func update_drill_mode_availability():
 	if not drill_mode_button:
 		return
 	
-	# Check if all levels (1-8) have at least 1 star
+	# Check if all levels (1-9) have at least 1 star
 	var all_levels_completed = true
-	for level in range(1, 9):
+	for level in range(1, 10):
 		var level_key = str(level)
 		if not save_data.levels.has(level_key):
 			all_levels_completed = false
@@ -2230,6 +2487,8 @@ func create_fraction(position: Vector2, numerator: int = 1, denominator: int = 1
 	var fraction_scene = load("res://scenes/fraction.tscn")
 	var fraction_instance = fraction_scene.instantiate()
 	
+	print("Creating fraction ", numerator, "/", denominator, " at position ", position)
+	
 	# Set the position
 	fraction_instance.position = position
 	
@@ -2242,5 +2501,128 @@ func create_fraction(position: Vector2, numerator: int = 1, denominator: int = 1
 	# Set the fraction values (this will trigger automatic resizing)
 	fraction_instance.set_fraction(numerator, denominator)
 	
+	# Make sure it's visible
+	fraction_instance.visible = true
+	
+	print("Fraction created and added to scene tree")
+	
 	# Return the instance for further manipulation if needed
 	return fraction_instance
+
+func create_fraction_problem():
+	"""Create a fraction-type problem display with fractions, operator, equals sign, and answer area"""
+	if not current_question or current_question.get("type") != "add_like_denominators":
+		return
+	
+	# Clean up any existing problem nodes
+	cleanup_problem_labels()
+	
+	# Parse operands from the question
+	# operands is an array of [numerator, denominator] pairs
+	var operands = current_question.operands
+	if operands.size() < 2:
+		print("Error: Fraction question missing operands")
+		return
+	
+	var operand1 = operands[0]  # [num, denom]
+	var operand2 = operands[1]  # [num, denom]
+	
+	print("Creating fraction problem: ", operand1[0], "/", operand1[1], " + ", operand2[0], "/", operand2[1])
+	
+	# Calculate horizontal positions for the final layout
+	# Start further left to center the whole expression
+	var base_x = primary_position.x - 200
+	var target_y = primary_position.y
+	var start_y = off_screen_bottom.y  # Start off-screen at bottom
+	
+	var current_x = base_x
+	
+	# Create first fraction (start off-screen)
+	print("Creating fraction 1 at position: ", Vector2(current_x, start_y))
+	var fraction1 = create_fraction(Vector2(current_x, start_y), operand1[0], operand1[1], play_node)
+	current_problem_nodes.append(fraction1)
+	var fraction1_target = Vector2(current_x, target_y) + fraction_offset
+	current_x += fraction_element_spacing * 2
+	
+	# Create operator label (+, -, etc.) - start off-screen
+	print("Creating operator at position: ", Vector2(current_x, start_y))
+	var operator_label = Label.new()
+	operator_label.label_settings = label_settings_resource
+	operator_label.text = current_question.operator
+	operator_label.position = Vector2(current_x, start_y)
+	operator_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	operator_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	play_node.add_child(operator_label)
+	current_problem_nodes.append(operator_label)
+	var operator_target = Vector2(current_x, target_y) + operator_offset
+	current_x += fraction_element_spacing * 2
+	
+	# Create second fraction - start off-screen
+	print("Creating fraction 2 at position: ", Vector2(current_x, start_y))
+	var fraction2 = create_fraction(Vector2(current_x, start_y), operand2[0], operand2[1], play_node)
+	current_problem_nodes.append(fraction2)
+	var fraction2_target = Vector2(current_x, target_y) + fraction_offset
+	current_x += fraction_element_spacing * 2
+	
+	# Create equals label - start off-screen
+	print("Creating equals at position: ", Vector2(current_x, start_y))
+	var equals_label = Label.new()
+	equals_label.label_settings = label_settings_resource
+	equals_label.text = "="
+	equals_label.position = Vector2(current_x, start_y)
+	equals_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	equals_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	play_node.add_child(equals_label)
+	current_problem_nodes.append(equals_label)
+	var equals_target = Vector2(current_x, target_y) + operator_offset
+	current_x += fraction_element_spacing * 2 + fraction_answer_offset
+	
+	# Create answer label (will show underscore or typed number before fraction mode) - start off-screen
+	print("Creating answer label at position: ", Vector2(current_x, start_y))
+	current_problem_label = Label.new()
+	current_problem_label.label_settings = label_settings_resource
+	current_problem_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	current_problem_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	current_problem_label.position = Vector2(current_x, start_y)
+	current_problem_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	current_problem_label.self_modulate = Color(1, 1, 1)
+	play_node.add_child(current_problem_label)
+	current_problem_nodes.append(current_problem_label)
+	var answer_target = Vector2(current_x, target_y) + operator_offset
+	
+	print("Fraction problem created successfully! Total nodes: ", current_problem_nodes.size())
+	
+	# Animate all elements to their target positions
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.set_parallel(true)  # Animate all elements simultaneously
+	tween.tween_property(fraction1, "position", fraction1_target, animation_duration)
+	tween.tween_property(operator_label, "position", operator_target, animation_duration)
+	tween.tween_property(fraction2, "position", fraction2_target, animation_duration)
+	tween.tween_property(equals_label, "position", equals_target, animation_duration)
+	tween.tween_property(current_problem_label, "position", answer_target, animation_duration)
+	
+	# Start timing this question when animation completes
+	tween.tween_callback(start_question_timing)
+	
+	# Note: answer_fraction_node will be created when user presses Divide
+
+func create_answer_fraction():
+	"""Create just the answer fraction visual when user presses Divide"""
+	if answer_fraction_node:
+		return  # Already exists
+	
+	# Use the position of the current_problem_label (the answer label) but apply fraction_offset
+	var base_pos = current_problem_label.position if current_problem_label else primary_position
+	# Subtract operator_offset and add fraction_offset to align with other fractions
+	var answer_pos = base_pos - operator_offset + fraction_offset
+	
+	# Create the answer fraction at the aligned position
+	answer_fraction_node = create_fraction(answer_pos, 0, 1, play_node)
+	answer_fraction_node.set_input_mode(true)
+	current_problem_nodes.append(answer_fraction_node)
+	
+	# Hide the label since we're now using the fraction node
+	if current_problem_label:
+		current_problem_label.visible = false
