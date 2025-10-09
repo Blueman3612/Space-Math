@@ -26,6 +26,7 @@ var drill_mode_duration = 60.0  # Duration for drill mode in seconds (1 minute)
 var fraction_element_spacing = 112.0  # Spacing between fractions and operators
 var fraction_answer_offset = 88.0  # Horizontal offset for answer positioning (fraction mode)
 var fraction_answer_number_offset = -40.0  # Additional leftward offset for non-fractionalized answers
+var fraction_mixed_answer_extra_offset = 64.0  # Additional rightward offset for mixed fraction answers to prevent overlap
 var fraction_offset = Vector2(48, 64.0)  # Position offset for fraction elements (x, y)
 var operator_offset = Vector2(0, 0.0)  # Position offset for operators and equals sign (x, y)
 var fraction_problem_x_offset = -64.0  # Horizontal offset from primary_position for the entire fraction problem
@@ -84,6 +85,9 @@ var high_score_flicker_speed = 12.0  # Speed of color flickering between blue an
 const menu_above_screen = Vector2(0, -1144)
 const menu_below_screen = Vector2(0, 1144)
 const menu_on_screen = Vector2(0, 0)
+
+# Fraction problem positioning constants
+const fraction_problem_min_x = 32.0  # Minimum x position for fraction problems to prevent going off-screen
 
 # Track progression mapping (button index to track ID, ordered by difficulty)
 const track_progression = [12, 9, 6, 10, 8, 11, 7, 5, "4.NF.B"]
@@ -1256,6 +1260,18 @@ func create_incorrect_fraction_answer():
 	# Position answer area after equals sign
 	var answer_x = equals_x + fraction_element_spacing + fraction_answer_offset
 	var answer_number_x = answer_x + fraction_answer_number_offset
+	
+	# Check if problem extends too far left and adjust if necessary
+	var leftmost_x = fraction1_x - fraction1_half_width
+	if leftmost_x < fraction_problem_min_x:
+		var x_offset = fraction_problem_min_x - leftmost_x
+		# Shift all x positions rightward
+		fraction1_x += x_offset
+		operator_x += x_offset
+		fraction2_x += x_offset
+		equals_x += x_offset
+		answer_x += x_offset
+		answer_number_x += x_offset
 	
 	# Position all the fractions
 	fraction1.position = Vector2(fraction1_x, target_y) + fraction_offset
@@ -3290,6 +3306,18 @@ func create_fraction_problem():
 	var answer_x = equals_x + fraction_element_spacing + fraction_answer_offset
 	var answer_number_x = answer_x + fraction_answer_number_offset  # Position for non-fractionalized answer
 	
+	# Check if problem extends too far left and adjust if necessary
+	var leftmost_x = fraction1_x - fraction1_half_width
+	if leftmost_x < fraction_problem_min_x:
+		var x_offset = fraction_problem_min_x - leftmost_x
+		# Shift all x positions rightward
+		fraction1_x += x_offset
+		operator_x += x_offset
+		fraction2_x += x_offset
+		equals_x += x_offset
+		answer_x += x_offset
+		answer_number_x += x_offset
+	
 	# Now position all the fractions at their calculated positions (off-screen initially)
 	fraction1.position = Vector2(fraction1_x, start_y) + fraction_offset
 	fraction2.position = Vector2(fraction2_x, start_y) + fraction_offset
@@ -3401,6 +3429,18 @@ func create_answer_mixed_fraction():
 	answer_fraction_node.set_mixed_fraction(whole_num, 0, 1)
 	answer_fraction_node.editing_numerator = true
 	current_problem_nodes.append(answer_fraction_node)
+	
+	# Get the baseline width (a fraction with just "0/1")
+	var temp_fraction = create_fraction(Vector2(0, 0), 0, 1, play_node)
+	var baseline_width = temp_fraction.current_divisor_width
+	temp_fraction.queue_free()
+	
+	# Calculate how much wider the mixed fraction is compared to baseline
+	var width_diff = answer_fraction_node.current_total_width - baseline_width
+	
+	# Shift the position rightward by half the width difference plus additional offset to prevent overlap with equals sign
+	answer_pos.x += (width_diff / 2.0) + fraction_mixed_answer_extra_offset
+	answer_fraction_node.position = answer_pos
 	
 	# Store initial position and width for dynamic positioning (using total width for mixed fractions)
 	answer_fraction_base_x = answer_pos.x

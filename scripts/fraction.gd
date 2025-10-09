@@ -7,7 +7,7 @@ var divisor_padding = 48.0
 var label_x_offset = 8.0
 
 # Mixed fraction spacing
-var whole_number_spacing = 48.0  # Spacing between whole number and fraction
+var whole_number_spacing = 40.0  # Spacing between whole number and fraction
 
 # Input mode variables
 var is_input_mode = false  # Whether this fraction is used for user input
@@ -117,7 +117,8 @@ func set_fraction_text(numerator_text: String, denominator_text: String, add_und
 	denominator_label.offset_right = denominator_half_width + label_x_offset + underscore_shift
 	
 	# Check if denominator is 1 (whole number display)
-	var is_whole_number = (denominator_label.text.strip_edges() == "1")
+	# Only hide fraction elements if NOT in input mode (to avoid hiding while user is typing "1")
+	var is_whole_number = (denominator_label.text.strip_edges() == "1") and not is_input_mode
 	
 	# Hide divisor lines and denominator for whole numbers
 	if is_whole_number:
