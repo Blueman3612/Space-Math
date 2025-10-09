@@ -137,7 +137,6 @@ label_settings = ExtResource("7_eb6dy")
 horizontal_alignment = 2
 
 [node name="ResetDataButton" type="Button" parent="MainMenu"]
-visible = false
 self_modulate = Color(1, 1, 0, 1)
 layout_mode = 1
 anchors_preset = 8
@@ -161,6 +160,34 @@ offset_left = 6.0
 offset_right = 198.0
 offset_bottom = 192.0
 text = "R"
+label_settings = SubResource("LabelSettings_85g3d")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="UnlockAllButton" type="Button" parent="MainMenu"]
+self_modulate = Color(0, 1, 1, 1)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -480.0
+offset_top = -508.0
+offset_right = -288.0
+offset_bottom = -316.0
+grow_horizontal = 2
+grow_vertical = 2
+tooltip_text = "Unlock All Levels (DEV ONLY)"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Label" type="Label" parent="MainMenu/UnlockAllButton"]
+layout_mode = 0
+offset_left = 6.0
+offset_right = 198.0
+offset_bottom = 192.0
+text = "U"
 label_settings = SubResource("LabelSettings_85g3d")
 horizontal_alignment = 1
 vertical_alignment = 1

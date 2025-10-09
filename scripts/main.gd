@@ -1284,6 +1284,12 @@ func connect_menu_buttons():
 		reset_data_button.pressed.connect(_on_reset_data_button_pressed)
 		connect_button_sounds(reset_data_button)
 	
+	# Connect unlock all button
+	var unlock_all_button = main_menu_node.get_node("UnlockAllButton")
+	if unlock_all_button:
+		unlock_all_button.pressed.connect(_on_unlock_all_button_pressed)
+		connect_button_sounds(unlock_all_button)
+	
 	# Connect drill mode button
 	var drill_mode_button = main_menu_node.get_node("DrillModeButton")
 	if drill_mode_button:
@@ -1333,6 +1339,35 @@ func _on_reset_data_button_pressed():
 	update_level_availability()
 	
 	print("Save data reset complete!")
+
+func _on_unlock_all_button_pressed():
+	"""Handle unlock all button press - unlock all levels with 3 stars (DEV ONLY)"""
+	if current_state != GameState.MENU:
+		return
+	
+	print("Unlocking all levels...")
+	
+	# Set all levels to have 3 stars and reasonable completion values
+	for level in range(1, track_progression.size() + 1):
+		var level_key = str(level)
+		var level_config = level_configs.get(level, level_configs[1])
+		
+		# Set each level to have 3 stars and max values
+		save_data.levels[level_key] = {
+			"highest_stars": 3,
+			"best_accuracy": level_config.problems,  # Perfect accuracy
+			"best_time": level_config.star3.time,  # Best time for 3 stars
+			"best_cqpm": calculate_cqpm(level_config.problems, level_config.star3.time)
+		}
+	
+	save_save_data()
+	
+	# Update menu display with unlocked levels
+	update_menu_stars()
+	update_level_availability()
+	update_drill_mode_high_score_display()
+	
+	print("All levels unlocked!")
 
 func _on_drill_mode_button_pressed():
 	"""Handle drill mode button press - start drill mode"""
@@ -2273,22 +2308,27 @@ func find_question_by_key(question_key):
 			if question.operator != operator:
 				continue
 			
+			# Make sure question has operands array
+			if not question.has("operands") or typeof(question.operands) != TYPE_ARRAY or question.operands.size() < 2:
+				continue
+			
 			var operands_match = false
 			if is_fraction:
 				# Fraction question - parse "num/denom" format
 				var op1_parts = parts[0].split("/")
 				var op2_parts = parts[2].split("/")
 				if op1_parts.size() == 2 and op2_parts.size() == 2:
-					if typeof(question.operands[0]) == TYPE_ARRAY:
-						operands_match = (question.operands[0][0] == float(op1_parts[0]) and 
-										  question.operands[0][1] == float(op1_parts[1]) and
-										  question.operands[1][0] == float(op2_parts[0]) and
-										  question.operands[1][1] == float(op2_parts[1]))
+					if typeof(question.operands[0]) == TYPE_ARRAY and typeof(question.operands[1]) == TYPE_ARRAY:
+						if question.operands[0].size() >= 2 and question.operands[1].size() >= 2:
+							operands_match = (question.operands[0][0] == float(op1_parts[0]) and 
+											  question.operands[0][1] == float(op1_parts[1]) and
+											  question.operands[1][0] == float(op2_parts[0]) and
+											  question.operands[1][1] == float(op2_parts[1]))
 			else:
 				# Regular question - parse as numbers
 				var operand1 = float(parts[0])
 				var operand2 = float(parts[2])
-				if typeof(question.operands[0]) != TYPE_ARRAY:
+				if typeof(question.operands[0]) != TYPE_ARRAY and typeof(question.operands[1]) != TYPE_ARRAY:
 					operands_match = (question.operands[0] == operand1 and question.operands[1] == operand2)
 			
 			if operands_match:

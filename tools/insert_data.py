@@ -3,7 +3,13 @@
 Insert Data - JSON Format Converter
 Converts various JSON formats to the standardized data-example.json format.
 
-Usage: python3 insert_data.py [input_file] [output_file] [--include-all] [--wipe-output-file]
+Usage: python3 insert_data.py [input_file] [output_file] [options]
+
+Options:
+  --include-all          Include all optional fields without prompting
+  --wipe-output-file     Replace existing output file instead of merging
+  --selective            Review and approve each level individually
+  --skip-invalid-facts   Skip facts with missing fields (default: interactive resolution)
 """
 
 import json
@@ -24,11 +30,11 @@ class Colors:
 
 # Essential fields required in the output format
 ESSENTIAL_LEVEL_FIELDS = ['id', 'title', 'facts']  # factCount is auto-generated
-ESSENTIAL_FACT_FIELDS = ['index', 'operands', 'operator', 'result', 'expression']  # type is optional
+ESSENTIAL_FACT_FIELDS = ['index', 'result', 'expression']
 
 # Optional fields that can be included
 OPTIONAL_LEVEL_FIELDS = ['objective', 'standards', 'mastery', 'difficulty']
-OPTIONAL_FACT_FIELDS = ['prompt', 'asking_for', 'type']
+OPTIONAL_FACT_FIELDS = ['prompt', 'asking_for', 'type', 'operands', 'operator']
 
 # Statistics tracking
 stats = {
@@ -146,37 +152,70 @@ def prompt_for_optional_fields(available_fields, context="level"):
         print(f"   {Colors.WARNING}Invalid input. Skipping optional fields.{Colors.ENDC}")
         return []
 
-def map_fact(source_fact, field_mapping, optional_fields, level_context):
+def map_fact(source_fact, field_mapping, optional_fields, level_context, skip_invalid=False):
     """Map a single fact to the target format."""
     try:
         target_fact = {}
+        missing_fields = []
         
         # Map essential fields
         for essential_field in ESSENTIAL_FACT_FIELDS:
-            if essential_field == 'operator':
-                # Try to get operator, or auto-generate
-                if 'operator' in field_mapping and field_mapping['operator'] in source_fact:
-                    target_fact['operator'] = source_fact[field_mapping['operator']]
-                elif 'operator' in source_fact:
-                    target_fact['operator'] = source_fact['operator']
-                else:
-                    # Auto-generate from type
-                    fact_type = target_fact.get('type', '')
-                    target_fact['operator'] = auto_generate_operator(fact_type)
-                    if not target_fact['operator']:
-                        stats['warnings'].append(
-                            f"Level '{level_context}' fact #{source_fact.get('index', '?')}: No operator found or generated"
-                        )
+            mapped_key = field_mapping.get(essential_field, essential_field)
+            
+            # First try the mapped key
+            if mapped_key in source_fact:
+                target_fact[essential_field] = source_fact[mapped_key]
+            # Fallback: try the essential field name itself (in case mapping is wrong for this specific fact)
+            elif essential_field in source_fact:
+                target_fact[essential_field] = source_fact[essential_field]
             else:
-                mapped_key = field_mapping.get(essential_field, essential_field)
-                if mapped_key in source_fact:
-                    target_fact[essential_field] = source_fact[mapped_key]
-                else:
-                    # Essential field missing
+                # Essential field missing
+                missing_fields.append(essential_field)
+        
+        # If there are missing fields, handle interactively or skip
+        if missing_fields:
+            if skip_invalid:
+                # Just log and skip
+                for field in missing_fields:
                     stats['warnings'].append(
-                        f"Level '{level_context}' fact #{source_fact.get('index', '?')}: Missing essential field '{essential_field}'"
+                        f"Level '{level_context}' fact #{source_fact.get('index', '?')}: Missing essential field '{field}'"
                     )
-                    return None
+                return None
+            else:
+                # Interactive resolution
+                print(f"\n   {Colors.WARNING}⚠️  Problem with fact #{source_fact.get('index', '?')} in '{level_context}'{Colors.ENDC}")
+                print(f"   Missing essential field(s): {', '.join(missing_fields)}")
+                print(f"\n   {Colors.OKBLUE}Fact contents:{Colors.ENDC}")
+                for key, value in source_fact.items():
+                    value_str = str(value)
+                    if len(value_str) > 70:
+                        value_str = value_str[:67] + "..."
+                    print(f"      • {key}: {value_str}")
+                
+                available_keys = list(source_fact.keys())
+                
+                # Try to map each missing field
+                for missing_field in missing_fields:
+                    mapped = prompt_user_for_field(missing_field, available_keys, f"fact #{source_fact.get('index', '?')}")
+                    if mapped:
+                        field_mapping[missing_field] = mapped
+                        target_fact[missing_field] = source_fact[mapped]
+                        stats['field_mappings'][f"fact.{missing_field}"] = mapped
+                        print(f"   📝 {Colors.OKCYAN}This mapping will be applied to all future facts (with fallback to '{missing_field}' if available){Colors.ENDC}")
+                    else:
+                        # User chose to skip this field
+                        while True:
+                            response = input(f"\n   Skip this fact? (y/n): ").strip().lower()
+                            if response in ['y', 'yes']:
+                                stats['warnings'].append(
+                                    f"Level '{level_context}' fact #{source_fact.get('index', '?')}: User skipped - missing '{missing_field}'"
+                                )
+                                return None
+                            elif response in ['n', 'no']:
+                                print(f"   {Colors.FAIL}Cannot proceed without '{missing_field}'. Aborting conversion.{Colors.ENDC}")
+                                sys.exit(1)
+                            else:
+                                print(f"   {Colors.FAIL}Please enter 'y' or 'n'{Colors.ENDC}")
         
         # Map optional fields
         for opt_field in optional_fields:
@@ -189,16 +228,39 @@ def map_fact(source_fact, field_mapping, optional_fields, level_context):
         return target_fact
         
     except Exception as e:
-        stats['warnings'].append(
-            f"Level '{level_context}' fact #{source_fact.get('index', '?')}: Error processing - {str(e)}"
-        )
-        return None
+        if skip_invalid:
+            stats['warnings'].append(
+                f"Level '{level_context}' fact #{source_fact.get('index', '?')}: Error processing - {str(e)}"
+            )
+            return None
+        else:
+            print(f"\n   {Colors.FAIL}❌ Error processing fact #{source_fact.get('index', '?')}: {str(e)}{Colors.ENDC}")
+            while True:
+                response = input(f"\n   Skip this fact? (y/n): ").strip().lower()
+                if response in ['y', 'yes']:
+                    stats['warnings'].append(
+                        f"Level '{level_context}' fact #{source_fact.get('index', '?')}: User skipped - error: {str(e)}"
+                    )
+                    return None
+                elif response in ['n', 'no']:
+                    print(f"   {Colors.FAIL}Cannot proceed. Aborting conversion.{Colors.ENDC}")
+                    sys.exit(1)
+                else:
+                    print(f"   {Colors.FAIL}Please enter 'y' or 'n'{Colors.ENDC}")
 
-def convert_json(input_data, include_all_optional=False):
+def convert_json(input_data, include_all_optional=False, selective_mode=False, skip_invalid_facts=False):
     """Convert input JSON to target format."""
     print(f"\n{'='*60}")
     print(f"🚀 {Colors.HEADER}{Colors.BOLD}Starting Conversion Process{Colors.ENDC}")
     print(f"{'='*60}")
+    
+    if selective_mode:
+        print(f"   🎯 {Colors.OKCYAN}Selective mode enabled - you'll review each level{Colors.ENDC}")
+    
+    if skip_invalid_facts:
+        print(f"   ⏭️  {Colors.WARNING}Skip mode enabled - facts with missing fields will be skipped{Colors.ENDC}")
+    else:
+        print(f"   🛠️  {Colors.OKGREEN}Interactive mode - you'll resolve any missing fields{Colors.ENDC}")
     
     # Step 1: Find the levels/tracks container
     print(f"\n📦 {Colors.OKBLUE}Step 1: Identifying levels container...{Colors.ENDC}")
@@ -265,6 +327,85 @@ def convert_json(input_data, include_all_optional=False):
         
         levels_array = flattened_levels
         print(f"   ✅ Flattened to {len(levels_array)} track(s)")
+    
+    # Step 1.6: Selective mode - let user choose which levels to include BEFORE field mapping
+    selected_levels = []
+    if selective_mode:
+        print(f"\n🎯 {Colors.OKBLUE}Step 1.6: Selecting levels to include...{Colors.ENDC}")
+        print(f"   You'll review each level and decide whether to include it.\n")
+        
+        for i, level in enumerate(levels_array, 1):
+            # Try to find ID and title fields (they might have different names)
+            level_id = level.get('id', level.get('level_id', level.get('track_id', f'Level {i}')))
+            level_title = level.get('title', level.get('name', level.get('track_name', 'Untitled')))
+            
+            print(f"{'─'*60}")
+            print(f"📋 {Colors.BOLD}Level {i}/{len(levels_array)}: {Colors.OKCYAN}{level_id}{Colors.ENDC}")
+            print(f"   Title: {level_title}")
+            print(f"{'─'*60}")
+            
+            # Show all level fields
+            print(f"\n   {Colors.OKBLUE}Level Fields:{Colors.ENDC}")
+            facts_keys = ['facts', 'problems', 'questions', 'items']  # Common names for facts arrays
+            facts_key_found = None
+            
+            for key, value in level.items():
+                if key in facts_keys and isinstance(value, list):
+                    facts_key_found = key
+                    print(f"      • {key}: [{len(value)} items]")
+                else:
+                    value_preview = str(value)
+                    if len(value_preview) > 60:
+                        value_preview = value_preview[:57] + "..."
+                    print(f"      • {key}: {value_preview}")
+            
+            # Show first fact if available
+            if facts_key_found and level[facts_key_found]:
+                first_fact = level[facts_key_found][0]
+                print(f"\n   {Colors.OKBLUE}Fact Fields (from first fact):{Colors.ENDC}")
+                for key in first_fact.keys():
+                    print(f"      • {key}")
+                
+                print(f"\n   {Colors.OKBLUE}First Fact Example:{Colors.ENDC}")
+                for key, value in first_fact.items():
+                    value_str = str(value)
+                    if len(value_str) > 70:
+                        value_str = value_str[:67] + "..."
+                    print(f"      • {key}: {value_str}")
+            else:
+                print(f"\n   {Colors.WARNING}⚠️  No facts found in this level{Colors.ENDC}")
+            
+            # Ask for approval
+            while True:
+                response = input(f"\n   Include this level? (y/n/q to quit): ").strip().lower()
+                if response in ['y', 'yes']:
+                    print(f"   ✅ Including level '{level_id}'")
+                    selected_levels.append(level)
+                    break
+                elif response in ['n', 'no']:
+                    print(f"   ⏭️  Skipping level '{level_id}'")
+                    break
+                elif response in ['q', 'quit']:
+                    print(f"\n   {Colors.WARNING}🛑 Level selection cancelled by user{Colors.ENDC}")
+                    if selected_levels:
+                        print(f"   📊 {len(selected_levels)} level(s) selected before cancellation")
+                        break
+                    else:
+                        print(f"   ❌ No levels selected. Aborting.")
+                        return None
+                else:
+                    print(f"   {Colors.FAIL}Please enter 'y', 'n', or 'q'{Colors.ENDC}")
+            
+            # Check if user quit
+            if response in ['q', 'quit']:
+                break
+        
+        if not selected_levels:
+            print(f"\n   {Colors.FAIL}❌ No levels selected. Aborting.{Colors.ENDC}")
+            return None
+        
+        levels_array = selected_levels
+        print(f"\n   ✅ {Colors.OKGREEN}Selected {len(levels_array)} level(s) to process{Colors.ENDC}")
     
     # Step 2: Analyze first level structure
     print(f"\n🔍 {Colors.OKBLUE}Step 2: Analyzing level structure...{Colors.ENDC}")
@@ -342,7 +483,10 @@ def convert_json(input_data, include_all_optional=False):
     output_levels = []
     
     for i, source_level in enumerate(levels_array, 1):
-        print(f"\n   Processing level {i}/{len(levels_array)}...", end=' ')
+        level_id = source_level.get(level_field_mapping.get('id', 'id'), f'Level {i}')
+        level_title = source_level.get(level_field_mapping.get('title', 'title'), f'Level {i}')
+        
+        print(f"\n   Processing level {i}/{len(levels_array)} ({level_id})...", end=' ')
         
         target_level = {}
         
@@ -364,10 +508,8 @@ def convert_json(input_data, include_all_optional=False):
         source_facts = source_level.get(facts_key, [])
         target_facts = []
         
-        level_title = target_level.get('title', f'Level {i}')
-        
         for source_fact in source_facts:
-            mapped_fact = map_fact(source_fact, fact_field_mapping, optional_fact_fields, level_title)
+            mapped_fact = map_fact(source_fact, fact_field_mapping, optional_fact_fields, level_title, skip_invalid_facts)
             if mapped_fact:
                 target_facts.append(mapped_fact)
             else:
@@ -416,13 +558,20 @@ def main():
     """Main entry point."""
     # Parse arguments
     if len(sys.argv) < 3:
-        print(f"{Colors.FAIL}❌ Usage: python3 insert_data.py [input_file] [output_file] [--include-all] [--wipe-output-file]{Colors.ENDC}")
+        print(f"{Colors.FAIL}❌ Usage: python3 insert_data.py [input_file] [output_file] [options]{Colors.ENDC}")
+        print(f"\nOptions:")
+        print(f"  --include-all          Include all optional fields without prompting")
+        print(f"  --wipe-output-file     Replace existing output file instead of merging")
+        print(f"  --selective            Review and approve each level individually")
+        print(f"  --skip-invalid-facts   Skip facts with missing fields (default: interactive resolution)")
         sys.exit(1)
     
     input_file = sys.argv[1]
     output_file = sys.argv[2]
     include_all = '--include-all' in sys.argv or '--include_all' in sys.argv
     wipe_output = '--wipe-output-file' in sys.argv or '--wipe_output_file' in sys.argv
+    selective_mode = '--selective' in sys.argv
+    skip_invalid_facts = '--skip-invalid-facts' in sys.argv
     
     # Load input file
     print(f"\n📂 Loading input file: {input_file}")
@@ -465,7 +614,7 @@ def main():
         print(f"\n🗑️  {Colors.WARNING}Wiping existing output file: {output_file}{Colors.ENDC}")
     
     # Convert
-    output_data = convert_json(input_data, include_all)
+    output_data = convert_json(input_data, include_all, selective_mode, skip_invalid_facts)
     
     if output_data is None:
         print(f"\n{Colors.FAIL}❌ Conversion failed. No output file created.{Colors.ENDC}")
