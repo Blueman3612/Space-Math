@@ -29,6 +29,7 @@ var fraction_answer_number_offset = -40.0  # Additional leftward offset for non-
 var fraction_mixed_answer_extra_offset = 4.0  # Additional rightward offset for mixed fraction answers to prevent overlap
 var fraction_offset = Vector2(48, 64.0)  # Position offset for fraction elements (x, y)
 var operator_offset = Vector2(0, 0.0)  # Position offset for operators and equals sign (x, y)
+var unicode_operator_offset = Vector2(10, -30)  # Additional offset for unicode operators (× and ÷) to center them properly
 var fraction_problem_x_offset = -64.0  # Horizontal offset from primary_position for the entire fraction problem
 
 # Star animation variables
@@ -49,14 +50,9 @@ var level_configs = {
 	6: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
 	7: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
 	8: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
-	9: {"problems": 20, "star1": {"accuracy": 13, "time": 120.0}, "star2": {"accuracy": 15, "time": 100.0}, "star3": {"accuracy": 16, "time": 80.0}},
-	10: {"problems": 20, "star1": {"accuracy": 13, "time": 120.0}, "star2": {"accuracy": 15, "time": 100.0}, "star3": {"accuracy": 17, "time": 80.0}},
-	11: {"problems": 20, "star1": {"accuracy": 13, "time": 240.0}, "star2": {"accuracy": 15, "time": 200.0}, "star3": {"accuracy": 17, "time": 160.0}},
-	12: {"problems": 20, "star1": {"accuracy": 13, "time": 300.0}, "star2": {"accuracy": 15, "time": 240.0}, "star3": {"accuracy": 17, "time": 180.0}},
-	13: {"problems": 20, "star1": {"accuracy": 13, "time": 300.0}, "star2": {"accuracy": 15, "time": 240.0}, "star3": {"accuracy": 17, "time": 180.0}},
-	14: {"problems": 20, "star1": {"accuracy": 13, "time": 300.0}, "star2": {"accuracy": 15, "time": 240.0}, "star3": {"accuracy": 17, "time": 180.0}},
-	15: {"problems": 20, "star1": {"accuracy": 13, "time": 240.0}, "star2": {"accuracy": 15, "time": 200.0}, "star3": {"accuracy": 17, "time": 160.0}},
-	16: {"problems": 20, "star1": {"accuracy": 13, "time": 240.0}, "star2": {"accuracy": 15, "time": 200.0}, "star3": {"accuracy": 17, "time": 160.0}}
+	9: {"problems": 20, "star1": {"accuracy": 12, "time": 120.0}, "star2": {"accuracy": 14, "time": 100.0}, "star3": {"accuracy": 16, "time": 80.0}},
+	10: {"problems": 20, "star1": {"accuracy": 12, "time": 180.0}, "star2": {"accuracy": 14, "time": 150.0}, "star3": {"accuracy": 16, "time": 120.0}},
+	11: {"problems": 20, "star1": {"accuracy": 12, "time": 210.0}, "star2": {"accuracy": 14, "time": 180.0}, "star3": {"accuracy": 16, "time": 150.0}}
 }
 
 # Title animation variables
@@ -90,14 +86,18 @@ const menu_on_screen = Vector2(0, 0)
 const fraction_problem_min_x = 32.0  # Minimum x position for fraction problems to prevent going off-screen
 
 # Track progression mapping (button index to track ID, ordered by difficulty)
-const track_progression = [12, 9, 6, 10, 8, 11, 7, 5, "4.NF.B"]
+const track_progression = [12, 9, 6, 10, 8, 11, 7, 5, "4.NF.B", "5.NF.A", "5.NF.B"]
 
 # Problem type display format mapping
 # Maps problem types to their display format ("fraction" or "standard")
 const PROBLEM_DISPLAY_FORMATS = {
 	"Like-denominator addition/subtraction": "fraction",
 	"Mixed numbers (like denominators)": "fraction",
-	"Multiply fraction by whole number": "fraction"
+	"Multiply fraction by whole number": "fraction",
+	"Add unlike denominators": "fraction",
+	"Subtract unlike denominators": "fraction",
+	"Multiply fraction by fraction": "fraction",
+	"Division with unit fractions": "fraction"
 }
 
 # Level button creation configuration
@@ -1080,7 +1080,30 @@ func get_math_question(track = null, grade = null, operator = null, no_zeroes = 
 	# Check if this is a fraction-type question (operands are arrays of arrays)
 	if random_question.has("type") and is_fraction_display_type(random_question.get("type", "")):
 		# For fraction questions, use the expression as the question text
-		question_text = random_question.expression.split(" = ")[0] if random_question.expression else ""
+		if random_question.has("expression") and random_question.expression != "" and not random_question.expression.contains("["):
+			# Expression exists and doesn't contain malformed array notation
+			question_text = random_question.expression.split(" = ")[0]
+		else:
+			# Fallback: construct from operands if expression doesn't exist
+			if random_question.has("operands") and random_question.operands.size() >= 2:
+				var op1 = random_question.operands[0]
+				var op2 = random_question.operands[1]
+				var op1_str = ""
+				var op2_str = ""
+				
+				# Format operand 1
+				if typeof(op1) == TYPE_ARRAY and op1.size() >= 2:
+					op1_str = str(int(op1[0])) + "/" + str(int(op1[1]))
+				else:
+					op1_str = str(int(op1) if typeof(op1) == TYPE_FLOAT else op1)
+				
+				# Format operand 2
+				if typeof(op2) == TYPE_ARRAY and op2.size() >= 2:
+					op2_str = str(int(op2[0])) + "/" + str(int(op2[1]))
+				else:
+					op2_str = str(int(op2) if typeof(op2) == TYPE_FLOAT else op2)
+				
+				question_text = op1_str + " " + random_question.operator + " " + op2_str
 	else:
 		# For regular questions, format integers without decimals
 		# Check if operands exist and are numeric (not arrays) before converting
@@ -1181,7 +1204,6 @@ func create_incorrect_fraction_answer():
 	# result_data format: [whole, numerator, denominator]
 	var is_mixed_result = result_data[0] > 0
 	var is_fraction_result = result_data[1] > 0  # Has a fraction part
-	var is_whole_number_result = result_data[0] > 0 and result_data[1] == 0
 	
 	# Create correct answer elements in dark green, positioned at the same locations as current problem
 	
@@ -1344,7 +1366,11 @@ func create_incorrect_fraction_answer():
 	var operator_label = Label.new()
 	operator_label.label_settings = label_settings_resource
 	operator_label.text = current_question.operator
-	operator_label.position = Vector2(operator_x - fraction1_x, 0) + operator_offset - fraction_offset
+	# Apply unicode offset for × and ÷ symbols to center them properly
+	var op_offset = operator_offset
+	if current_question.operator == "×" or current_question.operator == "÷":
+		op_offset += unicode_operator_offset
+	operator_label.position = Vector2(operator_x - fraction1_x, 0) + op_offset - fraction_offset
 	operator_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	operator_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	# Don't set self_modulate - inherit dark green from parent fraction
@@ -2579,10 +2605,33 @@ func get_weighted_random_question():
 					# Mixed fraction or expression-based question
 					question_text = selected_question.expression if selected_question.has("expression") else ""
 					display_text = question_text.split(" = ")[0] if question_text else ""
-				elif typeof(selected_question.operands[0]) == TYPE_ARRAY:
-					# Regular fraction question - use expression
-					question_text = selected_question.expression if selected_question.has("expression") else ""
-					display_text = question_text.split(" = ")[0] if question_text else ""
+				elif typeof(selected_question.operands[0]) == TYPE_ARRAY or typeof(selected_question.operands[1]) == TYPE_ARRAY:
+					# Regular fraction question - use expression, or construct from operands if needed
+					if selected_question.has("expression") and selected_question.expression != "" and not selected_question.expression.contains("["):
+						# Expression exists and doesn't contain malformed array notation
+						question_text = selected_question.expression
+						display_text = question_text.split(" = ")[0]
+					else:
+						# Fallback: construct from operands
+						var op1 = selected_question.operands[0]
+						var op2 = selected_question.operands[1]
+						var op1_str = ""
+						var op2_str = ""
+						
+						# Format operand 1
+						if typeof(op1) == TYPE_ARRAY and op1.size() >= 2:
+							op1_str = str(int(op1[0])) + "/" + str(int(op1[1]))
+						else:
+							op1_str = str(int(op1) if typeof(op1) == TYPE_FLOAT else op1)
+						
+						# Format operand 2
+						if typeof(op2) == TYPE_ARRAY and op2.size() >= 2:
+							op2_str = str(int(op2[0])) + "/" + str(int(op2[1]))
+						else:
+							op2_str = str(int(op2) if typeof(op2) == TYPE_FLOAT else op2)
+						
+						display_text = op1_str + " " + selected_question.operator + " " + op2_str
+						question_text = display_text + " = " + str(selected_question.result)
 				else:
 					# Regular question with numeric operands - format integers
 					var operand1 = selected_question.operands[0]
@@ -3362,7 +3411,11 @@ func create_fraction_problem():
 	operator_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	operator_label.self_modulate = Color(1, 1, 1)
 	# Position relative to fraction1
-	operator_label.position = Vector2(operator_x - fraction1_x, 0) + operator_offset - fraction_offset
+	# Apply unicode offset for × and ÷ symbols to center them properly
+	var op_offset = operator_offset
+	if current_question.operator == "×" or current_question.operator == "÷":
+		op_offset += unicode_operator_offset
+	operator_label.position = Vector2(operator_x - fraction1_x, 0) + op_offset - fraction_offset
 	fraction1.add_child(operator_label)
 	current_problem_nodes.append(operator_label)
 	

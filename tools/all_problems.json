@@ -20924,7 +20924,7 @@
         {
           "index": 41,
           "result": "3/4",
-          "expression": "2 3/4 - 4 3/4 = 3/4",
+          "expression": "2 3/4 - 2 = 3/4",
           "id": "4NFB-041",
           "type": "Mixed numbers (like denominators)",
           "standard": "4.NF.B",
@@ -21681,7 +21681,7 @@
     },
     {
       "id": "5.NF.A",
-      "title": "Add/Subtract with Unlike Denominators (Grade 5)",
+      "title": "Add/Subtract Unlike Denominators",
       "objective": "Add/subtract fractions and mixed numbers with unlike denominators.",
       "standards": [
         "5.NF.1",
@@ -23744,7 +23744,7 @@
     },
     {
       "id": "5.NF.B",
-      "title": "Multiply/Divide Fractions; Scaling (Grade 5)",
+      "title": "Multiply/Divide Fractions",
       "objective": "Multiply fractions, interpret scaling, unit-fraction division, area contexts.",
       "standards": [
         "5.NF.3",
@@ -23758,7 +23758,7 @@
         "min_accuracy": 0.8,
         "min_sessions": 3
       },
-      "factCount": 100,
+      "factCount": 50,
       "facts": [
         {
           "index": 1,
@@ -24537,956 +24537,6 @@
         },
         {
           "index": 26,
-          "result": "<",
-          "expression": "(6/12) × (2/3) ? 6/12 = <",
-          "id": "5NFB-026",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (6/12) × (2/3) less than, equal to, or greater than 6/12? Explain your reasoning briefly.",
-          "operands": [
-            [
-              6,
-              12
-            ],
-            [
-              2,
-              3
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 27,
-          "result": "<",
-          "expression": "(9/7) × (5/7) ? 9/7 = <",
-          "id": "5NFB-027",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (9/7) × (5/7) less than, equal to, or greater than 9/7? Explain your reasoning briefly.",
-          "operands": [
-            [
-              9,
-              7
-            ],
-            [
-              5,
-              7
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 28,
-          "result": "<",
-          "expression": "(3/4) × (1/4) ? 3/4 = <",
-          "id": "5NFB-028",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (3/4) × (1/4) less than, equal to, or greater than 3/4? Explain your reasoning briefly.",
-          "operands": [
-            [
-              3,
-              4
-            ],
-            [
-              1,
-              4
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 29,
-          "result": "<",
-          "expression": "(2/10) × (3/10) ? 2/10 = <",
-          "id": "5NFB-029",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (2/10) × (3/10) less than, equal to, or greater than 2/10? Explain your reasoning briefly.",
-          "operands": [
-            [
-              2,
-              10
-            ],
-            [
-              3,
-              10
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 30,
-          "result": ">",
-          "expression": "(3/7) × (9/7) ? 3/7 = >",
-          "id": "5NFB-030",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (3/7) × (9/7) less than, equal to, or greater than 3/7? Explain your reasoning briefly.",
-          "operands": [
-            [
-              3,
-              7
-            ],
-            [
-              9,
-              7
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 31,
-          "result": ">",
-          "expression": "(6/10) × (6/5) ? 6/10 = >",
-          "id": "5NFB-031",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (6/10) × (6/5) less than, equal to, or greater than 6/10? Explain your reasoning briefly.",
-          "operands": [
-            [
-              6,
-              10
-            ],
-            [
-              6,
-              5
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 32,
-          "result": ">",
-          "expression": "(5/5) × (2/1) ? 5/5 = >",
-          "id": "5NFB-032",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (5/5) × (2/1) less than, equal to, or greater than 5/5? Explain your reasoning briefly.",
-          "operands": [
-            [
-              5,
-              5
-            ],
-            [
-              2,
-              1
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 33,
-          "result": ">",
-          "expression": "(5/4) × (5/4) ? 5/4 = >",
-          "id": "5NFB-033",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (5/4) × (5/4) less than, equal to, or greater than 5/4? Explain your reasoning briefly.",
-          "operands": [
-            [
-              5,
-              4
-            ],
-            [
-              5,
-              4
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 34,
-          "result": "<",
-          "expression": "(9/12) × (5/6) ? 9/12 = <",
-          "id": "5NFB-034",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (9/12) × (5/6) less than, equal to, or greater than 9/12? Explain your reasoning briefly.",
-          "operands": [
-            [
-              9,
-              12
-            ],
-            [
-              5,
-              6
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 35,
-          "result": ">",
-          "expression": "(3/4) × (7/4) ? 3/4 = >",
-          "id": "5NFB-035",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (3/4) × (7/4) less than, equal to, or greater than 3/4? Explain your reasoning briefly.",
-          "operands": [
-            [
-              3,
-              4
-            ],
-            [
-              7,
-              4
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 36,
-          "result": "<",
-          "expression": "(1/2) × (1/2) ? 1/2 = <",
-          "id": "5NFB-036",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (1/2) × (1/2) less than, equal to, or greater than 1/2? Explain your reasoning briefly.",
-          "operands": [
-            [
-              1,
-              2
-            ],
-            [
-              1,
-              2
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 37,
-          "result": "<",
-          "expression": "(4/11) × (1/11) ? 4/11 = <",
-          "id": "5NFB-037",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (4/11) × (1/11) less than, equal to, or greater than 4/11? Explain your reasoning briefly.",
-          "operands": [
-            [
-              4,
-              11
-            ],
-            [
-              1,
-              11
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 38,
-          "result": ">",
-          "expression": "(8/12) × (23/12) ? 8/12 = >",
-          "id": "5NFB-038",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (8/12) × (23/12) less than, equal to, or greater than 8/12? Explain your reasoning briefly.",
-          "operands": [
-            [
-              8,
-              12
-            ],
-            [
-              23,
-              12
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 39,
-          "result": "<",
-          "expression": "(5/9) × (7/9) ? 5/9 = <",
-          "id": "5NFB-039",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (5/9) × (7/9) less than, equal to, or greater than 5/9? Explain your reasoning briefly.",
-          "operands": [
-            [
-              5,
-              9
-            ],
-            [
-              7,
-              9
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 40,
-          "result": "<",
-          "expression": "(5/9) × (1/9) ? 5/9 = <",
-          "id": "5NFB-040",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (5/9) × (1/9) less than, equal to, or greater than 5/9? Explain your reasoning briefly.",
-          "operands": [
-            [
-              5,
-              9
-            ],
-            [
-              1,
-              9
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 41,
-          "result": "<",
-          "expression": "(3/9) × (8/9) ? 3/9 = <",
-          "id": "5NFB-041",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (3/9) × (8/9) less than, equal to, or greater than 3/9? Explain your reasoning briefly.",
-          "operands": [
-            [
-              3,
-              9
-            ],
-            [
-              8,
-              9
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 42,
-          "result": ">",
-          "expression": "(4/7) × (10/7) ? 4/7 = >",
-          "id": "5NFB-042",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (4/7) × (10/7) less than, equal to, or greater than 4/7? Explain your reasoning briefly.",
-          "operands": [
-            [
-              4,
-              7
-            ],
-            [
-              10,
-              7
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 43,
-          "result": ">",
-          "expression": "(6/7) × (9/7) ? 6/7 = >",
-          "id": "5NFB-043",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (6/7) × (9/7) less than, equal to, or greater than 6/7? Explain your reasoning briefly.",
-          "operands": [
-            [
-              6,
-              7
-            ],
-            [
-              9,
-              7
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 44,
-          "result": ">",
-          "expression": "(6/10) × (8/5) ? 6/10 = >",
-          "id": "5NFB-044",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (6/10) × (8/5) less than, equal to, or greater than 6/10? Explain your reasoning briefly.",
-          "operands": [
-            [
-              6,
-              10
-            ],
-            [
-              8,
-              5
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 45,
-          "result": "<",
-          "expression": "(4/9) × (8/9) ? 4/9 = <",
-          "id": "5NFB-045",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (4/9) × (8/9) less than, equal to, or greater than 4/9? Explain your reasoning briefly.",
-          "operands": [
-            [
-              4,
-              9
-            ],
-            [
-              8,
-              9
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 46,
-          "result": "<",
-          "expression": "(4/4) × (1/2) ? 4/4 = <",
-          "id": "5NFB-046",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (4/4) × (1/2) less than, equal to, or greater than 4/4? Explain your reasoning briefly.",
-          "operands": [
-            [
-              4,
-              4
-            ],
-            [
-              1,
-              2
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 47,
-          "result": "<",
-          "expression": "(7/11) × (3/11) ? 7/11 = <",
-          "id": "5NFB-047",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (7/11) × (3/11) less than, equal to, or greater than 7/11? Explain your reasoning briefly.",
-          "operands": [
-            [
-              7,
-              11
-            ],
-            [
-              3,
-              11
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 48,
-          "result": ">",
-          "expression": "(6/11) × (15/11) ? 6/11 = >",
-          "id": "5NFB-048",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (6/11) × (15/11) less than, equal to, or greater than 6/11? Explain your reasoning briefly.",
-          "operands": [
-            [
-              6,
-              11
-            ],
-            [
-              15,
-              11
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 49,
-          "result": ">",
-          "expression": "(3/9) × (17/9) ? 3/9 = >",
-          "id": "5NFB-049",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (3/9) × (17/9) less than, equal to, or greater than 3/9? Explain your reasoning briefly.",
-          "operands": [
-            [
-              3,
-              9
-            ],
-            [
-              17,
-              9
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 50,
-          "result": "<",
-          "expression": "(8/6) × (1/6) ? 8/6 = <",
-          "id": "5NFB-050",
-          "type": "Scaling reasoning",
-          "standard": "5.NF.B",
-          "skills": "interpret multiplication as scaling (resizing)",
-          "prompt": "Without calculating the exact product, is (8/6) × (1/6) less than, equal to, or greater than 8/6? Explain your reasoning briefly.",
-          "operands": [
-            [
-              8,
-              6
-            ],
-            [
-              1,
-              6
-            ]
-          ],
-          "operator": "scale_compare"
-        },
-        {
-          "index": 51,
-          "result": "28/25",
-          "expression": "(7/10)×(8/5) = 28/25",
-          "id": "5NFB-051",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 7/10 m and width 8/5 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 28,
-          "result_denominator": 25,
-          "result_whole": 1,
-          "result_fraction_numerator": 3,
-          "result_fraction_denominator": 25,
-          "result_mixed": "1 3/25"
-        },
-        {
-          "index": 52,
-          "result": "12/11",
-          "expression": "(4/11)×(6/2) = 12/11",
-          "id": "5NFB-052",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 4/11 m and width 6/2 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 12,
-          "result_denominator": 11,
-          "result_whole": 1,
-          "result_fraction_numerator": 1,
-          "result_fraction_denominator": 11,
-          "result_mixed": "1 1/11"
-        },
-        {
-          "index": 53,
-          "result": "4/33",
-          "expression": "(1/6)×(8/11) = 4/33",
-          "id": "5NFB-053",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 1/6 m and width 8/11 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 4,
-          "result_denominator": 33,
-          "result_whole": 0,
-          "result_fraction_numerator": 4,
-          "result_fraction_denominator": 33,
-          "result_mixed": "4/33"
-        },
-        {
-          "index": 54,
-          "result": "6",
-          "expression": "(8/6)×(9/2) = 6",
-          "id": "5NFB-054",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 8/6 m and width 9/2 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 6,
-          "result_denominator": 1,
-          "result_whole": 6,
-          "result_fraction_numerator": 0,
-          "result_fraction_denominator": 1,
-          "result_mixed": "6"
-        },
-        {
-          "index": 55,
-          "result": "1/8",
-          "expression": "(2/8)×(3/6) = 1/8",
-          "id": "5NFB-055",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 2/8 m and width 3/6 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 1,
-          "result_denominator": 8,
-          "result_whole": 0,
-          "result_fraction_numerator": 1,
-          "result_fraction_denominator": 8,
-          "result_mixed": "1/8"
-        },
-        {
-          "index": 56,
-          "result": "9/4",
-          "expression": "(6/8)×(6/2) = 9/4",
-          "id": "5NFB-056",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 6/8 m and width 6/2 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 9,
-          "result_denominator": 4,
-          "result_whole": 2,
-          "result_fraction_numerator": 1,
-          "result_fraction_denominator": 4,
-          "result_mixed": "2 1/4"
-        },
-        {
-          "index": 57,
-          "result": "63/10",
-          "expression": "(7/2)×(9/5) = 63/10",
-          "id": "5NFB-057",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 7/2 m and width 9/5 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 63,
-          "result_denominator": 10,
-          "result_whole": 6,
-          "result_fraction_numerator": 3,
-          "result_fraction_denominator": 10,
-          "result_mixed": "6 3/10"
-        },
-        {
-          "index": 58,
-          "result": "1",
-          "expression": "(6/10)×(5/3) = 1",
-          "id": "5NFB-058",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 6/10 m and width 5/3 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 1,
-          "result_denominator": 1,
-          "result_whole": 1,
-          "result_fraction_numerator": 0,
-          "result_fraction_denominator": 1,
-          "result_mixed": "1"
-        },
-        {
-          "index": 59,
-          "result": "14/25",
-          "expression": "(7/10)×(8/10) = 14/25",
-          "id": "5NFB-059",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 7/10 m and width 8/10 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 14,
-          "result_denominator": 25,
-          "result_whole": 0,
-          "result_fraction_numerator": 14,
-          "result_fraction_denominator": 25,
-          "result_mixed": "14/25"
-        },
-        {
-          "index": 60,
-          "result": "5/22",
-          "expression": "(5/11)×(2/4) = 5/22",
-          "id": "5NFB-060",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 5/11 m and width 2/4 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 5,
-          "result_denominator": 22,
-          "result_whole": 0,
-          "result_fraction_numerator": 5,
-          "result_fraction_denominator": 22,
-          "result_mixed": "5/22"
-        },
-        {
-          "index": 61,
-          "result": "3/14",
-          "expression": "(2/8)×(6/7) = 3/14",
-          "id": "5NFB-061",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 2/8 m and width 6/7 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 3,
-          "result_denominator": 14,
-          "result_whole": 0,
-          "result_fraction_numerator": 3,
-          "result_fraction_denominator": 14,
-          "result_mixed": "3/14"
-        },
-        {
-          "index": 62,
-          "result": "27/35",
-          "expression": "(9/7)×(3/5) = 27/35",
-          "id": "5NFB-062",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 9/7 m and width 3/5 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 27,
-          "result_denominator": 35,
-          "result_whole": 0,
-          "result_fraction_numerator": 27,
-          "result_fraction_denominator": 35,
-          "result_mixed": "27/35"
-        },
-        {
-          "index": 63,
-          "result": "81/16",
-          "expression": "(9/8)×(9/2) = 81/16",
-          "id": "5NFB-063",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 9/8 m and width 9/2 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 81,
-          "result_denominator": 16,
-          "result_whole": 5,
-          "result_fraction_numerator": 1,
-          "result_fraction_denominator": 16,
-          "result_mixed": "5 1/16"
-        },
-        {
-          "index": 64,
-          "result": "3/14",
-          "expression": "(1/2)×(3/7) = 3/14",
-          "id": "5NFB-064",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 1/2 m and width 3/7 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 3,
-          "result_denominator": 14,
-          "result_whole": 0,
-          "result_fraction_numerator": 3,
-          "result_fraction_denominator": 14,
-          "result_mixed": "3/14"
-        },
-        {
-          "index": 65,
-          "result": "8/5",
-          "expression": "(8/10)×(8/4) = 8/5",
-          "id": "5NFB-065",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 8/10 m and width 8/4 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 8,
-          "result_denominator": 5,
-          "result_whole": 1,
-          "result_fraction_numerator": 3,
-          "result_fraction_denominator": 5,
-          "result_mixed": "1 3/5"
-        },
-        {
-          "index": 66,
-          "result": "27/22",
-          "expression": "(9/4)×(6/11) = 27/22",
-          "id": "5NFB-066",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 9/4 m and width 6/11 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 27,
-          "result_denominator": 22,
-          "result_whole": 1,
-          "result_fraction_numerator": 5,
-          "result_fraction_denominator": 22,
-          "result_mixed": "1 5/22"
-        },
-        {
-          "index": 67,
-          "result": "21/22",
-          "expression": "(6/4)×(7/11) = 21/22",
-          "id": "5NFB-067",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 6/4 m and width 7/11 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 21,
-          "result_denominator": 22,
-          "result_whole": 0,
-          "result_fraction_numerator": 21,
-          "result_fraction_denominator": 22,
-          "result_mixed": "21/22"
-        },
-        {
-          "index": 68,
-          "result": "3/11",
-          "expression": "(5/11)×(6/10) = 3/11",
-          "id": "5NFB-068",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 5/11 m and width 6/10 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 3,
-          "result_denominator": 11,
-          "result_whole": 0,
-          "result_fraction_numerator": 3,
-          "result_fraction_denominator": 11,
-          "result_mixed": "3/11"
-        },
-        {
-          "index": 69,
-          "result": "36/55",
-          "expression": "(9/10)×(8/11) = 36/55",
-          "id": "5NFB-069",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 9/10 m and width 8/11 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 36,
-          "result_denominator": 55,
-          "result_whole": 0,
-          "result_fraction_numerator": 36,
-          "result_fraction_denominator": 55,
-          "result_mixed": "36/55"
-        },
-        {
-          "index": 70,
-          "result": "5/63",
-          "expression": "(5/9)×(1/7) = 5/63",
-          "id": "5NFB-070",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 5/9 m and width 1/7 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 5,
-          "result_denominator": 63,
-          "result_whole": 0,
-          "result_fraction_numerator": 5,
-          "result_fraction_denominator": 63,
-          "result_mixed": "5/63"
-        },
-        {
-          "index": 71,
-          "result": "1/8",
-          "expression": "(6/12)×(2/8) = 1/8",
-          "id": "5NFB-071",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 6/12 m and width 2/8 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 1,
-          "result_denominator": 8,
-          "result_whole": 0,
-          "result_fraction_numerator": 1,
-          "result_fraction_denominator": 8,
-          "result_mixed": "1/8"
-        },
-        {
-          "index": 72,
-          "result": "5/132",
-          "expression": "(5/12)×(1/11) = 5/132",
-          "id": "5NFB-072",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 5/12 m and width 1/11 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 5,
-          "result_denominator": 132,
-          "result_whole": 0,
-          "result_fraction_numerator": 5,
-          "result_fraction_denominator": 132,
-          "result_mixed": "5/132"
-        },
-        {
-          "index": 73,
-          "result": "8/3",
-          "expression": "(8/6)×(4/2) = 8/3",
-          "id": "5NFB-073",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 8/6 m and width 4/2 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 8,
-          "result_denominator": 3,
-          "result_whole": 2,
-          "result_fraction_numerator": 2,
-          "result_fraction_denominator": 3,
-          "result_mixed": "2 2/3"
-        },
-        {
-          "index": 74,
-          "result": "3/2",
-          "expression": "(8/4)×(9/12) = 3/2",
-          "id": "5NFB-074",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 8/4 m and width 9/12 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 3,
-          "result_denominator": 2,
-          "result_whole": 1,
-          "result_fraction_numerator": 1,
-          "result_fraction_denominator": 2,
-          "result_mixed": "1 1/2"
-        },
-        {
-          "index": 75,
-          "result": "7/2",
-          "expression": "(7/4)×(4/2) = 7/2",
-          "id": "5NFB-075",
-          "type": "Area with fractional sides",
-          "standard": "5.NF.B",
-          "skills": "area model; multiply fractions",
-          "prompt": "A rectangle has length 7/4 m and width 4/2 m. What is its area in square meters? (simplify)",
-          "operator": "area",
-          "result_numerator": 7,
-          "result_denominator": 2,
-          "result_whole": 3,
-          "result_fraction_numerator": 1,
-          "result_fraction_denominator": 2,
-          "result_mixed": "3 1/2"
-        },
-        {
-          "index": 76,
           "result": "10",
           "expression": "2 ÷ [1, 5] = 10",
           "id": "5NFB-076",
@@ -25510,7 +24560,7 @@
           "result_mixed": "10"
         },
         {
-          "index": 77,
+          "index": 27,
           "result": "1/56",
           "expression": "[1, 7] ÷ 8 = 1/56",
           "id": "5NFB-077",
@@ -25534,7 +24584,7 @@
           "result_mixed": "1/56"
         },
         {
-          "index": 78,
+          "index": 28,
           "result": "40",
           "expression": "5 ÷ [1, 8] = 40",
           "id": "5NFB-078",
@@ -25558,7 +24608,7 @@
           "result_mixed": "40"
         },
         {
-          "index": 79,
+          "index": 29,
           "result": "1/110",
           "expression": "[1, 10] ÷ 11 = 1/110",
           "id": "5NFB-079",
@@ -25582,7 +24632,7 @@
           "result_mixed": "1/110"
         },
         {
-          "index": 80,
+          "index": 30,
           "result": "1/8",
           "expression": "[1, 2] ÷ 4 = 1/8",
           "id": "5NFB-080",
@@ -25606,7 +24656,7 @@
           "result_mixed": "1/8"
         },
         {
-          "index": 81,
+          "index": 31,
           "result": "70",
           "expression": "7 ÷ [1, 10] = 70",
           "id": "5NFB-081",
@@ -25630,7 +24680,7 @@
           "result_mixed": "70"
         },
         {
-          "index": 82,
+          "index": 32,
           "result": "1/80",
           "expression": "[1, 10] ÷ 8 = 1/80",
           "id": "5NFB-082",
@@ -25654,7 +24704,7 @@
           "result_mixed": "1/80"
         },
         {
-          "index": 83,
+          "index": 33,
           "result": "1/36",
           "expression": "[1, 4] ÷ 9 = 1/36",
           "id": "5NFB-083",
@@ -25678,7 +24728,7 @@
           "result_mixed": "1/36"
         },
         {
-          "index": 84,
+          "index": 34,
           "result": "1/70",
           "expression": "[1, 10] ÷ 7 = 1/70",
           "id": "5NFB-084",
@@ -25702,7 +24752,7 @@
           "result_mixed": "1/70"
         },
         {
-          "index": 85,
+          "index": 35,
           "result": "1/99",
           "expression": "[1, 11] ÷ 9 = 1/99",
           "id": "5NFB-085",
@@ -25726,7 +24776,7 @@
           "result_mixed": "1/99"
         },
         {
-          "index": 86,
+          "index": 36,
           "result": "30",
           "expression": "6 ÷ [1, 5] = 30",
           "id": "5NFB-086",
@@ -25750,7 +24800,7 @@
           "result_mixed": "30"
         },
         {
-          "index": 87,
+          "index": 37,
           "result": "1/30",
           "expression": "[1, 5] ÷ 6 = 1/30",
           "id": "5NFB-087",
@@ -25774,7 +24824,7 @@
           "result_mixed": "1/30"
         },
         {
-          "index": 88,
+          "index": 38,
           "result": "1/45",
           "expression": "[1, 5] ÷ 9 = 1/45",
           "id": "5NFB-088",
@@ -25798,7 +24848,7 @@
           "result_mixed": "1/45"
         },
         {
-          "index": 89,
+          "index": 39,
           "result": "1/63",
           "expression": "[1, 9] ÷ 7 = 1/63",
           "id": "5NFB-089",
@@ -25822,7 +24872,7 @@
           "result_mixed": "1/63"
         },
         {
-          "index": 90,
+          "index": 40,
           "result": "1/18",
           "expression": "[1, 6] ÷ 3 = 1/18",
           "id": "5NFB-090",
@@ -25846,7 +24896,7 @@
           "result_mixed": "1/18"
         },
         {
-          "index": 91,
+          "index": 41,
           "result": "1/56",
           "expression": "[1, 8] ÷ 7 = 1/56",
           "id": "5NFB-091",
@@ -25870,7 +24920,7 @@
           "result_mixed": "1/56"
         },
         {
-          "index": 92,
+          "index": 42,
           "result": "12",
           "expression": "2 ÷ [1, 6] = 12",
           "id": "5NFB-092",
@@ -25894,7 +24944,7 @@
           "result_mixed": "12"
         },
         {
-          "index": 93,
+          "index": 43,
           "result": "1/21",
           "expression": "[1, 3] ÷ 7 = 1/21",
           "id": "5NFB-093",
@@ -25918,7 +24968,7 @@
           "result_mixed": "1/21"
         },
         {
-          "index": 94,
+          "index": 44,
           "result": "1/72",
           "expression": "[1, 12] ÷ 6 = 1/72",
           "id": "5NFB-094",
@@ -25942,7 +24992,7 @@
           "result_mixed": "1/72"
         },
         {
-          "index": 95,
+          "index": 45,
           "result": "1/25",
           "expression": "[1, 5] ÷ 5 = 1/25",
           "id": "5NFB-095",
@@ -25966,7 +25016,7 @@
           "result_mixed": "1/25"
         },
         {
-          "index": 96,
+          "index": 46,
           "result": "1/60",
           "expression": "[1, 10] ÷ 6 = 1/60",
           "id": "5NFB-096",
@@ -25990,7 +25040,7 @@
           "result_mixed": "1/60"
         },
         {
-          "index": 97,
+          "index": 47,
           "result": "33",
           "expression": "11 ÷ [1, 3] = 33",
           "id": "5NFB-097",
@@ -26014,7 +25064,7 @@
           "result_mixed": "33"
         },
         {
-          "index": 98,
+          "index": 48,
           "result": "10",
           "expression": "2 ÷ [1, 5] = 10",
           "id": "5NFB-098",
@@ -26038,7 +25088,7 @@
           "result_mixed": "10"
         },
         {
-          "index": 99,
+          "index": 49,
           "result": "60",
           "expression": "5 ÷ [1, 12] = 60",
           "id": "5NFB-099",
@@ -26062,7 +25112,7 @@
           "result_mixed": "60"
         },
         {
-          "index": 100,
+          "index": 50,
           "result": "24",
           "expression": "8 ÷ [1, 3] = 24",
           "id": "5NFB-100",
