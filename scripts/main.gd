@@ -86,19 +86,14 @@ const menu_below_screen = Vector2(0, 1144)
 const menu_on_screen = Vector2(0, 0)
 
 # Track progression mapping (button index to track ID, ordered by difficulty)
-const track_progression = [12, 9, 6, 10, 8, 11, 7, 5, "FRAC-07", "FRAC-08", "FRAC-09", "FRAC-10", "FRAC-11", "FRAC-12", "FRAC-14", "FRAC-16"]
+const track_progression = [12, 9, 6, 10, 8, 11, 7, 5, "4.NF.B"]
 
 # Problem type display format mapping
 # Maps problem types to their display format ("fraction" or "standard")
 const PROBLEM_DISPLAY_FORMATS = {
-	"add_like_denominators": "fraction",
-	"subtract_like_denominators": "fraction",
-	"add_unlike_multiple": "fraction",
-	"add_unlike_lcm": "fraction",
-	"subtract_unlike_multiple": "fraction",
-	"subtract_unlike_lcm": "fraction",
-	"multiply_fraction_by_fraction": "fraction",
-	"divide_fraction_by_fraction": "fraction"
+	"Like-denominator addition/subtraction": "fraction",
+	"Mixed numbers (like denominators)": "fraction",
+	"Multiply fraction by whole number": "fraction"
 }
 
 # Level button creation configuration
@@ -108,9 +103,9 @@ var level_buttons_per_row = 8  # Number of buttons per row
 var level_button_size = Vector2(192, 192)  # Size of each level button
 
 # Position variables
-var primary_position = Vector2(416, 476)  # Main problem position
-var off_screen_top = Vector2(416, 1276)   # Off-screen top position
-var off_screen_bottom = Vector2(416, -324) # Off-screen bottom position
+var primary_position = Vector2(480, 476)  # Main problem position
+var off_screen_top = Vector2(480, 1276)   # Off-screen top position
+var off_screen_bottom = Vector2(480, -324) # Off-screen bottom position
 
 # Game state variables
 var current_state = GameState.MENU
@@ -129,6 +124,8 @@ var backspace_just_pressed = false  # Track if backspace was just pressed this f
 
 # Fraction input state variables
 var is_fraction_input = false  # Whether the user's answer is currently in fraction format
+var is_mixed_fraction_input = false  # Whether the user's answer is a mixed fraction
+var editing_numerator = true  # For mixed fractions: whether we're editing numerator (true) or denominator (false)
 var current_level_number = 0  # Current level number (1-9)
 var current_problem_nodes = []  # Array of nodes (fractions, labels) for the current problem display
 var answer_fraction_node = null  # Reference to the fraction node used for answer input
@@ -312,8 +309,28 @@ func _input(event):
 				if Input.is_action_just_pressed(digit_actions[i]):
 					var digit = str(i)
 					
-					if is_fraction_input:
-						# Fraction input mode - add to denominator
+					if is_mixed_fraction_input:
+						# Mixed fraction input mode
+						var parts = user_answer.split(" ")
+						if parts.size() == 2:
+							var fraction_parts = parts[1].split("/")
+							if fraction_parts.size() == 2:
+								if editing_numerator:
+									# Add to numerator
+									var numer = fraction_parts[0]
+									var effective_length = numer.length()
+									if effective_length < max_answer_chars:
+										user_answer = parts[0] + " " + numer + digit + "/" + fraction_parts[1]
+										AudioManager.play_tick()
+								else:
+									# Add to denominator
+									var denom = fraction_parts[1]
+									var effective_length = denom.length()
+									if effective_length < max_answer_chars:
+										user_answer = parts[0] + " " + fraction_parts[0] + "/" + denom + digit
+										AudioManager.play_tick()
+					elif is_fraction_input:
+						# Regular fraction input mode - add to denominator
 						var parts = user_answer.split("/")
 						if parts.size() == 2:
 							var denom = parts[1]
@@ -336,10 +353,33 @@ func _input(event):
 				user_answer = "-"
 				AudioManager.play_tick()  # Play tick sound on minus input
 			
-			# Handle Divide key - convert to fraction input (only for fraction-type questions)
-			if Input.is_action_just_pressed("Divide") and not is_fraction_input and current_question and is_fraction_display_type(current_question.get("type", "")):
-				if user_answer != "" and user_answer != "-":
-					# Convert current answer to numerator of fraction
+			# Handle Fraction key - create mixed fraction (only for fraction-type questions)
+			if Input.is_action_just_pressed("Fraction") and current_question and is_fraction_display_type(current_question.get("type", "")):
+				if is_mixed_fraction_input:
+					# Already in mixed fraction mode - transition from numerator to denominator
+					if editing_numerator:
+						editing_numerator = false
+						AudioManager.play_tick()
+				elif not is_fraction_input and user_answer != "" and user_answer != "-":
+					# Convert current answer to whole number of mixed fraction
+					is_fraction_input = true
+					is_mixed_fraction_input = true
+					editing_numerator = true
+					user_answer = user_answer + " /"  # Format: "2 /"
+					AudioManager.play_tick()
+					# Create answer fraction visual if needed
+					if answer_fraction_node == null:
+						create_answer_mixed_fraction()
+			
+			# Handle Divide key - convert to fraction input or transition to denominator (only for fraction-type questions)
+			if Input.is_action_just_pressed("Divide") and current_question and is_fraction_display_type(current_question.get("type", "")):
+				if is_mixed_fraction_input:
+					# In mixed fraction mode - transition from numerator to denominator
+					if editing_numerator:
+						editing_numerator = false
+						AudioManager.play_tick()
+				elif not is_fraction_input and user_answer != "" and user_answer != "-":
+					# Convert current answer to numerator of regular fraction
 					is_fraction_input = true
 					user_answer = user_answer + "/"
 					AudioManager.play_tick()
@@ -416,27 +456,70 @@ func _process(delta):
 		if backspace_just_pressed and not answer_submitted:
 			# Immediate backspace on first press
 			if user_answer.length() > 0:
-				# Check if we need to exit fraction mode BEFORE backspacing
-				# (if denominator is already empty, indicated by ending with "/")
-				var should_exit_fraction = is_fraction_input and user_answer.ends_with("/")
-				
-				user_answer = user_answer.substr(0, user_answer.length() - 1)
-				AudioManager.play_tick()
-				
-				# Exit fraction mode if denominator was already empty
-				if should_exit_fraction:
-					is_fraction_input = false
-					# Clean up answer fraction visual
-					if answer_fraction_node:
-						answer_fraction_node.queue_free()
-						# Remove from current_problem_nodes array
-						var idx = current_problem_nodes.find(answer_fraction_node)
-						if idx != -1:
-							current_problem_nodes.remove_at(idx)
-						answer_fraction_node = null
-					# Show the regular label again
-					if current_problem_label:
-						current_problem_label.visible = true
+				if is_mixed_fraction_input:
+					# Mixed fraction backspace logic
+					var parts = user_answer.split(" ")
+					if parts.size() == 2:
+						var fraction_parts = parts[1].split("/")
+						if fraction_parts.size() == 2:
+							if editing_numerator:
+								# Backspacing in numerator
+								var numer = fraction_parts[0]
+								if numer == "":
+									# Numerator empty - exit mixed fraction mode
+									is_fraction_input = false
+									is_mixed_fraction_input = false
+									editing_numerator = true
+									user_answer = parts[0]  # Return to just the whole number
+									AudioManager.play_tick()
+									# Clean up answer fraction visual
+									if answer_fraction_node:
+										answer_fraction_node.queue_free()
+										var idx = current_problem_nodes.find(answer_fraction_node)
+										if idx != -1:
+											current_problem_nodes.remove_at(idx)
+										answer_fraction_node = null
+									# Show the regular label again
+									if current_problem_label:
+										current_problem_label.visible = true
+								else:
+									# Remove last digit from numerator
+									user_answer = parts[0] + " " + numer.substr(0, numer.length() - 1) + "/" + fraction_parts[1]
+									AudioManager.play_tick()
+							else:
+								# Backspacing in denominator
+								var denom = fraction_parts[1]
+								if denom == "":
+									# Denominator empty - move back to numerator
+									editing_numerator = true
+									AudioManager.play_tick()
+								else:
+									# Remove last digit from denominator
+									user_answer = parts[0] + " " + fraction_parts[0] + "/" + denom.substr(0, denom.length() - 1)
+									AudioManager.play_tick()
+				else:
+					# Regular fraction or normal backspace logic
+					# Check if we need to exit fraction mode BEFORE backspacing
+					# (if denominator is already empty, indicated by ending with "/")
+					var should_exit_fraction = is_fraction_input and user_answer.ends_with("/")
+					
+					user_answer = user_answer.substr(0, user_answer.length() - 1)
+					AudioManager.play_tick()
+					
+					# Exit fraction mode if denominator was already empty
+					if should_exit_fraction:
+						is_fraction_input = false
+						# Clean up answer fraction visual
+						if answer_fraction_node:
+							answer_fraction_node.queue_free()
+							# Remove from current_problem_nodes array
+							var idx = current_problem_nodes.find(answer_fraction_node)
+							if idx != -1:
+								current_problem_nodes.remove_at(idx)
+							answer_fraction_node = null
+						# Show the regular label again
+						if current_problem_label:
+							current_problem_label.visible = true
 			backspace_just_pressed = false
 			backspace_timer = 0.0
 		
@@ -453,27 +536,62 @@ func _process(delta):
 				if backspace_timer >= 0.05:
 					backspace_timer = 0.0
 					if user_answer.length() > 0:
-						# Check if we need to exit fraction mode BEFORE backspacing
-						# (if denominator is already empty, indicated by ending with "/")
-						var should_exit_fraction = is_fraction_input and user_answer.ends_with("/")
-						
-						user_answer = user_answer.substr(0, user_answer.length() - 1)
-						AudioManager.play_tick()
-						
-						# Exit fraction mode if denominator was already empty
-						if should_exit_fraction:
-							is_fraction_input = false
-							# Clean up answer fraction visual
-							if answer_fraction_node:
-								answer_fraction_node.queue_free()
-								# Remove from current_problem_nodes array
-								var idx = current_problem_nodes.find(answer_fraction_node)
-								if idx != -1:
-									current_problem_nodes.remove_at(idx)
-								answer_fraction_node = null
-							# Show the regular label again
-							if current_problem_label:
-								current_problem_label.visible = true
+						if is_mixed_fraction_input:
+							# Mixed fraction backspace logic (same as above)
+							var parts = user_answer.split(" ")
+							if parts.size() == 2:
+								var fraction_parts = parts[1].split("/")
+								if fraction_parts.size() == 2:
+									if editing_numerator:
+										var numer = fraction_parts[0]
+										if numer == "":
+											is_fraction_input = false
+											is_mixed_fraction_input = false
+											editing_numerator = true
+											user_answer = parts[0]
+											AudioManager.play_tick()
+											if answer_fraction_node:
+												answer_fraction_node.queue_free()
+												var idx = current_problem_nodes.find(answer_fraction_node)
+												if idx != -1:
+													current_problem_nodes.remove_at(idx)
+												answer_fraction_node = null
+											if current_problem_label:
+												current_problem_label.visible = true
+										else:
+											user_answer = parts[0] + " " + numer.substr(0, numer.length() - 1) + "/" + fraction_parts[1]
+											AudioManager.play_tick()
+									else:
+										var denom = fraction_parts[1]
+										if denom == "":
+											editing_numerator = true
+											AudioManager.play_tick()
+										else:
+											user_answer = parts[0] + " " + fraction_parts[0] + "/" + denom.substr(0, denom.length() - 1)
+											AudioManager.play_tick()
+						else:
+							# Regular fraction or normal backspace logic
+							# Check if we need to exit fraction mode BEFORE backspacing
+							# (if denominator is already empty, indicated by ending with "/")
+							var should_exit_fraction = is_fraction_input and user_answer.ends_with("/")
+							
+							user_answer = user_answer.substr(0, user_answer.length() - 1)
+							AudioManager.play_tick()
+							
+							# Exit fraction mode if denominator was already empty
+							if should_exit_fraction:
+								is_fraction_input = false
+								# Clean up answer fraction visual
+								if answer_fraction_node:
+									answer_fraction_node.queue_free()
+									# Remove from current_problem_nodes array
+									var idx = current_problem_nodes.find(answer_fraction_node)
+									if idx != -1:
+										current_problem_nodes.remove_at(idx)
+									answer_fraction_node = null
+								# Show the regular label again
+								if current_problem_label:
+									current_problem_label.visible = true
 		else:
 			# Reset hold state when backspace is released
 			backspace_held = false
@@ -493,6 +611,8 @@ func generate_new_question():
 	user_answer = ""
 	answer_submitted = false  # Reset submission state for new question
 	is_fraction_input = false  # Reset fraction input mode
+	is_mixed_fraction_input = false  # Reset mixed fraction input mode
+	editing_numerator = true  # Reset to editing numerator
 	answer_fraction_node = null  # Will be created by problem display if needed
 	correct_answer_nodes.clear()  # Clear any lingering correct answer nodes
 	
@@ -523,8 +643,28 @@ func update_problem_display():
 
 func update_fraction_problem_display():
 	"""Update the display for fraction-type problems"""
-	if is_fraction_input and answer_fraction_node:
-		# In fraction mode - use the fraction node to display answer
+	if is_mixed_fraction_input and answer_fraction_node:
+		# In mixed fraction mode - use the fraction node to display answer
+		var parts = user_answer.split(" ")
+		if parts.size() == 2:
+			var whole = parts[0]
+			var fraction_parts = parts[1].split("/")
+			if fraction_parts.size() == 2:
+				var numerator = fraction_parts[0]
+				var denominator = fraction_parts[1]
+				answer_fraction_node.set_mixed_fraction_text(whole, numerator, denominator, editing_numerator, not editing_numerator)
+				answer_fraction_node.update_underscore(underscore_visible and not answer_submitted)
+				
+				# Dynamically adjust position based on total width change (including whole number)
+				var width_diff = answer_fraction_node.current_total_width - answer_fraction_initial_width
+				var new_x = answer_fraction_base_x + (width_diff / 2.0)  # Shift right as it expands
+				answer_fraction_node.position.x = new_x
+		
+		# Hide the regular label
+		if current_problem_label:
+			current_problem_label.visible = false
+	elif is_fraction_input and answer_fraction_node:
+		# In regular fraction mode - use the fraction node to display answer
 		var parts = user_answer.split("/")
 		if parts.size() == 2:
 			var numerator = parts[0]
@@ -556,8 +696,21 @@ func submit_answer():
 	if user_answer == "" or user_answer == "-" or answer_submitted:
 		return  # Don't submit empty answers, just minus sign, or already submitted
 	
-	# Don't submit fractions with empty denominator
-	if is_fraction_input:
+	# Don't submit mixed fractions with empty numerator or denominator
+	if is_mixed_fraction_input:
+		var parts = user_answer.split(" ")
+		if parts.size() != 2:
+			return
+		var fraction_parts = parts[1].split("/")
+		if fraction_parts.size() != 2 or fraction_parts[0] == "" or fraction_parts[1] == "":
+			return
+		# Also transition from numerator to denominator if still editing numerator
+		if editing_numerator:
+			editing_numerator = false
+			return
+	
+	# Don't submit regular fractions with empty denominator
+	if is_fraction_input and not is_mixed_fraction_input:
 		var parts = user_answer.split("/")
 		if parts.size() != 2 or parts[1] == "":
 			return
@@ -920,15 +1073,24 @@ func get_math_question(track = null, grade = null, operator = null, no_zeroes = 
 		question_text = random_question.expression.split(" = ")[0] if random_question.expression else ""
 	else:
 		# For regular questions, format integers without decimals
-		var operand1 = int(random_question.operands[0]) if random_question.operands[0] == int(random_question.operands[0]) else random_question.operands[0]
-		var operand2 = int(random_question.operands[1]) if random_question.operands[1] == int(random_question.operands[1]) else random_question.operands[1]
-		question_text = str(operand1) + " " + random_question.operator + " " + str(operand2)
+		# Check if operands exist and are numeric (not arrays) before converting
+		if random_question.has("operands") and random_question.operands != null and random_question.operands.size() >= 2:
+			var operand1 = random_question.operands[0]
+			var operand2 = random_question.operands[1]
+			if typeof(operand1) == TYPE_FLOAT and operand1 == int(operand1):
+				operand1 = int(operand1)
+			if typeof(operand2) == TYPE_FLOAT and operand2 == int(operand2):
+				operand2 = int(operand2)
+			question_text = str(operand1) + " " + random_question.operator + " " + str(operand2)
+		else:
+			# No operands - use expression if available
+			question_text = random_question.get("expression", "").split(" = ")[0] if random_question.has("expression") else ""
 	
 	return {
-		"operands": random_question.operands,
+		"operands": random_question.get("operands", []),
 		"operator": random_question.operator,
 		"result": random_question.result,
-		"expression": random_question.expression,
+		"expression": random_question.get("expression", ""),
 		"question": question_text,
 		"title": question_title,
 		"grade": question_grade,
@@ -1004,46 +1166,79 @@ func create_incorrect_fraction_answer():
 			node.queue_free()
 	correct_answer_nodes.clear()
 	
-	# Parse the correct answer from the result (e.g., "10/9" or "1")
-	var result_parts = current_question.result.split("/")
-	var is_fraction_result = result_parts.size() == 2
-	
-	var correct_numerator = 0
-	var correct_denominator = 0
-	
-	if is_fraction_result:
-		correct_numerator = int(result_parts[0])
-		correct_denominator = int(result_parts[1])
-	else:
-		# Result is a whole number, not a fraction
-		pass
+	# Parse the correct answer from the result (e.g., "10/9", "2 1/2", or "1")
+	var result_data = parse_mixed_fraction_from_string(current_question.result)
+	# result_data format: [whole, numerator, denominator]
+	var is_mixed_result = result_data[0] > 0
+	var is_fraction_result = result_data[1] > 0  # Has a fraction part
+	var is_whole_number_result = result_data[0] > 0 and result_data[1] == 0
 	
 	# Create correct answer elements in dark green, positioned at the same locations as current problem
 	
-	# We need to recreate the problem structure, so let's get the operands
-	var operands = current_question.operands
-	if operands.size() < 2:
-		return
+	# Parse operands the same way as create_fraction_problem
+	var operand1_data = null
+	var operand2_data = null
 	
-	var operand1 = operands[0]
-	var operand2 = operands[1]
+	if current_question.has("operands") and current_question.operands.size() >= 2:
+		var operand1 = current_question.operands[0]
+		var operand2 = current_question.operands[1]
+		
+		if typeof(operand1) == TYPE_ARRAY and operand1.size() >= 2:
+			operand1_data = [0, int(operand1[0]), int(operand1[1])]
+			operand2_data = [0, int(operand2[0]), int(operand2[1])]
+		else:
+			var expr = current_question.get("expression", "")
+			if expr != "":
+				var expr_parts = expr.split(" = ")[0].split(" ")
+				var operator_idx = -1
+				for i in range(expr_parts.size()):
+					if expr_parts[i] == current_question.operator:
+						operator_idx = i
+						break
+				
+				if operator_idx > 0:
+					var operand1_str = ""
+					for i in range(operator_idx):
+						if operand1_str != "":
+							operand1_str += " "
+						operand1_str += expr_parts[i]
+					operand1_data = parse_mixed_fraction_from_string(operand1_str)
+					
+					var operand2_str = ""
+					for i in range(operator_idx + 1, expr_parts.size()):
+						if operand2_str != "":
+							operand2_str += " "
+						operand2_str += expr_parts[i]
+					operand2_data = parse_mixed_fraction_from_string(operand2_str)
+	
+	if operand1_data == null or operand2_data == null:
+		return
 	
 	# Calculate the same positions as the original problem
 	var base_x = primary_position.x + fraction_problem_x_offset
 	var target_y = primary_position.y
 	
 	# Create fractions to measure their widths
-	var fraction1 = create_fraction(Vector2(0, 0), operand1[0], operand1[1], play_node)
-	var fraction2 = create_fraction(Vector2(0, 0), operand2[0], operand2[1], play_node)
+	var fraction1 = create_fraction(Vector2(0, 0), operand1_data[1], operand1_data[2], play_node)
+	if operand1_data[0] > 0:
+		fraction1.set_mixed_fraction(operand1_data[0], operand1_data[1], operand1_data[2])
 	
-	# Only create answer fraction if result is a fraction
+	var fraction2 = create_fraction(Vector2(0, 0), operand2_data[1], operand2_data[2], play_node)
+	if operand2_data[0] > 0:
+		fraction2.set_mixed_fraction(operand2_data[0], operand2_data[1], operand2_data[2])
+	
+	# Create answer fraction/mixed fraction if result has a fraction part
 	var answer_fraction = null
 	if is_fraction_result:
-		answer_fraction = create_fraction(Vector2(0, 0), correct_numerator, correct_denominator, play_node)
+		answer_fraction = create_fraction(Vector2(0, 0), result_data[1], result_data[2], play_node)
+		if is_mixed_result:
+			answer_fraction.set_mixed_fraction(result_data[0], result_data[1], result_data[2])
 	
-	# Get the actual widths of the fractions
-	var fraction1_half_width = fraction1.current_divisor_width / 2.0
-	var fraction2_half_width = fraction2.current_divisor_width / 2.0
+	# Get the actual widths of the fractions (use total width for mixed fractions)
+	var fraction1_width = fraction1.current_total_width if fraction1.is_mixed_fraction else fraction1.current_divisor_width
+	var fraction2_width = fraction2.current_total_width if fraction2.is_mixed_fraction else fraction2.current_divisor_width
+	var fraction1_half_width = fraction1_width / 2.0
+	var fraction2_half_width = fraction2_width / 2.0
 	
 	# Position the equals sign at a fixed location (same as in create_fraction_problem)
 	var equals_x = base_x + 672.0
@@ -1073,21 +1268,22 @@ func create_incorrect_fraction_answer():
 	correct_answer_nodes.append(fraction1)
 	correct_answer_nodes.append(fraction2)
 	
-	# Create either answer fraction or answer label depending on result type
+	# Create either answer fraction/mixed fraction or answer label depending on result type
 	if is_fraction_result:
-		# Apply dynamic X positioning to answer fraction based on divisor width
+		# Apply dynamic X positioning to answer fraction based on width (divisor or total for mixed)
 		# Get baseline width by creating a temporary 0/1 fraction
 		var temp_fraction = create_fraction(Vector2(0, 0), 0, 1, play_node)
 		var baseline_width = temp_fraction.current_divisor_width
 		temp_fraction.queue_free()
 		
 		# Calculate width difference and adjust position (shift right as it expands)
-		var width_diff = answer_fraction.current_divisor_width - baseline_width
+		var answer_width = answer_fraction.current_total_width if answer_fraction.is_mixed_fraction else answer_fraction.current_divisor_width
+		var width_diff = answer_width - baseline_width
 		answer_fraction.position = Vector2(answer_x + (width_diff / 2.0), target_y) + fraction_offset
 		answer_fraction.modulate = Color(0, 0.5, 0)
 		correct_answer_nodes.append(answer_fraction)
 	else:
-		# Create a label for the whole number answer
+		# Create a label for the whole number answer (or parse result string directly)
 		var answer_label = Label.new()
 		answer_label.label_settings = label_settings_resource
 		answer_label.text = current_question.result
@@ -2003,14 +2199,80 @@ func get_question_key(question_data):
 	var op1_str = ""
 	var op2_str = ""
 	
-	if typeof(question_data.operands[0]) == TYPE_ARRAY:
-		# Fraction question - format as "num/denom"
-		op1_str = str(question_data.operands[0][0]) + "/" + str(question_data.operands[0][1])
-		op2_str = str(question_data.operands[1][0]) + "/" + str(question_data.operands[1][1])
+	# Check if operands exist and are accessible
+	if not question_data.has("operands") or question_data.operands == null or question_data.operands.size() < 2:
+		# Parse operands from expression (for mixed fraction problems)
+		if question_data.has("expression") and question_data.expression != "":
+			var expr = question_data.expression.split(" = ")[0]
+			var expr_parts = expr.split(" ")
+			var operator_idx = -1
+			for i in range(expr_parts.size()):
+				if expr_parts[i] == question_data.operator:
+					operator_idx = i
+					break
+			
+			if operator_idx > 0:
+				# Parse operand1
+				var operand1_str = ""
+				for i in range(operator_idx):
+					if operand1_str != "":
+						operand1_str += " "
+					operand1_str += expr_parts[i]
+				op1_str = operand1_str
+				
+				# Parse operand2
+				var operand2_str = ""
+				for i in range(operator_idx + 1, expr_parts.size()):
+					if operand2_str != "":
+						operand2_str += " "
+					operand2_str += expr_parts[i]
+				op2_str = operand2_str
+			else:
+				# Fallback - use expression as-is
+				op1_str = question_data.get("expression", "unknown")
+				op2_str = ""
+		else:
+			# No expression available - use placeholder
+			op1_str = "unknown"
+			op2_str = "unknown"
 	else:
-		# Regular question - use numbers directly
-		op1_str = str(question_data.operands[0])
-		op2_str = str(question_data.operands[1])
+		# Handle operands individually (could be arrays, numbers, or mixed)
+		var operand1 = question_data.operands[0]
+		var operand2 = question_data.operands[1]
+		
+		# Format operand 1
+		if typeof(operand1) == TYPE_ARRAY and operand1.size() >= 2:
+			# Fraction - format as "num/denom", converting floats to ints
+			var num1 = operand1[0]
+			var denom1 = operand1[1]
+			if typeof(num1) == TYPE_FLOAT:
+				num1 = int(num1)
+			if typeof(denom1) == TYPE_FLOAT:
+				denom1 = int(denom1)
+			op1_str = str(num1) + "/" + str(denom1)
+		else:
+			# Whole number - convert float to int if it's a whole number
+			if typeof(operand1) == TYPE_FLOAT:
+				op1_str = str(int(operand1))
+			else:
+				op1_str = str(operand1)
+		
+		# Format operand 2
+		if typeof(operand2) == TYPE_ARRAY and operand2.size() >= 2:
+			# Fraction - format as "num/denom", converting floats to ints
+			var num2 = operand2[0]
+			var denom2 = operand2[1]
+			if typeof(num2) == TYPE_FLOAT:
+				num2 = int(num2)
+			if typeof(denom2) == TYPE_FLOAT:
+				denom2 = int(denom2)
+			op2_str = str(num2) + "/" + str(denom2)
+		else:
+			# Whole number - convert float to int if it's a whole number
+			if typeof(operand2) == TYPE_FLOAT:
+				op2_str = str(int(operand2))
+			else:
+				op2_str = str(operand2)
 	
 	return op1_str + "_" + question_data.operator + "_" + op2_str
 
@@ -2022,7 +2284,7 @@ func save_question_data(question_data, player_answer, time_taken):
 		save_data.questions[question_key] = []
 	
 	var question_record = {
-		"operands": question_data.operands,
+		"operands": question_data.get("operands", []),
 		"operator": question_data.operator,
 		"result": question_data.result,
 		"player_answer": player_answer,
@@ -2190,13 +2452,20 @@ func initialize_question_weights_for_track(track):
 		
 		# Format question display
 		var question_text = ""
-		if typeof(question.operands[0]) == TYPE_ARRAY:
-			# Fraction question
+		if not question.has("operands") or question.operands == null or question.operands.size() < 2:
+			# Mixed fraction or expression-based question
+			question_text = question.expression if question.has("expression") else ""
+		elif typeof(question.operands[0]) == TYPE_ARRAY:
+			# Regular fraction question
 			question_text = question.expression if question.has("expression") else ""
 		else:
-			# Regular question
-			var operand1 = int(question.operands[0]) if question.operands[0] == int(question.operands[0]) else question.operands[0]
-			var operand2 = int(question.operands[1]) if question.operands[1] == int(question.operands[1]) else question.operands[1]
+			# Regular question with numeric operands
+			var operand1 = question.operands[0]
+			var operand2 = question.operands[1]
+			if typeof(operand1) == TYPE_FLOAT and operand1 == int(operand1):
+				operand1 = int(operand1)
+			if typeof(operand2) == TYPE_FLOAT and operand2 == int(operand2):
+				operand2 = int(operand2)
 			question_text = str(operand1) + " " + question.operator + " " + str(operand2) + " = " + str(question.result)
 		
 		print("Question: ", question_text)
@@ -2259,25 +2528,33 @@ func get_weighted_random_question():
 				var question_text = ""
 				var display_text = ""
 				
-				# Check if this is a fraction question (operands are arrays)
-				if typeof(selected_question.operands[0]) == TYPE_ARRAY:
-					# Fraction question - use expression
+				# Check if operands exist and determine question type
+				if not selected_question.has("operands") or selected_question.operands == null or selected_question.operands.size() < 2:
+					# Mixed fraction or expression-based question
+					question_text = selected_question.expression if selected_question.has("expression") else ""
+					display_text = question_text.split(" = ")[0] if question_text else ""
+				elif typeof(selected_question.operands[0]) == TYPE_ARRAY:
+					# Regular fraction question - use expression
 					question_text = selected_question.expression if selected_question.has("expression") else ""
 					display_text = question_text.split(" = ")[0] if question_text else ""
 				else:
-					# Regular question - format integers
-					var operand1 = int(selected_question.operands[0]) if selected_question.operands[0] == int(selected_question.operands[0]) else selected_question.operands[0]
-					var operand2 = int(selected_question.operands[1]) if selected_question.operands[1] == int(selected_question.operands[1]) else selected_question.operands[1]
+					# Regular question with numeric operands - format integers
+					var operand1 = selected_question.operands[0]
+					var operand2 = selected_question.operands[1]
+					if typeof(operand1) == TYPE_FLOAT and operand1 == int(operand1):
+						operand1 = int(operand1)
+					if typeof(operand2) == TYPE_FLOAT and operand2 == int(operand2):
+						operand2 = int(operand2)
 					question_text = str(operand1) + " " + selected_question.operator + " " + str(operand2) + " = " + str(selected_question.result)
 					display_text = str(operand1) + " " + selected_question.operator + " " + str(operand2)
 				
 				print("Selected question: ", question_text, " (weight: %.3f)" % selected_weight)
 				
 				return {
-					"operands": selected_question.operands,
+					"operands": selected_question.get("operands", []),
 					"operator": selected_question.operator,
 					"result": selected_question.result,
-					"expression": selected_question.expression,
+					"expression": selected_question.get("expression", ""),
 					"question": display_text,
 					"title": "",  # Will be filled by caller if needed
 					"grade": "",  # Will be filled by caller if needed
@@ -2299,8 +2576,9 @@ func find_question_by_key(question_key):
 	
 	var operator = parts[1]
 	
-	# Check if this is a fraction question (operands contain "/")
-	var is_fraction = parts[0].contains("/")
+	# Check what types of operands we have
+	var op1_is_fraction = parts[0].contains("/")
+	var op2_is_fraction = parts[2].contains("/")
 	
 	# Search through all levels
 	for level in math_facts.levels:
@@ -2308,28 +2586,50 @@ func find_question_by_key(question_key):
 			if question.operator != operator:
 				continue
 			
-			# Make sure question has operands array
+			var operands_match = false
+			
+			# Check if question has operands array or uses expression format
 			if not question.has("operands") or typeof(question.operands) != TYPE_ARRAY or question.operands.size() < 2:
+				# Mixed fraction or expression-based question - match by reconstructing key from expression
+				if question.has("expression") and question.expression != "":
+					var reconstructed_key = get_question_key(question)
+					if reconstructed_key == question_key:
+						return question
 				continue
 			
-			var operands_match = false
-			if is_fraction:
-				# Fraction question - parse "num/denom" format
+			# Handle mixed operand types (whole number and fraction)
+			var q_op1 = question.operands[0]
+			var q_op2 = question.operands[1]
+			var q_op1_is_array = typeof(q_op1) == TYPE_ARRAY
+			var q_op2_is_array = typeof(q_op2) == TYPE_ARRAY
+			
+			# Check operand 1
+			var op1_match = false
+			if op1_is_fraction:
+				# Key has fraction format
 				var op1_parts = parts[0].split("/")
-				var op2_parts = parts[2].split("/")
-				if op1_parts.size() == 2 and op2_parts.size() == 2:
-					if typeof(question.operands[0]) == TYPE_ARRAY and typeof(question.operands[1]) == TYPE_ARRAY:
-						if question.operands[0].size() >= 2 and question.operands[1].size() >= 2:
-							operands_match = (question.operands[0][0] == float(op1_parts[0]) and 
-											  question.operands[0][1] == float(op1_parts[1]) and
-											  question.operands[1][0] == float(op2_parts[0]) and
-											  question.operands[1][1] == float(op2_parts[1]))
+				if op1_parts.size() == 2 and q_op1_is_array and q_op1.size() >= 2:
+					op1_match = (q_op1[0] == float(op1_parts[0]) and q_op1[1] == float(op1_parts[1]))
 			else:
-				# Regular question - parse as numbers
+				# Key has whole number format
 				var operand1 = float(parts[0])
+				if not q_op1_is_array:
+					op1_match = (q_op1 == operand1)
+			
+			# Check operand 2
+			var op2_match = false
+			if op2_is_fraction:
+				# Key has fraction format
+				var op2_parts = parts[2].split("/")
+				if op2_parts.size() == 2 and q_op2_is_array and q_op2.size() >= 2:
+					op2_match = (q_op2[0] == float(op2_parts[0]) and q_op2[1] == float(op2_parts[1]))
+			else:
+				# Key has whole number format
 				var operand2 = float(parts[2])
-				if typeof(question.operands[0]) != TYPE_ARRAY and typeof(question.operands[1]) != TYPE_ARRAY:
-					operands_match = (question.operands[0] == operand1 and question.operands[1] == operand2)
+				if not q_op2_is_array:
+					op2_match = (q_op2 == operand2)
+			
+			operands_match = (op1_match and op2_match)
 			
 			if operands_match:
 				return question
@@ -2366,16 +2666,25 @@ func calculate_question_difficulty(question_data):
 	# Find which track this question belongs to
 	for level in math_facts.levels:
 		for fact in level.facts:
-			# For fraction questions, operands are arrays, so we need to compare differently
+			# Check if both fact and question_data have comparable operands
+			var has_fact_operands = fact.has("operands") and fact.operands != null and fact.operands.size() >= 2
+			var has_question_operands = question_data.has("operands") and question_data.operands != null and question_data.operands.size() >= 2
+			
 			var operands_match = false
-			if typeof(fact.operands[0]) == TYPE_ARRAY and typeof(question_data.operands[0]) == TYPE_ARRAY:
-				# Fraction question - compare arrays
-				operands_match = (fact.operands[0] == question_data.operands[0] and 
-								  fact.operands[1] == question_data.operands[1])
-			else:
-				# Regular question - compare numbers
-				operands_match = (fact.operands[0] == question_data.operands[0] and 
-								  fact.operands[1] == question_data.operands[1])
+			if has_fact_operands and has_question_operands:
+				# For fraction questions, operands are arrays, so we need to compare differently
+				if typeof(fact.operands[0]) == TYPE_ARRAY and typeof(question_data.operands[0]) == TYPE_ARRAY:
+					# Fraction question - compare arrays
+					operands_match = (fact.operands[0] == question_data.operands[0] and 
+									  fact.operands[1] == question_data.operands[1])
+				else:
+					# Regular question - compare numbers
+					operands_match = (fact.operands[0] == question_data.operands[0] and 
+									  fact.operands[1] == question_data.operands[1])
+			elif not has_fact_operands and not has_question_operands:
+				# Both use expression format - compare expressions
+				if fact.has("expression") and question_data.has("expression"):
+					operands_match = (fact.expression == question_data.expression)
 			
 			if operands_match and fact.operator == question_data.operator:
 				# Get the track ID (could be "TRACK12" or "FRAC-07")
@@ -2457,13 +2766,20 @@ func initialize_question_weights_for_all_tracks():
 			
 			# Format question display for debug
 			var question_text = ""
-			if typeof(question.operands[0]) == TYPE_ARRAY:
-				# Fraction question
+			if not question.has("operands") or question.operands == null or question.operands.size() < 2:
+				# Mixed fraction or expression-based question
+				question_text = question.expression if question.has("expression") else ""
+			elif typeof(question.operands[0]) == TYPE_ARRAY:
+				# Regular fraction question
 				question_text = question.expression if question.has("expression") else ""
 			else:
-				# Regular question
-				var operand1 = int(question.operands[0]) if question.operands[0] == int(question.operands[0]) else question.operands[0]
-				var operand2 = int(question.operands[1]) if question.operands[1] == int(question.operands[1]) else question.operands[1]
+				# Regular question with numeric operands
+				var operand1 = question.operands[0]
+				var operand2 = question.operands[1]
+				if typeof(operand1) == TYPE_FLOAT and operand1 == int(operand1):
+					operand1 = int(operand1)
+				if typeof(operand2) == TYPE_FLOAT and operand2 == int(operand2):
+					operand2 = int(operand2)
 				question_text = str(operand1) + " " + question.operator + " " + str(operand2) + " = " + str(question.result)
 			
 			print("  Question: ", question_text, " (weight: %.3f)" % weight_result.weight)
@@ -2839,6 +3155,30 @@ func create_fraction(fraction_position: Vector2, numerator: int = 1, denominator
 	# Return the instance for further manipulation if needed
 	return fraction_instance
 
+func parse_mixed_fraction_from_string(frac_str: String) -> Array:
+	"""Parse a mixed fraction string like '4 1/6' into [whole, numerator, denominator]
+	Or parse a regular fraction like '1/6' into [0, numerator, denominator]"""
+	var parts = frac_str.strip_edges().split(" ")
+	
+	if parts.size() == 2:
+		# Mixed fraction: "4 1/6"
+		var whole = int(parts[0])
+		var frac_parts = parts[1].split("/")
+		if frac_parts.size() == 2:
+			return [whole, int(frac_parts[0]), int(frac_parts[1])]
+	elif parts.size() == 1:
+		# Could be a regular fraction "1/6" or whole number "4"
+		if parts[0].contains("/"):
+			var frac_parts = parts[0].split("/")
+			if frac_parts.size() == 2:
+				return [0, int(frac_parts[0]), int(frac_parts[1])]
+		else:
+			# Just a whole number
+			return [int(parts[0]), 0, 1]
+	
+	# Default fallback
+	return [0, 0, 1]
+
 func create_fraction_problem():
 	"""Create a fraction-type problem display with fractions, operator, equals sign, and answer area"""
 	if not current_question or not is_fraction_display_type(current_question.get("type", "")):
@@ -2848,14 +3188,67 @@ func create_fraction_problem():
 	cleanup_problem_labels()
 	
 	# Parse operands from the question
-	# operands is an array of [numerator, denominator] pairs
-	var operands = current_question.operands
-	if operands.size() < 2:
-		print("Error: Fraction question missing operands")
-		return
+	# For mixed fraction problems, operands may not be in array format, so parse from expression
+	var operand1_data = null
+	var operand2_data = null
 	
-	var operand1 = operands[0]  # [num, denom]
-	var operand2 = operands[1]  # [num, denom]
+	# First check if operands array exists and has valid data
+	var has_valid_operands = (current_question.has("operands") and 
+							   current_question.operands != null and 
+							   current_question.operands.size() >= 2 and
+							   current_question.operands[0] != null)
+	
+	if has_valid_operands:
+		var operand1 = current_question.operands[0]
+		var operand2 = current_question.operands[1]
+		
+		# Handle each operand individually (could be array or number)
+		if typeof(operand1) == TYPE_ARRAY and operand1.size() >= 2:
+			# Fraction format [num, denom]
+			operand1_data = [0, int(operand1[0]), int(operand1[1])]
+		elif typeof(operand1) == TYPE_FLOAT or typeof(operand1) == TYPE_INT:
+			# Whole number - display as numerator with denominator 1 (will show as "6/1")
+			operand1_data = [0, int(operand1), 1]
+		
+		if typeof(operand2) == TYPE_ARRAY and operand2.size() >= 2:
+			# Fraction format [num, denom]
+			operand2_data = [0, int(operand2[0]), int(operand2[1])]
+		elif typeof(operand2) == TYPE_FLOAT or typeof(operand2) == TYPE_INT:
+			# Whole number - display as numerator with denominator 1 (will show as "6/1")
+			operand2_data = [0, int(operand2), 1]
+	
+	# If we don't have valid operands, parse from expression (for mixed fractions)
+	if operand1_data == null or operand2_data == null:
+		var expr = current_question.get("expression", "")
+		if expr != "":
+			var expr_parts = expr.split(" = ")[0].split(" ")
+			# Find operator position
+			var operator_idx = -1
+			for i in range(expr_parts.size()):
+				if expr_parts[i] == current_question.operator:
+					operator_idx = i
+					break
+			
+			if operator_idx > 0:
+				# Parse operand1 (everything before operator)
+				var operand1_str = ""
+				for i in range(operator_idx):
+					if operand1_str != "":
+						operand1_str += " "
+					operand1_str += expr_parts[i]
+				operand1_data = parse_mixed_fraction_from_string(operand1_str)
+				
+				# Parse operand2 (everything after operator)
+				var operand2_str = ""
+				for i in range(operator_idx + 1, expr_parts.size()):
+					if operand2_str != "":
+						operand2_str += " "
+					operand2_str += expr_parts[i]
+				operand2_data = parse_mixed_fraction_from_string(operand2_str)
+	
+	if operand1_data == null or operand2_data == null:
+		print("Error: Could not parse fraction operands")
+		return
 	
 	# Calculate horizontal positions for the final layout
 	# Start with offset from primary position to center the whole expression
@@ -2864,12 +3257,20 @@ func create_fraction_problem():
 	var start_y = off_screen_bottom.y  # Start off-screen at bottom
 	
 	# Create fractions temporarily to measure their widths
-	var fraction1 = create_fraction(Vector2(0, 0), operand1[0], operand1[1], play_node)
-	var fraction2 = create_fraction(Vector2(0, 0), operand2[0], operand2[1], play_node)
+	# operand_data format: [whole, numerator, denominator]
+	var fraction1 = create_fraction(Vector2(0, 0), operand1_data[1], operand1_data[2], play_node)
+	if operand1_data[0] > 0:
+		fraction1.set_mixed_fraction(operand1_data[0], operand1_data[1], operand1_data[2])
 	
-	# Get the actual widths of the fractions
-	var fraction1_half_width = fraction1.current_divisor_width / 2.0
-	var fraction2_half_width = fraction2.current_divisor_width / 2.0
+	var fraction2 = create_fraction(Vector2(0, 0), operand2_data[1], operand2_data[2], play_node)
+	if operand2_data[0] > 0:
+		fraction2.set_mixed_fraction(operand2_data[0], operand2_data[1], operand2_data[2])
+	
+	# Get the actual widths of the fractions (use total width for mixed fractions)
+	var fraction1_width = fraction1.current_total_width if fraction1.is_mixed_fraction else fraction1.current_divisor_width
+	var fraction2_width = fraction2.current_total_width if fraction2.is_mixed_fraction else fraction2.current_divisor_width
+	var fraction1_half_width = fraction1_width / 2.0
+	var fraction2_half_width = fraction2_width / 2.0
 	
 	# Position the equals sign at a fixed location relative to base_x
 	# This ensures the equals sign is always in the same position
@@ -2972,6 +3373,38 @@ func create_answer_fraction():
 	# Store initial position and width for dynamic positioning
 	answer_fraction_base_x = answer_pos.x
 	answer_fraction_initial_width = answer_fraction_node.current_divisor_width
+	
+	# Hide the label since we're now using the fraction node
+	if current_problem_label:
+		current_problem_label.visible = false
+
+func create_answer_mixed_fraction():
+	"""Create the answer mixed fraction visual when user presses Fraction"""
+	if answer_fraction_node:
+		return  # Already exists
+	
+	# Use the position of the current_problem_label (the answer label) but apply fraction_offset
+	var base_pos = current_problem_label.position if current_problem_label else primary_position
+	# Subtract operator_offset and add fraction_offset to align with other fractions
+	# Also subtract the number offset since we want the fraction at the normal fraction position
+	var answer_pos = base_pos - operator_offset + fraction_offset - Vector2(fraction_answer_number_offset, 0)
+	
+	# Parse the whole number from user_answer
+	var parts = user_answer.split(" ")
+	var whole_num = 0
+	if parts.size() >= 1:
+		whole_num = int(parts[0])
+	
+	# Create the answer mixed fraction at the aligned position
+	answer_fraction_node = create_fraction(answer_pos, 0, 1, play_node)
+	answer_fraction_node.set_input_mode(true)
+	answer_fraction_node.set_mixed_fraction(whole_num, 0, 1)
+	answer_fraction_node.editing_numerator = true
+	current_problem_nodes.append(answer_fraction_node)
+	
+	# Store initial position and width for dynamic positioning (using total width for mixed fractions)
+	answer_fraction_base_x = answer_pos.x
+	answer_fraction_initial_width = answer_fraction_node.current_total_width
 	
 	# Hide the label since we're now using the fraction node
 	if current_problem_label:
