@@ -26,7 +26,7 @@ var drill_mode_duration = 60.0  # Duration for drill mode in seconds (1 minute)
 var fraction_element_spacing = 112.0  # Spacing between fractions and operators
 var fraction_answer_offset = 88.0  # Horizontal offset for answer positioning (fraction mode)
 var fraction_answer_number_offset = -40.0  # Additional leftward offset for non-fractionalized answers
-var fraction_mixed_answer_extra_offset = 64.0  # Additional rightward offset for mixed fraction answers to prevent overlap
+var fraction_mixed_answer_extra_offset = 4.0  # Additional rightward offset for mixed fraction answers to prevent overlap
 var fraction_offset = Vector2(48, 64.0)  # Position offset for fraction elements (x, y)
 var operator_offset = Vector2(0, 0.0)  # Position offset for operators and equals sign (x, y)
 var fraction_problem_x_offset = -64.0  # Horizontal offset from primary_position for the entire fraction problem
@@ -49,7 +49,7 @@ var level_configs = {
 	6: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
 	7: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
 	8: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
-	9: {"problems": 20, "star1": {"accuracy": 13, "time": 120.0}, "star2": {"accuracy": 15, "time": 100.0}, "star3": {"accuracy": 17, "time": 80.0}},
+	9: {"problems": 20, "star1": {"accuracy": 13, "time": 120.0}, "star2": {"accuracy": 15, "time": 100.0}, "star3": {"accuracy": 16, "time": 80.0}},
 	10: {"problems": 20, "star1": {"accuracy": 13, "time": 120.0}, "star2": {"accuracy": 15, "time": 100.0}, "star3": {"accuracy": 17, "time": 80.0}},
 	11: {"problems": 20, "star1": {"accuracy": 13, "time": 240.0}, "star2": {"accuracy": 15, "time": 200.0}, "star3": {"accuracy": 17, "time": 160.0}},
 	12: {"problems": 20, "star1": {"accuracy": 13, "time": 300.0}, "star2": {"accuracy": 15, "time": 240.0}, "star3": {"accuracy": 17, "time": 180.0}},
@@ -706,11 +706,17 @@ func submit_answer():
 		if parts.size() != 2:
 			return
 		var fraction_parts = parts[1].split("/")
-		if fraction_parts.size() != 2 or fraction_parts[0] == "" or fraction_parts[1] == "":
+		if fraction_parts.size() != 2:
 			return
-		# Also transition from numerator to denominator if still editing numerator
+		
+		# Transition from numerator to denominator if still editing numerator
 		if editing_numerator:
 			editing_numerator = false
+			AudioManager.play_tick()
+			return
+		
+		# Don't submit if numerator or denominator is empty
+		if fraction_parts[0] == "" or fraction_parts[1] == "":
 			return
 	
 	# Don't submit regular fractions with empty denominator
@@ -1183,37 +1189,59 @@ func create_incorrect_fraction_answer():
 	var operand1_data = null
 	var operand2_data = null
 	
-	if current_question.has("operands") and current_question.operands.size() >= 2:
+	# Check if operands exist and are valid
+	var has_valid_operands = (current_question.has("operands") and 
+							   current_question.operands != null and 
+							   current_question.operands.size() >= 2 and
+							   current_question.operands[0] != null)
+	
+	if has_valid_operands:
 		var operand1 = current_question.operands[0]
 		var operand2 = current_question.operands[1]
 		
+		# Handle each operand individually (could be array or number)
 		if typeof(operand1) == TYPE_ARRAY and operand1.size() >= 2:
+			# Fraction format [num, denom]
 			operand1_data = [0, int(operand1[0]), int(operand1[1])]
+		elif typeof(operand1) == TYPE_FLOAT or typeof(operand1) == TYPE_INT:
+			# Whole number - display as numerator with denominator 1 (will show as "6/1")
+			operand1_data = [0, int(operand1), 1]
+		
+		if typeof(operand2) == TYPE_ARRAY and operand2.size() >= 2:
+			# Fraction format [num, denom]
 			operand2_data = [0, int(operand2[0]), int(operand2[1])]
-		else:
-			var expr = current_question.get("expression", "")
-			if expr != "":
-				var expr_parts = expr.split(" = ")[0].split(" ")
-				var operator_idx = -1
-				for i in range(expr_parts.size()):
-					if expr_parts[i] == current_question.operator:
-						operator_idx = i
-						break
+		elif typeof(operand2) == TYPE_FLOAT or typeof(operand2) == TYPE_INT:
+			# Whole number - display as numerator with denominator 1 (will show as "6/1")
+			operand2_data = [0, int(operand2), 1]
+	
+	# If we don't have valid operands, parse from expression (for mixed fractions)
+	if operand1_data == null or operand2_data == null:
+		var expr = current_question.get("expression", "")
+		if expr != "":
+			var expr_parts = expr.split(" = ")[0].split(" ")
+			# Find operator position
+			var operator_idx = -1
+			for i in range(expr_parts.size()):
+				if expr_parts[i] == current_question.operator:
+					operator_idx = i
+					break
+			
+			if operator_idx > 0:
+				# Parse operand1 (everything before operator)
+				var operand1_str = ""
+				for i in range(operator_idx):
+					if operand1_str != "":
+						operand1_str += " "
+					operand1_str += expr_parts[i]
+				operand1_data = parse_mixed_fraction_from_string(operand1_str)
 				
-				if operator_idx > 0:
-					var operand1_str = ""
-					for i in range(operator_idx):
-						if operand1_str != "":
-							operand1_str += " "
-						operand1_str += expr_parts[i]
-					operand1_data = parse_mixed_fraction_from_string(operand1_str)
-					
-					var operand2_str = ""
-					for i in range(operator_idx + 1, expr_parts.size()):
-						if operand2_str != "":
-							operand2_str += " "
-						operand2_str += expr_parts[i]
-					operand2_data = parse_mixed_fraction_from_string(operand2_str)
+				# Parse operand2 (everything after operator)
+				var operand2_str = ""
+				for i in range(operator_idx + 1, expr_parts.size()):
+					if operand2_str != "":
+						operand2_str += " "
+					operand2_str += expr_parts[i]
+				operand2_data = parse_mixed_fraction_from_string(operand2_str)
 	
 	if operand1_data == null or operand2_data == null:
 		return
@@ -1295,6 +1323,8 @@ func create_incorrect_fraction_answer():
 		# Calculate width difference and adjust position (shift right as it expands)
 		var answer_width = answer_fraction.current_total_width if answer_fraction.is_mixed_fraction else answer_fraction.current_divisor_width
 		var width_diff = answer_width - baseline_width
+		
+		# Position is already calculated correctly from the problem layout, no extra offset needed
 		answer_fraction.position = Vector2(answer_x + (width_diff / 2.0), target_y) + fraction_offset
 		answer_fraction.modulate = Color(0, 0.5, 0)
 		correct_answer_nodes.append(answer_fraction)
@@ -3435,11 +3465,19 @@ func create_answer_mixed_fraction():
 	var baseline_width = temp_fraction.current_divisor_width
 	temp_fraction.queue_free()
 	
+	# Calculate the whole number label width to determine proper offset
+	# The whole number label was created in set_mixed_fraction
+	var whole_number_width = 0.0
+	if answer_fraction_node.whole_number_label:
+		whole_number_width = answer_fraction_node.whole_number_label.get_minimum_size().x
+	
 	# Calculate how much wider the mixed fraction is compared to baseline
 	var width_diff = answer_fraction_node.current_total_width - baseline_width
 	
-	# Shift the position rightward by half the width difference plus additional offset to prevent overlap with equals sign
-	answer_pos.x += (width_diff / 2.0) + fraction_mixed_answer_extra_offset
+	# Shift rightward by: half the total width difference + base offset + whole number compensation
+	# The whole number compensation accounts for the fact that larger whole numbers push everything further left
+	var dynamic_offset = (width_diff / 2.0) + fraction_mixed_answer_extra_offset + (whole_number_width * 0.5)
+	answer_pos.x += dynamic_offset
 	answer_fraction_node.position = answer_pos
 	
 	# Store initial position and width for dynamic positioning (using total width for mixed fractions)
