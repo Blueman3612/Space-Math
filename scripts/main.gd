@@ -1813,6 +1813,34 @@ func go_to_game_over():
 	if level_number > 0:
 		update_level_data(level_number, correct_answers, current_level_time, stars_earned)
 	
+	# Record progress to Playcademy TimeBack (1 minute = 1 XP)
+	if PlaycademySdk and PlaycademySdk.is_ready() and PlaycademySdk.timeback:
+		var level_config = level_configs.get(level_number, level_configs[1])
+		var total_questions = level_config.problems
+		
+		# Get activity name from track data
+		var activity_name = "Level " + str(level_number)
+		var question_data = get_math_question(current_track)
+		if question_data and question_data.has("title"):
+			activity_name = question_data.title
+		
+		# Calculate XP: 1 minute = 1 XP
+		var xp_earned = int(current_level_time / 60.0)
+		
+		var progress_data = {
+			"score": int((float(correct_answers) / float(total_questions)) * 100),
+			"totalQuestions": total_questions,
+			"correctQuestions": correct_answers,
+			"xpEarned": xp_earned,
+			"activityId": "level-" + str(level_number),
+			"activityName": activity_name,
+			"stars": stars_earned,
+			"timeSeconds": int(current_level_time)
+		}
+		
+		print("[Playcademy] Recording progress: ", progress_data)
+		PlaycademySdk.timeback.record_progress(progress_data)
+	
 	# Update GameOver labels with player performance
 	update_game_over_labels()
 	
@@ -2898,6 +2926,25 @@ func go_to_drill_mode_game_over():
 	
 	# Update GameOver labels with drill mode performance
 	update_drill_mode_game_over_labels()
+	
+	# Record drill mode progress to Playcademy TimeBack (1 minute = 1 XP)
+	if PlaycademySdk and PlaycademySdk.is_ready() and PlaycademySdk.timeback:
+		# Calculate XP: 1 minute = 1 XP
+		var xp_earned = int(current_level_time / 60.0)
+		
+		var progress_data = {
+			"score": drill_score,
+			"totalQuestions": drill_total_answered,
+			"correctQuestions": correct_answers,
+			"xpEarned": xp_earned,
+			"activityId": "drill-mode",
+			"activityName": "Drill Mode",
+			"timeSeconds": int(current_level_time),
+			"mode": "drill"
+		}
+		
+		print("[Playcademy] Recording drill mode progress: ", progress_data)
+		PlaycademySdk.timeback.record_progress(progress_data)
 	
 	# Set drill mode game over UI visibility
 	update_drill_mode_game_over_ui_visibility()
