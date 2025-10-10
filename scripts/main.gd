@@ -1829,16 +1829,16 @@ func connect_menu_buttons():
 	if reset_data_button:
 		reset_data_button.pressed.connect(_on_reset_data_button_pressed)
 		connect_button_sounds(reset_data_button)
-		# Hide in non-development builds
-		reset_data_button.visible = OS.is_debug_build()
+		# Hide in non-editor builds (only show when running in Godot editor)
+		reset_data_button.visible = OS.has_feature("editor")
 	
 	# Connect unlock all button
 	var unlock_all_button = main_menu_node.get_node("UnlockAllButton")
 	if unlock_all_button:
 		unlock_all_button.pressed.connect(_on_unlock_all_button_pressed)
 		connect_button_sounds(unlock_all_button)
-		# Hide in non-development builds
-		unlock_all_button.visible = OS.is_debug_build()
+		# Hide in non-editor builds (only show when running in Godot editor)
+		unlock_all_button.visible = OS.has_feature("editor")
 	
 	# Connect drill mode button
 	var drill_mode_button = main_menu_node.get_node("DrillModeButton")
