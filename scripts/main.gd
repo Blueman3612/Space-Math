@@ -96,6 +96,10 @@ const menu_on_screen = Vector2(0, 0)
 # Fraction problem positioning constants
 const fraction_problem_min_x = 32.0  # Minimum x position for fraction problems to prevent going off-screen
 
+# Control guide ordering constants (left to right ordering: Enter > Tab > Divide)
+enum ControlGuideType { DIVIDE, TAB, ENTER }
+const CONTROL_GUIDE_ORDER = [ControlGuideType.ENTER, ControlGuideType.TAB, ControlGuideType.DIVIDE]
+
 # Track progression mapping (button index to track ID, ordered by difficulty)
 const track_progression = [12, 9, 6, 10, 8, 11, 7, 5, "4.NF.B", "5.NF.A", "5.NF.B"]
 
@@ -2025,15 +2029,19 @@ func update_control_guide_visibility():
 	control_guide_tab.visible = show_tab
 	control_guide_divide.visible = show_divide
 	
-	# Calculate positions from right to left
-	# Maintain order: Divide -> Tab -> Enter
+	# Calculate positions from right to left using the constant ordering
 	var visible_controls = []
-	if show_divide:
-		visible_controls.append(control_guide_divide)
-	if show_tab:
-		visible_controls.append(control_guide_tab)
-	if show_enter:
-		visible_controls.append(control_guide_enter)
+	for control_type in CONTROL_GUIDE_ORDER:
+		match control_type:
+			ControlGuideType.DIVIDE:
+				if show_divide:
+					visible_controls.append(control_guide_divide)
+			ControlGuideType.TAB:
+				if show_tab:
+					visible_controls.append(control_guide_tab)
+			ControlGuideType.ENTER:
+				if show_enter:
+					visible_controls.append(control_guide_enter)
 	
 	# Position controls from right to left, clamping the RIGHT side of the rightmost control to control_guide_max_x
 	var current_x = control_guide_max_x
