@@ -30,6 +30,7 @@ var fraction_mixed_answer_extra_offset = 4.0  # Additional rightward offset for 
 var fraction_offset = Vector2(48, 64.0)  # Position offset for fraction elements (x, y)
 var operator_offset = Vector2(0, 0.0)  # Position offset for operators and equals sign (x, y)
 var unicode_operator_offset = Vector2(10, -30)  # Additional offset for unicode operators (× and ÷) to center them properly
+var simple_operator_offset = Vector2(-12, 0)  # Additional offset for simple character operators (x and /) when converted from unicode
 var fraction_problem_x_offset = -64.0  # Horizontal offset from primary_position for the entire fraction problem
 
 # Star animation variables
@@ -692,6 +693,13 @@ func _process(delta):
 func is_fraction_display_type(question_type: String) -> bool:
 	"""Check if a question type should be displayed in fraction format"""
 	return PROBLEM_DISPLAY_FORMATS.get(question_type, "") == "fraction"
+
+func get_display_operator(operator: String) -> String:
+	"""Convert unicode operators to simple characters for display"""
+	match operator:
+		"×": return "x"
+		"÷": return "/"
+		_: return operator
 
 func generate_new_question():
 	user_answer = ""
@@ -1453,11 +1461,11 @@ func create_incorrect_fraction_answer():
 	# Create operator label as child of fraction1
 	var operator_label = Label.new()
 	operator_label.label_settings = label_settings_resource
-	operator_label.text = current_question.operator
-	# Apply unicode offset for × and ÷ symbols to center them properly
+	operator_label.text = get_display_operator(current_question.operator)
+	# Apply simple operator offset for converted unicode operators
 	var op_offset = operator_offset
 	if current_question.operator == "×" or current_question.operator == "÷":
-		op_offset += unicode_operator_offset
+		op_offset += simple_operator_offset
 	operator_label.position = Vector2(operator_x - fraction1_x, 0) + op_offset - fraction_offset
 	operator_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	operator_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -4008,16 +4016,16 @@ func create_fraction_problem():
 	# Create operator label (+, -, etc.) - child of first fraction so it moves with it
 	var operator_label = Label.new()
 	operator_label.label_settings = label_settings_resource
-	operator_label.text = current_question.operator
+	operator_label.text = get_display_operator(current_question.operator)
 	operator_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	operator_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	operator_label.self_modulate = Color(1, 1, 1)
 	operator_label.z_index = -1  # Render behind UI elements
 	# Position relative to fraction1
-	# Apply unicode offset for × and ÷ symbols to center them properly
 	var op_offset = operator_offset
+	# Apply simple operator offset for converted unicode operators
 	if current_question.operator == "×" or current_question.operator == "÷":
-		op_offset += unicode_operator_offset
+		op_offset += simple_operator_offset
 	operator_label.position = Vector2(operator_x - fraction1_x, 0) + op_offset - fraction_offset
 	fraction1.add_child(operator_label)
 	current_problem_nodes.append(operator_label)
