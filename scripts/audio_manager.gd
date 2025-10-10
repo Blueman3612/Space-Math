@@ -31,10 +31,16 @@ func _ready():
 	music_player.stream = background_music
 	add_child(music_player)
 	
-	# Start playing the music and connect to finished signal for looping
+	# Connect to finished signal for looping
 	if background_music:
-		music_player.play()
 		music_player.finished.connect(_on_music_finished)
+	
+	# Note: Music will be started by main.gd after volume settings are loaded
+
+func start_music():
+	"""Start playing the background music (called after volume is initialized)"""
+	if background_music and music_player and not music_player.playing:
+		music_player.play()
 
 # Get an available AudioStreamPlayer from the pool
 func get_available_sfx_player() -> AudioStreamPlayer:

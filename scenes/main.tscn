@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://dgsyvy33jqe6f"]
+[gd_scene load_steps=17 format=3 uid="uid://dgsyvy33jqe6f"]
 
 [ext_resource type="Script" uid="uid://b7dgkimpo8qo0" path="res://scripts/main.gd" id="1_8k3xf"]
 [ext_resource type="Theme" uid="uid://qx67shaxna0a" path="res://assets/themes/classic/classic.tres" id="1_jyhfs"]
@@ -12,6 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://bw8wg1e8arbcr" path="res://assets/sprites/Star Icon.png" id="7_o6xl0"]
 [ext_resource type="LabelSettings" uid="uid://bokvnafms2bfh" path="res://assets/label settings/GravityBold16.tres" id="8_choun"]
 [ext_resource type="LabelSettings" uid="uid://cfexrs5iigrqq" path="res://assets/label settings/GravityBold32.tres" id="9_85g3d"]
+[ext_resource type="Texture2D" uid="uid://etg2ex4n2k8r" path="res://assets/sprites/Audio Icons.png" id="9_a8y0u"]
 [ext_resource type="LabelSettings" uid="uid://nqkc5o1v0fhc" path="res://assets/label settings/GravityBold256.tres" id="13_trceg"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_85g3d"]
@@ -223,6 +224,45 @@ text = "Nathan hall"
 label_settings = ExtResource("8_choun")
 horizontal_alignment = 2
 vertical_alignment = 2
+
+[node name="VolumeControls" type="Control" parent="MainMenu"]
+anchors_preset = 0
+offset_left = 32.0
+offset_top = 248.0
+offset_right = 672.0
+offset_bottom = 488.0
+mouse_filter = 2
+
+[node name="SFXIcon" type="Sprite2D" parent="MainMenu/VolumeControls"]
+position = Vector2(72, 72)
+scale = Vector2(2, 2)
+texture = ExtResource("9_a8y0u")
+hframes = 2
+
+[node name="SFXSlider" type="HSlider" parent="MainMenu/VolumeControls/SFXIcon"]
+offset_left = 24.0
+offset_top = -8.0
+offset_right = 264.0
+offset_bottom = 8.0
+tooltip_text = "Sound Effects Volume"
+mouse_default_cursor_shape = 7
+theme = ExtResource("1_jyhfs")
+
+[node name="MusicIcon" type="Sprite2D" parent="MainMenu/VolumeControls"]
+position = Vector2(72, 160)
+scale = Vector2(2, 2)
+texture = ExtResource("9_a8y0u")
+hframes = 2
+frame = 1
+
+[node name="MusicSlider" type="HSlider" parent="MainMenu/VolumeControls/MusicIcon"]
+offset_left = 24.0
+offset_top = -8.0
+offset_right = 264.0
+offset_bottom = 8.0
+tooltip_text = "Music Volume"
+mouse_default_cursor_shape = 7
+theme = ExtResource("1_jyhfs")
 
 [node name="GameOver" type="Control" parent="."]
 anchors_preset = 0

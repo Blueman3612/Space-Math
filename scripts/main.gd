@@ -71,6 +71,12 @@ var drill_score_expand_scale = 2.0  # Scale factor for drill score expansion
 var drill_score_expand_duration = 0.1  # Duration for drill score expansion
 var drill_score_shrink_duration = 0.9  # Duration for drill score shrink back to normal
 
+# Audio settings
+var default_sfx_volume = 0.85  # Default SFX volume (85%)
+var default_music_volume = 0.5  # Default music volume (50%)
+var sfx_slider: HSlider  # Reference to SFX volume slider
+var music_slider: HSlider  # Reference to Music volume slider
+
 # High score celebration variables
 var high_score_pop_scale = 8.0  # Scale factor for high score text pop effect
 var high_score_expand_duration = 0.1  # Duration for high score text expansion
@@ -277,6 +283,10 @@ func _ready():
 	star3_accuracy_label = star3_node.get_node("Accuracy")
 	star3_time_label = star3_node.get_node("Time")
 	
+	# Get references to volume sliders
+	sfx_slider = main_menu_node.get_node("VolumeControls/SFXIcon/SFXSlider")
+	music_slider = main_menu_node.get_node("VolumeControls/MusicIcon/MusicSlider")
+	
 	# Store the original position of the title for animation
 	if title_sprite:
 		title_base_position = title_sprite.position
@@ -291,6 +301,12 @@ func _ready():
 	
 	# Initialize save system
 	initialize_save_system()
+	
+	# Connect and initialize volume sliders (must be done before starting music)
+	connect_volume_sliders()
+	
+	# Start music now that volumes are set
+	AudioManager.start_music()
 	
 	# Create dynamic level buttons
 	create_level_buttons()
@@ -1551,12 +1567,16 @@ func connect_menu_buttons():
 	if reset_data_button:
 		reset_data_button.pressed.connect(_on_reset_data_button_pressed)
 		connect_button_sounds(reset_data_button)
+		# Hide in non-development builds
+		reset_data_button.visible = OS.is_debug_build()
 	
 	# Connect unlock all button
 	var unlock_all_button = main_menu_node.get_node("UnlockAllButton")
 	if unlock_all_button:
 		unlock_all_button.pressed.connect(_on_unlock_all_button_pressed)
 		connect_button_sounds(unlock_all_button)
+		# Hide in non-development builds
+		unlock_all_button.visible = OS.is_debug_build()
 	
 	# Connect drill mode button
 	var drill_mode_button = main_menu_node.get_node("DrillModeButton")
@@ -2197,12 +2217,96 @@ func initialize_save_system():
 	update_drill_mode_high_score_display()
 	# Note: update_menu_stars() and update_level_availability() are now called after create_level_buttons()
 
+func connect_volume_sliders():
+	"""Connect volume sliders and initialize their values from save data"""
+	if sfx_slider:
+		# Set slider range (0.0 to 1.0)
+		sfx_slider.min_value = 0.0
+		sfx_slider.max_value = 1.0
+		sfx_slider.step = 0.01
+		
+		# Load saved volume or use default
+		var sfx_volume = save_data.get("sfx_volume", default_sfx_volume)
+		sfx_slider.value = sfx_volume
+		
+		# Apply the volume immediately
+		set_sfx_volume(sfx_volume)
+		
+		# Connect signal
+		sfx_slider.value_changed.connect(_on_sfx_volume_changed)
+	
+	if music_slider:
+		# Set slider range (0.0 to 1.0)
+		music_slider.min_value = 0.0
+		music_slider.max_value = 1.0
+		music_slider.step = 0.01
+		
+		# Load saved volume or use default
+		var music_volume = save_data.get("music_volume", default_music_volume)
+		music_slider.value = music_volume
+		
+		# Apply the volume immediately
+		set_music_volume(music_volume)
+		
+		# Connect signal
+		music_slider.value_changed.connect(_on_music_volume_changed)
+
+func _on_sfx_volume_changed(value: float):
+	"""Handle SFX volume slider change"""
+	set_sfx_volume(value)
+	save_data.sfx_volume = value
+	save_save_data()
+
+func _on_music_volume_changed(value: float):
+	"""Handle Music volume slider change"""
+	set_music_volume(value)
+	save_data.music_volume = value
+	save_save_data()
+
+func volume_to_db(volume: float) -> float:
+	"""Convert volume (0.0-1.0) to decibels (-48 to 0) using moderately exponential scale"""
+	if volume <= 0.0:
+		return -80.0  # Effectively muted
+	# Use a square root curve: -48 * (1 - sqrt(volume))
+	# This creates a balanced exponential curve
+	# At 25%: -24dB, At 50%: -14dB, At 75%: -7dB, At 100%: 0dB
+	var db = -48.0 * (1.0 - sqrt(volume))
+	return db
+
+func set_sfx_volume(volume: float):
+	"""Set SFX bus volume"""
+	var bus_idx = AudioServer.get_bus_index("SFX")
+	if bus_idx >= 0:
+		if volume <= 0.0:
+			# Mute the bus when slider is at minimum
+			AudioServer.set_bus_mute(bus_idx, true)
+		else:
+			# Unmute and set volume
+			AudioServer.set_bus_mute(bus_idx, false)
+			var db = volume_to_db(volume)
+			AudioServer.set_bus_volume_db(bus_idx, db)
+
+func set_music_volume(volume: float):
+	"""Set Music bus volume"""
+	var bus_idx = AudioServer.get_bus_index("Music")
+	if bus_idx >= 0:
+		if volume <= 0.0:
+			# Mute the bus when slider is at minimum
+			AudioServer.set_bus_mute(bus_idx, true)
+		else:
+			# Unmute and set volume
+			AudioServer.set_bus_mute(bus_idx, false)
+			var db = volume_to_db(volume)
+			AudioServer.set_bus_volume_db(bus_idx, db)
+
 func get_default_save_data():
 	"""Return the default save data structure"""
 	var default_data = {
 		"version": ProjectSettings.get_setting("application/config/version"),
 		"levels": {},
-		"questions": {}
+		"questions": {},
+		"sfx_volume": default_sfx_volume,
+		"music_volume": default_music_volume
 	}
 	
 	# Initialize level data for all levels
@@ -2272,6 +2376,10 @@ func migrate_save_data():
 			save_data.levels = {}
 		if not save_data.has("questions"):
 			save_data.questions = {}
+		if not save_data.has("sfx_volume"):
+			save_data.sfx_volume = default_sfx_volume
+		if not save_data.has("music_volume"):
+			save_data.music_volume = default_music_volume
 		
 		# Ensure all levels have data
 		for level in range(1, track_progression.size() + 1):
