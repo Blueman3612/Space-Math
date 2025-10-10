@@ -1,5 +1,7 @@
 extends Node
 
+const UsersAPI = preload("res://addons/playcademy/sdk/apis/users_api.gd")
+
 signal profile_received(user_data: Dictionary)
 signal profile_fetch_failed(error_message: String)
 

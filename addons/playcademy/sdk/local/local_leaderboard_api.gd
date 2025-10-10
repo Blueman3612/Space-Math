@@ -43,7 +43,8 @@ func fetch(options: Dictionary = {}):
 	if params.size() > 0:
 		url += "?" + "&".join(params)
 	
-	var err := http.request(url)
+	var headers = PackedStringArray(["Authorization: Bearer sandbox-demo-token"])
+	var err := http.request(url, headers)
 	if err != OK:
 		printerr("[LocalLeaderboardAPI] Failed to make GET %s request. Error code: %s" % [url, err])
 		emit_signal("fetch_failed", "HTTP_REQUEST_FAILED")
@@ -78,7 +79,8 @@ func get_user_rank(user_id: String, game_id: String = ""):
 	http.request_completed.connect(_on_get_user_rank_completed.bind(http))
 	
 	var url = "%s/users/%s/rank" % [_base_url, user_id]
-	var err := http.request(url)
+	var headers = PackedStringArray(["Authorization: Bearer sandbox-demo-token"])
+	var err := http.request(url, headers)
 	if err != OK:
 		printerr("[LocalLeaderboardAPI] Failed to make GET %s request. Error code: %s" % [url, err])
 		emit_signal("get_user_rank_failed", "HTTP_REQUEST_FAILED")

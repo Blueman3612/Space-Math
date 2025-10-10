@@ -16,7 +16,8 @@ func me():
 	var http := HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_request_completed.bind(http))
-	var err := http.request("%s/users/me" % _base_url)
+	var headers = PackedStringArray(["Authorization: Bearer sandbox-demo-token"])
+	var err := http.request("%s/users/me" % _base_url, headers)
 	if err != OK:
 		printerr("[LocalUsersAPI] Failed to make GET /users/me request. Error code: ", err)
 		emit_signal("profile_fetch_failed", "HTTP_REQUEST_FAILED")

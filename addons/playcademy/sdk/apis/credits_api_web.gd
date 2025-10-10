@@ -1,5 +1,7 @@
 extends Node
 
+const CreditsAPI = preload("res://addons/playcademy/sdk/apis/credits_api.gd")
+
 signal balance_succeeded(balance: int)
 signal balance_failed(error_message: String)
 signal add_succeeded(new_balance: int)

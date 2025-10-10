@@ -1,5 +1,7 @@
 extends Node
 
+const LeaderboardAPI = preload("res://addons/playcademy/sdk/apis/leaderboard_api.gd")
+
 # Signals for fetch operation
 signal fetch_succeeded(leaderboard_data: Array)
 signal fetch_failed(error_message: String)

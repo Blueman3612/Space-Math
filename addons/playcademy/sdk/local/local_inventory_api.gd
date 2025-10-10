@@ -23,7 +23,8 @@ func get_all():
 	var http := HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_get_all_completed.bind(http))
-	var err := http.request("%s/inventory" % _base_url)
+	var headers = PackedStringArray(["Authorization: Bearer sandbox-demo-token"])
+	var err := http.request("%s/inventory" % _base_url, headers)
 	if err != OK:
 		emit_signal("get_all_failed", "HTTP_REQUEST_FAILED")
 		http.queue_free()
@@ -47,7 +48,7 @@ func add(item_id: String, quantity: int = 1):
 	var http := HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_add_completed.bind(http))
-	var headers := PackedStringArray(["Content-Type: application/json"])
+	var headers := PackedStringArray(["Content-Type: application/json", "Authorization: Bearer sandbox-demo-token"])
 	var err := http.request("%s/inventory/add" % _base_url, headers, HTTPClient.METHOD_POST, JSON.stringify(payload))
 	if err != OK:
 		emit_signal("add_failed", "HTTP_REQUEST_FAILED")
@@ -73,7 +74,7 @@ func remove(item_id: String, quantity: int = 1):
 	var http := HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_remove_completed.bind(http))
-	var headers := PackedStringArray(["Content-Type: application/json"])
+	var headers := PackedStringArray(["Content-Type: application/json", "Authorization: Bearer sandbox-demo-token"])
 	var err := http.request("%s/inventory/remove" % _base_url, headers, HTTPClient.METHOD_POST, JSON.stringify(payload))
 	if err != OK:
 		emit_signal("remove_failed", "HTTP_REQUEST_FAILED")

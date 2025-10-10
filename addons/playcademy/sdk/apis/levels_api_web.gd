@@ -1,5 +1,7 @@
 extends Node
 
+const LevelsAPI = preload("res://addons/playcademy/sdk/apis/levels_api.gd")
+
 # Signals for get operation (user level info)
 signal get_succeeded(level_data: Dictionary)
 signal get_failed(error_message: String)

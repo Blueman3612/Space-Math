@@ -1,5 +1,7 @@
 extends Node
 
+const InventoryAPI = preload("res://addons/playcademy/sdk/apis/inventory_api.gd")
+
 signal get_all_succeeded(inventory_data: Array)
 signal get_all_failed(error_message: String)
 signal add_succeeded(response_data: Dictionary)

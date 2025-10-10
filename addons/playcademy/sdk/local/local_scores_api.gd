@@ -23,7 +23,7 @@ func submit(score: int, metadata: Dictionary = {}):
 	
 	# In local development, let sandbox determine the game context
 	var url = "%s/scores" % _base_url
-	var headers = ["Content-Type: application/json"]
+	var headers = ["Content-Type: application/json", "Authorization: Bearer sandbox-demo-token"]
 	
 	# Build request body
 	var request_body = {
@@ -74,7 +74,8 @@ func get_by_user(user_id: String, options: Dictionary = {}):
 	if params.size() > 0:
 		url += "?" + "&".join(params)
 	
-	var err := http.request(url)
+	var headers = PackedStringArray(["Authorization: Bearer sandbox-demo-token"])
+	var err := http.request(url, headers)
 	if err != OK:
 		printerr("[LocalScoresAPI] Failed to make GET %s request. Error code: %s" % [url, err])
 		emit_signal("get_by_user_failed", "HTTP_REQUEST_FAILED")

@@ -11,6 +11,8 @@ const LevelsAPIWeb = preload("res://addons/playcademy/sdk/apis/levels_api_web.gd
 const CreditsAPIWeb = preload("res://addons/playcademy/sdk/apis/credits_api_web.gd")
 const LeaderboardAPIWeb = preload("res://addons/playcademy/sdk/apis/leaderboard_api_web.gd")
 const ScoresAPIWeb = preload("res://addons/playcademy/sdk/apis/scores_api_web.gd")
+const TimebackAPIWeb = preload("res://addons/playcademy/sdk/apis/timeback_api_web.gd")
+const BackendAPIWeb = preload("res://addons/playcademy/sdk/apis/backend_api_web.gd")
 
 var playcademy_client: JavaScriptObject = null
 var is_sdk_initialized := false
@@ -23,6 +25,8 @@ var levels
 var credits
 var leaderboard
 var scores
+var timeback
+var backend
 
 # --- Main PlaycademySDK Methods ---
 func _ready():
@@ -108,7 +112,19 @@ func _on_sdk_initialized_from_js(args_array: Array):
 			_on_sdk_initialization_failed_from_js(["ScoresAPI_INSTANTIATION_FAILED"])
 			return
 
-		print("[PlaycademySDK.gd] Main Client assigned. Sub-APIs (Users, Runtime, Inventory, Levels, Credits, Leaderboard, Scores) instantiated.")
+		timeback = TimebackAPIWeb.new(playcademy_client)
+		if timeback == null:
+			printerr("[PlaycademySDK.gd] CRITICAL: TimebackAPIWeb failed to instantiate!")
+			_on_sdk_initialization_failed_from_js(["TimebackAPI_INSTANTIATION_FAILED"])
+			return
+
+		backend = BackendAPIWeb.new(playcademy_client)
+		if backend == null:
+			printerr("[PlaycademySDK.gd] CRITICAL: BackendAPIWeb failed to instantiate!")
+			_on_sdk_initialization_failed_from_js(["BackendAPI_INSTANTIATION_FAILED"])
+			return
+
+		print("[PlaycademySDK.gd] Main Client assigned. Sub-APIs (Users, Runtime, Inventory, Levels, Credits, Leaderboard, Scores, Timeback, Backend) instantiated.")
 		emit_signal("sdk_ready")
 		test_sdk_ping()
 	else:
@@ -234,6 +250,8 @@ var _found_sandbox_port: int = 0
 func _initialize_mock_client():
 	# Communicate with the local sandbox via HTTP using the discovered port
 	var sandbox_api_url = "http://localhost:%d/api" % _found_sandbox_port
+	# Game backend runs on different port (matches TypeScript SDK gameUrl)
+	var game_backend_url = "http://localhost:8788/api"
 
 	is_sdk_initialized = true
 
@@ -246,6 +264,8 @@ func _initialize_mock_client():
 	credits = preload("res://addons/playcademy/sdk/local/local_credits_api.gd").new(inventory)
 	leaderboard = preload("res://addons/playcademy/sdk/local/local_leaderboard_api.gd").new(sandbox_api_url)
 	scores = preload("res://addons/playcademy/sdk/local/local_scores_api.gd").new(sandbox_api_url)
+	timeback = preload("res://addons/playcademy/sdk/local/local_timeback_api.gd").new(game_backend_url)
+	backend = preload("res://addons/playcademy/sdk/local/local_backend_api.gd").new(game_backend_url)
 
 	add_child(users)
 	add_child(runtime)
@@ -253,6 +273,8 @@ func _initialize_mock_client():
 	add_child(levels)
 	add_child(leaderboard)
 	add_child(scores)
+	add_child(timeback)
+	add_child(backend)
 
 	emit_signal("sdk_ready")
 

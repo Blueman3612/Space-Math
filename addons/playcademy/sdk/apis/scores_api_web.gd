@@ -1,5 +1,7 @@
 extends Node
 
+const ScoresAPI = preload("res://addons/playcademy/sdk/apis/scores_api.gd")
+
 # Signals for submit operation
 signal submit_succeeded(score_data: Dictionary)
 signal submit_failed(error_message: String)

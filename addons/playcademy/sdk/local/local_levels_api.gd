@@ -34,7 +34,8 @@ func get_level():
 	var http := HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_get_completed.bind(http))
-	var err := http.request("%s/users/level" % _base_url)
+	var headers = PackedStringArray(["Authorization: Bearer sandbox-demo-token"])
+	var err := http.request("%s/users/level" % _base_url, headers)
 	if err != OK:
 		printerr("[LocalLevelsAPI] Failed to make GET /users/level request. Error code: ", err)
 		emit_signal("get_failed", "HTTP_REQUEST_FAILED")
@@ -60,7 +61,8 @@ func progress():
 	var http := HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_progress_completed.bind(http))
-	var err := http.request("%s/users/level/progress" % _base_url)
+	var headers = PackedStringArray(["Authorization: Bearer sandbox-demo-token"])
+	var err := http.request("%s/users/level/progress" % _base_url, headers)
 	if err != OK:
 		printerr("[LocalLevelsAPI] Failed to make GET /users/level/progress request. Error code: ", err)
 		emit_signal("progress_failed", "HTTP_REQUEST_FAILED")
@@ -87,7 +89,7 @@ func add_xp(amount: int):
 	var http := HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_add_xp_completed.bind(http))
-	var headers := PackedStringArray(["Content-Type: application/json"])
+	var headers := PackedStringArray(["Content-Type: application/json", "Authorization: Bearer sandbox-demo-token"])
 	var err := http.request("%s/users/xp/add" % _base_url, headers, HTTPClient.METHOD_POST, JSON.stringify(payload))
 	if err != OK:
 		printerr("[LocalLevelsAPI] Failed to make POST /users/xp/add request. Error code: ", err)
@@ -123,7 +125,8 @@ func config_list():
 	var http := HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_config_list_completed.bind(http))
-	var err := http.request("%s/levels/config" % _base_url)
+	var headers = PackedStringArray(["Authorization: Bearer sandbox-demo-token"])
+	var err := http.request("%s/levels/config" % _base_url, headers)
 	if err != OK:
 		printerr("[LocalLevelsAPI] Failed to make GET /levels/config request. Error code: ", err)
 		emit_signal("config_list_failed", "HTTP_REQUEST_FAILED")
@@ -149,7 +152,8 @@ func config_get(level: int):
 	var http := HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_config_get_completed.bind(http))
-	var err := http.request("%s/levels/config/%d" % [_base_url, level])
+	var headers = PackedStringArray(["Authorization: Bearer sandbox-demo-token"])
+	var err := http.request("%s/levels/config/%d" % [_base_url, level], headers)
 	if err != OK:
 		printerr("[LocalLevelsAPI] Failed to make GET /levels/config/%d request. Error code: " % level, err)
 		emit_signal("config_get_failed", "HTTP_REQUEST_FAILED")
