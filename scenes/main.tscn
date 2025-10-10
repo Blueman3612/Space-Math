@@ -266,7 +266,6 @@ mouse_default_cursor_shape = 7
 theme = ExtResource("1_jyhfs")
 
 [node name="GameOver" type="Control" parent="."]
-visible = false
 anchors_preset = 0
 offset_top = -1144.0
 offset_right = 1920.0

@@ -1776,7 +1776,7 @@ func create_pack_outline(pack_name: String, pack_buttons: Array, start_x: float,
 	level_pack_outlines.append(outline_container)
 	row_outlines.append(outline_container)
 
-func finalize_and_center_row(row_buttons: Array, row_outlines: Array, row_start_x: float):
+func finalize_and_center_row(row_buttons: Array, row_outlines: Array, _row_start_x: float):
 	"""Center all buttons and outlines in a row by calculating equal padding"""
 	if row_buttons.size() == 0:
 		return
@@ -3386,10 +3386,12 @@ func initialize_question_weights_for_all_tracks():
 	unavailable_questions.clear()
 	available_questions.clear()
 	
-	print("=== Question Weight Calculations for All Tracks ===")
+	print("=== Question Weight Calculations for Drill Mode (First 4 Packs, Standard Problems Only) ===")
 	
-	# Get questions from all tracks across all level packs
-	for pack_name in level_pack_order:
+	# Get questions from only the first 4 level packs (excluding Fractions)
+	var drill_mode_packs = ["Addition", "Subtraction", "Multiplication", "Division"]
+	
+	for pack_name in drill_mode_packs:
 		var pack_config = level_packs[pack_name]
 		for track in pack_config.levels:
 			var track_key = str(track) if typeof(track) == TYPE_STRING else "TRACK" + str(track)
@@ -3403,8 +3405,15 @@ func initialize_question_weights_for_all_tracks():
 			
 			print("Processing Track ", track, " from pack ", pack_name, " (", questions.size(), " questions)")
 			
-			# Calculate weights for all questions in this track
+			# Calculate weights for standard (non-fraction) questions in this track
+			var standard_count = 0
 			for question in questions:
+				# Skip fraction-type questions
+				var question_type = question.get("type", "")
+				if is_fraction_display_type(question_type):
+					continue
+				
+				standard_count += 1
 				var question_key = get_question_key(question)
 				available_questions.append(question_key)
 				
@@ -3430,8 +3439,10 @@ func initialize_question_weights_for_all_tracks():
 					question_text = str(operand1) + " " + question.operator + " " + str(operand2) + " = " + str(question.result)
 				
 				print("  Question: ", question_text, " (weight: %.3f)" % weight_result.weight)
+			
+			print("  Standard questions in this track: ", standard_count)
 	
-	print("Total questions available across all tracks: ", available_questions.size())
+	print("Total questions available for drill mode: ", available_questions.size())
 	print("==========================================")
 
 func go_to_drill_mode_game_over():
