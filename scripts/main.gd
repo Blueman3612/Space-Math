@@ -100,8 +100,32 @@ const fraction_problem_min_x = 32.0  # Minimum x position for fraction problems 
 enum ControlGuideType { DIVIDE, TAB, ENTER }
 const CONTROL_GUIDE_ORDER = [ControlGuideType.ENTER, ControlGuideType.TAB, ControlGuideType.DIVIDE]
 
-# Track progression mapping (button index to track ID, ordered by difficulty)
-const track_progression = [12, 9, 6, 10, 8, 11, 7, 5, "4.NF.B", "5.NF.A", "5.NF.B"]
+# Level pack configuration (ordered list of packs)
+const level_pack_order = ["Addition", "Subtraction", "Multiplication", "Division", "Fractions"]
+
+# Level pack definitions (pack name -> config dict)
+const level_packs = {
+	"Addition": {
+		"levels": [12, 9, 6],
+		"theme_color": Color(0, 0.5, 1)
+	},
+	"Subtraction": {
+		"levels": [10, 8],
+		"theme_color": Color(1, 0.25, 0.25)
+	},
+	"Multiplication": {
+		"levels": [11, 7],
+		"theme_color": Color(1, 0.75, 0.25)
+	},
+	"Division": {
+		"levels": [5],
+		"theme_color": Color(1, 0.5, 1)
+	},
+	"Fractions": {
+		"levels": ["4.NF.B", "5.NF.A", "5.NF.B"],
+		"theme_color": Color(0, 0.75, 0)
+	}
+}
 
 # Problem type display format mapping
 # Maps problem types to their display format ("fraction" or "standard")
@@ -116,10 +140,17 @@ const PROBLEM_DISPLAY_FORMATS = {
 }
 
 # Level button creation configuration
-var level_button_start_position = Vector2(-880, -32)  # Starting position for first button
-var level_button_spacing = Vector2(224, 224)  # Horizontal and vertical spacing between buttons
-var level_buttons_per_row = 8  # Number of buttons per row
+var level_button_start_position = Vector2(-960, -32)  # Starting position for first button (top-left of screen)
+var level_button_spacing = Vector2(208, 256)  # Horizontal and vertical spacing between buttons
 var level_button_size = Vector2(192, 192)  # Size of each level button
+var minimum_padding = 64  # Minimum padding on left and right edges of screen
+var max_row_width = 1792  # Maximum width for a row (1920 - 2*minimum_padding)
+
+# Level pack outline configuration
+var pack_outline_offset = Vector2(-48, -48)  # Offset from top-left of first button in pack
+var pack_outline_base_width = 160.0  # Base width for ShapeHorizontal (for 1 button)
+var pack_outline_height = 32.0  # Height of ShapeHorizontal
+var pack_outline_vertical_height = 128.0  # Height of ShapeVertical
 
 # Position variables
 var primary_position = Vector2(480, 476)  # Main problem position
@@ -131,6 +162,8 @@ var current_state = GameState.MENU
 var current_problem_label: Label
 var current_question = null  # Store current question data
 var current_track = 0  # Current track being played
+var current_pack_name = ""  # Current level pack being played
+var current_pack_level_index = 0  # Current level index within pack (0-based)
 var problems_completed = 0  # Number of problems completed in current level
 var user_answer = ""
 var blink_timer = 0.0
@@ -165,7 +198,8 @@ var is_celebrating_high_score = false  # Whether we're currently celebrating a n
 var high_score_flicker_time = 0.0  # Track time for color flickering animation
 
 # Dynamic level button references
-var level_buttons = []  # Array to store dynamically created level buttons
+var level_buttons = []  # Array to store dynamically created level buttons (each entry: {button: Button, pack_name: String, pack_level_index: int, global_number: int})
+var level_pack_outlines = []  # Array to store dynamically created pack outline nodes
 var label_settings_64: LabelSettings  # Label settings for button numbers
 var star_icon_texture: Texture2D  # Texture for star icons
 
@@ -1513,84 +1547,272 @@ func _on_button_click():
 	AudioManager.play_select()
 
 func create_level_buttons():
-	"""Dynamically create level buttons based on track progression"""
-	for level in range(1, track_progression.size() + 1):
-		# Calculate grid position
-		var row = int((level - 1) / level_buttons_per_row)
-		var col = (level - 1) % level_buttons_per_row
+	"""Dynamically create level buttons with level pack outlines"""
+	var global_button_number = 1
+	var current_row_buttons = []  # Track buttons in current row for centering
+	var current_row_outlines = []  # Track outlines in current row for centering
+	var current_x = level_button_start_position.x
+	var current_y = level_button_start_position.y
+	var current_row_start_x = current_x
+	
+	# Iterate through each pack in order
+	for pack_name in level_pack_order:
+		var pack_config = level_packs[pack_name]
+		var pack_levels = pack_config.levels
+		var theme_color = pack_config.theme_color
 		
-		# Calculate button position
-		var button_position = level_button_start_position + Vector2(
-			col * level_button_spacing.x,
-			row * level_button_spacing.y
-		)
+		var pack_first_button_in_row = true  # Track if this is the first button of the pack in this row
+		var pack_buttons_in_row = []  # Track buttons of this pack in current row
+		var outline_start_x = 0.0  # Track where outline should start
 		
-		# Create the button
-		var button = Button.new()
-		button.name = "LevelButton" + str(level)
-		button.custom_minimum_size = level_button_size
-		button.focus_mode = Control.FOCUS_NONE
-		button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		# Iterate through each level in the pack
+		for level_index in range(pack_levels.size()):
+			var track_id = pack_levels[level_index]
+			
+			# Check if this button is the first in a new pack segment on this row
+			if pack_first_button_in_row:
+				# Add extra spacing if not the first pack on the row
+				if current_row_buttons.size() > 0:
+					current_x += abs(pack_outline_offset.x)
+				outline_start_x = current_x
+			
+			# Calculate button right edge
+			var button_right_edge = current_x + level_button_size.x
+			
+			# Check if we need to wrap to a new row
+			if button_right_edge > level_button_start_position.x + max_row_width:
+				# Finalize and center current row
+				finalize_and_center_row(current_row_buttons, current_row_outlines, current_row_start_x)
+				
+				# Start new row
+				current_x = level_button_start_position.x
+				current_y += level_button_spacing.y
+				current_row_start_x = current_x
+				current_row_buttons.clear()
+				current_row_outlines.clear()
+				
+				# Create new outline for continuation of pack on new row
+				if pack_buttons_in_row.size() > 0:
+					# Finalize previous row's pack outline
+					create_pack_outline(pack_name, pack_buttons_in_row, outline_start_x, current_row_outlines, theme_color)
+					pack_buttons_in_row.clear()
+				
+				# Reset for new row
+				pack_first_button_in_row = true
+				outline_start_x = current_x
+			
+			# Create button at current position
+			var button_position = Vector2(current_x, current_y)
+			var button = create_single_button(global_button_number, pack_name, level_index, track_id, button_position, theme_color)
+			
+			# Track button
+			current_row_buttons.append(button)
+			pack_buttons_in_row.append(button)
+			level_buttons.append({
+				"button": button,
+				"pack_name": pack_name,
+				"pack_level_index": level_index,
+				"global_number": global_button_number
+			})
+			
+			# Move to next button position
+			current_x += level_button_spacing.x
+			global_button_number += 1
+			pack_first_button_in_row = false
 		
-		# Set anchors and position (center anchored)
-		button.anchor_left = 0.5
-		button.anchor_top = 0.5
-		button.anchor_right = 0.5
-		button.anchor_bottom = 0.5
-		button.offset_left = button_position.x
-		button.offset_top = button_position.y
-		button.offset_right = button_position.x + level_button_size.x
-		button.offset_bottom = button_position.y + level_button_size.y
-		button.grow_horizontal = Control.GROW_DIRECTION_BOTH
-		button.grow_vertical = Control.GROW_DIRECTION_BOTH
-		
-		# Get tooltip from track data
-		var track = track_progression[level - 1]
-		var question_data = get_math_question(track)
-		if question_data and question_data.has("title"):
-			button.tooltip_text = question_data.title
-		
-		# Create Contents control
-		var contents = Control.new()
-		contents.name = "Contents"
-		contents.set_anchors_preset(Control.PRESET_FULL_RECT)
-		contents.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		button.add_child(contents)
-		
-		# Create Number label
-		var number_label = Label.new()
-		number_label.name = "Number"
-		number_label.text = str(level)
-		number_label.label_settings = label_settings_64
-		number_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		number_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		number_label.position = Vector2(4, -32)
-		number_label.size = Vector2(192, 192)
-		contents.add_child(number_label)
-		
-		# Create star sprites
-		var star_positions = [Vector2(44, 136), Vector2(96, 144), Vector2(148, 136)]
-		for i in range(3):
-			var star = Sprite2D.new()
-			star.name = "Star" + str(i + 1)
-			star.texture = star_icon_texture
-			star.hframes = 2
-			star.frame = 0  # Start with unearned star
-			star.scale = Vector2(2, 2)
-			star.position = star_positions[i]
-			contents.add_child(star)
-		
-		# Add button to main menu
-		main_menu_node.add_child(button)
-		level_buttons.append(button)
-		
-		# Connect button press and sounds
-		button.pressed.connect(_on_level_button_pressed.bind(level))
-		connect_button_sounds(button)
+		# Create outline for this pack segment (or final segment if wrapped)
+		if pack_buttons_in_row.size() > 0:
+			create_pack_outline(pack_name, pack_buttons_in_row, outline_start_x, current_row_outlines, theme_color)
+			pack_buttons_in_row.clear()
+	
+	# Finalize and center the last row
+	if current_row_buttons.size() > 0:
+		finalize_and_center_row(current_row_buttons, current_row_outlines, current_row_start_x)
 	
 	# Update stars based on save data
 	update_menu_stars()
 	update_level_availability()
+
+func create_single_button(global_number: int, pack_name: String, pack_level_index: int, track_id, button_position: Vector2, theme_color: Color) -> Button:
+	"""Create a single level button"""
+	var button = Button.new()
+	button.name = "LevelButton_" + pack_name + "_" + str(pack_level_index)
+	button.custom_minimum_size = level_button_size
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.self_modulate = theme_color
+	
+	# Set anchors and position (center anchored)
+	button.anchor_left = 0.5
+	button.anchor_top = 0.5
+	button.anchor_right = 0.5
+	button.anchor_bottom = 0.5
+	button.offset_left = button_position.x
+	button.offset_top = button_position.y
+	button.offset_right = button_position.x + level_button_size.x
+	button.offset_bottom = button_position.y + level_button_size.y
+	button.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	button.grow_vertical = Control.GROW_DIRECTION_BOTH
+	
+	# Get tooltip from track data
+	var question_data = get_math_question(track_id)
+	if question_data and question_data.has("title"):
+		button.tooltip_text = question_data.title
+	
+	# Create Contents control
+	var contents = Control.new()
+	contents.name = "Contents"
+	contents.set_anchors_preset(Control.PRESET_FULL_RECT)
+	contents.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(contents)
+	
+	# Create Number label
+	var number_label = Label.new()
+	number_label.name = "Number"
+	number_label.text = str(global_number)
+	number_label.label_settings = label_settings_64
+	number_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	number_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	number_label.position = Vector2(4, -32)
+	number_label.size = Vector2(192, 192)
+	contents.add_child(number_label)
+	
+	# Create star sprites
+	var star_positions = [Vector2(44, 136), Vector2(96, 144), Vector2(148, 136)]
+	for i in range(3):
+		var star = Sprite2D.new()
+		star.name = "Star" + str(i + 1)
+		star.texture = star_icon_texture
+		star.hframes = 2
+		star.frame = 0  # Start with unearned star
+		star.scale = Vector2(2, 2)
+		star.position = star_positions[i]
+		contents.add_child(star)
+	
+	# Add button to main menu
+	main_menu_node.add_child(button)
+	
+	# Connect button press and sounds
+	button.pressed.connect(_on_level_button_pressed.bind(pack_name, pack_level_index))
+	connect_button_sounds(button)
+	
+	return button
+
+func create_pack_outline(pack_name: String, pack_buttons: Array, start_x: float, row_outlines: Array, theme_color: Color):
+	"""Create a level pack outline for a segment of buttons"""
+	if pack_buttons.size() == 0:
+		return
+	
+	# Calculate outline width based on number of buttons
+	var num_buttons = pack_buttons.size()
+	var outline_width = pack_outline_base_width + (num_buttons - 1) * level_button_spacing.x
+	
+	# Get position from first button in segment
+	var first_button = pack_buttons[0]
+	var outline_x = start_x + pack_outline_offset.x
+	var outline_y = first_button.offset_top + pack_outline_offset.y
+	
+	# Create outline container
+	var outline_container = Control.new()
+	outline_container.name = "LevelPackOutline_" + pack_name
+	outline_container.anchor_left = 0.5
+	outline_container.anchor_top = 0.5
+	outline_container.anchor_right = 0.5
+	outline_container.anchor_bottom = 0.5
+	outline_container.offset_left = outline_x
+	outline_container.offset_top = outline_y
+	outline_container.offset_right = outline_x + 40
+	outline_container.offset_bottom = outline_y + 40
+	outline_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	# Create ShapeHorizontal
+	var shape_horizontal = ColorRect.new()
+	shape_horizontal.name = "ShapeHorizontal"
+	shape_horizontal.position = Vector2(0, 0)
+	shape_horizontal.size = Vector2(outline_width, pack_outline_height)
+	shape_horizontal.color = theme_color
+	outline_container.add_child(shape_horizontal)
+	
+	# Create TailHorizontal
+	var tail_horizontal = Sprite2D.new()
+	tail_horizontal.name = "TailHorizontal"
+	var triangle_texture = load("res://assets/sprites/Triangle.png")
+	tail_horizontal.texture = triangle_texture
+	tail_horizontal.self_modulate = theme_color
+	tail_horizontal.position = Vector2(outline_width + 32, pack_outline_height / 2.0)
+	tail_horizontal.scale = Vector2(2, 1)
+	outline_container.add_child(tail_horizontal)
+	
+	# Create ShapeVertical
+	var shape_vertical = ColorRect.new()
+	shape_vertical.name = "ShapeVertical"
+	shape_vertical.position = Vector2(0, pack_outline_height)
+	shape_vertical.size = Vector2(pack_outline_height, pack_outline_vertical_height)
+	shape_vertical.color = theme_color
+	outline_container.add_child(shape_vertical)
+	
+	# Create TailVertical
+	var tail_vertical = Sprite2D.new()
+	tail_vertical.name = "TailVertical"
+	tail_vertical.texture = triangle_texture
+	tail_vertical.self_modulate = theme_color
+	tail_vertical.position = Vector2(pack_outline_height / 2.0, pack_outline_height + pack_outline_vertical_height + 32)
+	tail_vertical.rotation = 4.712389  # -90 degrees in radians
+	tail_vertical.scale = Vector2(-2, 1)
+	outline_container.add_child(tail_vertical)
+	
+	# Create Label
+	var label_settings_24 = load("res://assets/label settings/GravityBold24Plain.tres")
+	var label = Label.new()
+	label.name = "Label"
+	label.position = Vector2(4, 4)
+	label.size = Vector2(outline_width - 8, pack_outline_height - 8)
+	label.text = pack_name
+	label.label_settings = label_settings_24
+	outline_container.add_child(label)
+	
+	# Add to main menu and track
+	main_menu_node.add_child(outline_container)
+	level_pack_outlines.append(outline_container)
+	row_outlines.append(outline_container)
+
+func finalize_and_center_row(row_buttons: Array, row_outlines: Array, row_start_x: float):
+	"""Center all buttons and outlines in a row by calculating equal padding"""
+	if row_buttons.size() == 0:
+		return
+	
+	# Calculate actual row width used (including outlines)
+	var first_button = row_buttons[0]
+	var last_button = row_buttons[row_buttons.size() - 1]
+	
+	# The leftmost point is the outline (which extends left of the first button)
+	var row_left = first_button.offset_left + pack_outline_offset.x
+	var row_right = last_button.offset_right
+	var row_width = row_right - row_left
+	
+	# Calculate where the leftmost point should be to center the row
+	# Available width is max_row_width (1792), centered within the screen
+	# Screen is 1920 wide, buttons are center-anchored (anchor at 960)
+	# Left boundary (in center-relative coords) = minimum_padding - 960 = 64 - 960 = -896
+	var left_boundary = minimum_padding - 960.0  # Convert to center-relative coordinates
+	var total_padding = max_row_width - row_width
+	var padding_each_side = total_padding / 2.0
+	
+	# Target position for leftmost point
+	var target_left = left_boundary + padding_each_side
+	
+	# Calculate offset needed to move current leftmost point to target
+	var center_offset = target_left - row_left
+	
+	# Apply offset to all buttons in row
+	for button in row_buttons:
+		button.offset_left += center_offset
+		button.offset_right += center_offset
+	
+	# Apply offset to all outlines in row
+	for outline in row_outlines:
+		outline.offset_left += center_offset
+		outline.offset_right += center_offset
 
 func connect_menu_buttons():
 	"""Connect all menu buttons to their respective functions"""
@@ -1631,15 +1853,36 @@ func connect_menu_buttons():
 		if unlock_requirements:
 			unlock_requirements.visible = false
 
-func _on_level_button_pressed(level: int):
+func _on_level_button_pressed(pack_name: String, pack_level_index: int):
 	"""Handle level button press - only respond during MENU state"""
 	if current_state != GameState.MENU:
 		return
 	
-	# Set the track and level based on the level button pressed
-	current_level_number = level
-	current_track = track_progression[level - 1]  # Convert 1-based to 0-based index
+	# Set the pack and level based on the button pressed
+	current_pack_name = pack_name
+	current_pack_level_index = pack_level_index
+	
+	# Get the track ID from the pack configuration
+	var pack_config = level_packs[pack_name]
+	current_track = pack_config.levels[pack_level_index]
+	
+	# Calculate current_level_number for level_configs lookup (still needed for star requirements)
+	# We need to find which level this is globally for the level_configs dictionary
+	var global_level_num = get_global_level_number(pack_name, pack_level_index)
+	current_level_number = global_level_num
+	
 	start_play_state()
+
+func get_global_level_number(pack_name: String, pack_level_index: int) -> int:
+	"""Get the global level number (1-11) for a pack and index"""
+	var global_num = 1
+	for pack in level_pack_order:
+		var pack_config = level_packs[pack]
+		if pack == pack_name:
+			return global_num + pack_level_index
+		else:
+			global_num += pack_config.levels.size()
+	return 1  # Fallback
 
 func _on_exit_button_pressed():
 	# Use PlaycademySdk.runtime.exit() when available, otherwise fall back to quit
@@ -1675,18 +1918,29 @@ func _on_unlock_all_button_pressed():
 	
 	print("Unlocking all levels...")
 	
-	# Set all levels to have 3 stars and reasonable completion values
-	for level in range(1, track_progression.size() + 1):
-		var level_key = str(level)
-		var level_config = level_configs.get(level, level_configs[1])
+	# Set all levels across all packs to have 3 stars and reasonable completion values
+	var global_level_num = 1
+	for pack_name in level_pack_order:
+		var pack_config = level_packs[pack_name]
 		
-		# Set each level to have 3 stars and max values
-		save_data.levels[level_key] = {
-			"highest_stars": 3,
-			"best_accuracy": level_config.problems,  # Perfect accuracy
-			"best_time": level_config.star3.time,  # Best time for 3 stars
-			"best_cqpm": calculate_cqpm(level_config.problems, level_config.star3.time)
-		}
+		# Ensure pack exists in save data
+		if not save_data.packs.has(pack_name):
+			save_data.packs[pack_name] = {"levels": {}}
+		
+		# Unlock each level in the pack
+		for level_index in range(pack_config.levels.size()):
+			var level_key = str(level_index)
+			var level_config = level_configs.get(global_level_num, level_configs[1])
+			
+			# Set each level to have 3 stars and max values
+			save_data.packs[pack_name].levels[level_key] = {
+				"highest_stars": 3,
+				"best_accuracy": level_config.problems,  # Perfect accuracy
+				"best_time": level_config.star3.time,  # Best time for 3 stars
+				"best_cqpm": calculate_cqpm(level_config.problems, level_config.star3.time)
+			}
+			
+			global_level_num += 1
 	
 	save_save_data()
 	
@@ -1869,17 +2123,15 @@ func go_to_game_over():
 	
 	# Calculate and save level performance data
 	var stars_earned = evaluate_stars().size()
-	var level_number = get_level_number_from_track(current_track)
-	if level_number > 0:
-		update_level_data(level_number, correct_answers, current_level_time, stars_earned)
+	update_level_data(current_pack_name, current_pack_level_index, correct_answers, current_level_time, stars_earned)
 	
 	# Record progress to Playcademy TimeBack (1 minute = 1 XP)
 	if PlaycademySdk and PlaycademySdk.is_ready() and PlaycademySdk.timeback:
-		var level_config = level_configs.get(level_number, level_configs[1])
+		var level_config = level_configs.get(current_level_number, level_configs[1])
 		var total_questions = level_config.problems
 		
 		# Get activity name from track data
-		var activity_name = "Level " + str(level_number)
+		var activity_name = current_pack_name + " - Level " + str(current_pack_level_index + 1)
 		var question_data = get_math_question(current_track)
 		if question_data and question_data.has("title"):
 			activity_name = question_data.title
@@ -1892,7 +2144,7 @@ func go_to_game_over():
 			"totalQuestions": total_questions,
 			"correctQuestions": correct_answers,
 			"xpEarned": xp_earned,
-			"activityId": "level-" + str(level_number),
+			"activityId": "level-" + current_pack_name + "-" + str(current_pack_level_index),
 			"activityName": activity_name,
 			"stars": stars_earned,
 			"timeSeconds": int(current_level_time)
@@ -2433,20 +2685,28 @@ func get_default_save_data():
 	"""Return the default save data structure"""
 	var default_data = {
 		"version": ProjectSettings.get_setting("application/config/version"),
-		"levels": {},
+		"save_structure": "pack_based",  # Identifier for new save structure
+		"packs": {},
 		"questions": {},
 		"sfx_volume": default_sfx_volume,
 		"music_volume": default_music_volume
 	}
 	
-	# Initialize level data for all levels
-	for level in range(1, track_progression.size() + 1):
-		default_data.levels[str(level)] = {
-			"highest_stars": 0,
-			"best_accuracy": 0,
-			"best_time": 999999.0,  # Very high default time
-			"best_cqpm": 0.0
+	# Initialize level data for all packs
+	for pack_name in level_pack_order:
+		var pack_config = level_packs[pack_name]
+		default_data.packs[pack_name] = {
+			"levels": {}
 		}
+		
+		# Initialize each level in the pack
+		for level_index in range(pack_config.levels.size()):
+			default_data.packs[pack_name].levels[str(level_index)] = {
+				"highest_stars": 0,
+				"best_accuracy": 0,
+				"best_time": 999999.0,
+				"best_cqpm": 0.0
+			}
 	
 	return default_data
 
@@ -2482,7 +2742,6 @@ func save_save_data():
 		var json_string = JSON.stringify(save_data, "\t")
 		file.store_string(json_string)
 		file.close()
-		print("Save data saved successfully")
 	else:
 		print("Could not save data to file")
 
@@ -2490,20 +2749,22 @@ func migrate_save_data():
 	"""Handle save data migration for version changes"""
 	var current_version = ProjectSettings.get_setting("application/config/version")
 	var save_version = save_data.get("version", "0.0")
+	var save_structure = save_data.get("save_structure", "legacy")
 	
+	# Check if this is an old save structure - wipe if not pack_based
+	if save_structure != "pack_based":
+		print("Old save structure detected - wiping all save data for pack-based system")
+		save_data = get_default_save_data()
+		save_save_data()
+		return
+	
+	# Version migration for pack-based saves
 	if save_version != current_version:
 		print("Migrating save data from version ", save_version, " to ", current_version)
 		
-		# Special case: Wipe all data from version 1.0 due to data structure changes
-		if save_version == "1.0":
-			print("Version 1.0 detected - wiping all save data due to incompatible data structure changes")
-			save_data = get_default_save_data()
-			save_save_data()
-			return
-		
 		# Ensure all required fields exist
-		if not save_data.has("levels"):
-			save_data.levels = {}
+		if not save_data.has("packs"):
+			save_data.packs = {}
 		if not save_data.has("questions"):
 			save_data.questions = {}
 		if not save_data.has("sfx_volume"):
@@ -2511,21 +2772,31 @@ func migrate_save_data():
 		if not save_data.has("music_volume"):
 			save_data.music_volume = default_music_volume
 		
-		# Ensure all levels have data
-		for level in range(1, track_progression.size() + 1):
-			var level_key = str(level)
-			if not save_data.levels.has(level_key):
-				save_data.levels[level_key] = {
-					"highest_stars": 0,
-					"best_accuracy": 0,
-					"best_time": 999999.0,
-					"best_cqpm": 0.0
-				}
-			else:
-				# Ensure all fields exist for existing levels
-				var level_data = save_data.levels[level_key]
-				if not level_data.has("best_cqpm"):
-					level_data.best_cqpm = 0.0
+		# Ensure all packs and levels have data
+		for pack_name in level_pack_order:
+			var pack_config = level_packs[pack_name]
+			if not save_data.packs.has(pack_name):
+				save_data.packs[pack_name] = {"levels": {}}
+			
+			var pack_data = save_data.packs[pack_name]
+			if not pack_data.has("levels"):
+				pack_data.levels = {}
+			
+			# Ensure all levels in pack have data
+			for level_index in range(pack_config.levels.size()):
+				var level_key = str(level_index)
+				if not pack_data.levels.has(level_key):
+					pack_data.levels[level_key] = {
+						"highest_stars": 0,
+						"best_accuracy": 0,
+						"best_time": 999999.0,
+						"best_cqpm": 0.0
+					}
+				else:
+					# Ensure all fields exist for existing levels
+					var level_data = pack_data.levels[level_key]
+					if not level_data.has("best_cqpm"):
+						level_data.best_cqpm = 0.0
 		
 		# Update version
 		save_data.version = current_version
@@ -2639,18 +2910,27 @@ func save_question_data(question_data, player_answer, time_taken):
 	
 	save_save_data()
 
-func update_level_data(level_number, accuracy, time_taken, stars_earned):
-	"""Update the saved data for a level"""
-	var level_key = str(level_number)
-	if not save_data.levels.has(level_key):
-		save_data.levels[level_key] = {
+func update_level_data(pack_name: String, pack_level_index: int, accuracy: int, time_taken: float, stars_earned: int):
+	"""Update the saved data for a level using pack-based structure"""
+	# Ensure pack exists
+	if not save_data.packs.has(pack_name):
+		save_data.packs[pack_name] = {"levels": {}}
+	
+	var pack_data = save_data.packs[pack_name]
+	if not pack_data.has("levels"):
+		pack_data.levels = {}
+	
+	# Ensure level exists
+	var level_key = str(pack_level_index)
+	if not pack_data.levels.has(level_key):
+		pack_data.levels[level_key] = {
 			"highest_stars": 0,
 			"best_accuracy": 0,
 			"best_time": 999999.0,
 			"best_cqpm": 0.0
 		}
 	
-	var level_data = save_data.levels[level_key]
+	var level_data = pack_data.levels[level_key]
 	var updated = false
 	
 	# Update highest stars
@@ -2671,7 +2951,7 @@ func update_level_data(level_number, accuracy, time_taken, stars_earned):
 	# Calculate and update CQPM (Correct Questions Per Minute)
 	var cqpm = 0.0
 	if time_taken > 0:
-		cqpm = (accuracy / time_taken) * 60.0
+		cqpm = (float(accuracy) / time_taken) * 60.0
 	
 	if cqpm > level_data.best_cqpm:
 		level_data.best_cqpm = cqpm
@@ -2997,26 +3277,25 @@ func find_question_by_key(question_key):
 	
 	return null
 
-func get_level_number_from_track(track):
-	"""Get the level number (1-9) from a track using track_progression mapping"""
-	for i in range(track_progression.size()):
-		# Convert both to strings for comparison to handle mixed int/string types
-		if str(track_progression[i]) == str(track):
-			return i + 1  # Convert 0-based index to 1-based level number
-	return 0  # Track not found
-
 func update_menu_stars():
 	"""Update the star display on menu level buttons based on save data"""
-	for level in range(1, track_progression.size() + 1):
-		var level_key = str(level)
-		var button_name = "LevelButton" + str(level)
-		var level_button = main_menu_node.get_node(button_name)
+	for button_data in level_buttons:
+		var button = button_data.button
+		var pack_name = button_data.pack_name
+		var pack_level_index = button_data.pack_level_index
 		
-		if level_button and save_data.levels.has(level_key):
-			var stars_earned = save_data.levels[level_key].highest_stars
-			var contents = level_button.get_node("Contents")
-			
-			# Update each star sprite
+		# Get save data for this level
+		var stars_earned = 0
+		if save_data.packs.has(pack_name):
+			var pack_data = save_data.packs[pack_name]
+			if pack_data.has("levels"):
+				var level_key = str(pack_level_index)
+				if pack_data.levels.has(level_key):
+					stars_earned = pack_data.levels[level_key].highest_stars
+		
+		# Update star sprites
+		var contents = button.get_node("Contents")
+		if contents:
 			for star_num in range(1, 4):
 				var star_sprite = contents.get_node("Star" + str(star_num))
 				if star_sprite:
@@ -3051,20 +3330,25 @@ func calculate_question_difficulty(question_data):
 				# Get the track ID (could be "TRACK12" or "FRAC-07")
 				var track_id = level.id
 				
-				# Find index in track_progression
-				for i in range(track_progression.size()):
-					var track_entry = track_progression[i]
-					# Handle both numeric and string track IDs
-					var matches = false
-					if typeof(track_entry) == TYPE_STRING:
-						matches = (track_entry == track_id)
-					else:
-						# Numeric track, need to compare with "TRACK#" format
-						matches = (track_id == "TRACK" + str(track_entry))
-					
-					if matches:
-						return (i + 1) * 2  # (index + 1) * 2
-				# If not found in track_progression, return default difficulty
+				# Find global index across all level packs
+				var global_index = 0
+				for pack_name in level_pack_order:
+					var pack_config = level_packs[pack_name]
+					for track_entry in pack_config.levels:
+						# Handle both numeric and string track IDs
+						var matches = false
+						if typeof(track_entry) == TYPE_STRING:
+							matches = (track_entry == track_id)
+						else:
+							# Numeric track, need to compare with "TRACK#" format
+							matches = (track_id == "TRACK" + str(track_entry))
+						
+						if matches:
+							return (global_index + 1) * 2  # (index + 1) * 2
+						
+						global_index += 1
+				
+				# If not found, return default difficulty
 				return 2
 	# Default difficulty if track not found
 	return 2
@@ -3096,7 +3380,7 @@ func update_normal_mode_ui_visibility():
 		drill_score_label.visible = false
 
 func initialize_question_weights_for_all_tracks():
-	"""Initialize question weights for all questions from all tracks in track_progression"""
+	"""Initialize question weights for all questions from all tracks in all level packs"""
 	# Clear previous data
 	question_weights.clear()
 	unavailable_questions.clear()
@@ -3104,46 +3388,48 @@ func initialize_question_weights_for_all_tracks():
 	
 	print("=== Question Weight Calculations for All Tracks ===")
 	
-	# Get questions from all tracks in track_progression
-	for track in track_progression:
-		var track_key = "TRACK" + str(track)
-		var questions = []
-		
-		# Find questions from this track
-		for level in math_facts.levels:
-			if level.id == track_key:
-				questions = level.facts
-				break
-		
-		print("Processing Track ", track, " (", questions.size(), " questions)")
-		
-		# Calculate weights for all questions in this track
-		for question in questions:
-			var question_key = get_question_key(question)
-			available_questions.append(question_key)
+	# Get questions from all tracks across all level packs
+	for pack_name in level_pack_order:
+		var pack_config = level_packs[pack_name]
+		for track in pack_config.levels:
+			var track_key = str(track) if typeof(track) == TYPE_STRING else "TRACK" + str(track)
+			var questions = []
 			
-			var weight_result = calculate_question_weight(question)
-			question_weights[question_key] = weight_result.weight
+			# Find questions from this track
+			for level in math_facts.levels:
+				if level.id == track_key:
+					questions = level.facts
+					break
 			
-			# Format question display for debug
-			var question_text = ""
-			if not question.has("operands") or question.operands == null or question.operands.size() < 2:
-				# Mixed fraction or expression-based question
-				question_text = question.expression if question.has("expression") else ""
-			elif typeof(question.operands[0]) == TYPE_ARRAY:
-				# Regular fraction question
-				question_text = question.expression if question.has("expression") else ""
-			else:
-				# Regular question with numeric operands
-				var operand1 = question.operands[0]
-				var operand2 = question.operands[1]
-				if typeof(operand1) == TYPE_FLOAT and operand1 == int(operand1):
-					operand1 = int(operand1)
-				if typeof(operand2) == TYPE_FLOAT and operand2 == int(operand2):
-					operand2 = int(operand2)
-				question_text = str(operand1) + " " + question.operator + " " + str(operand2) + " = " + str(question.result)
+			print("Processing Track ", track, " from pack ", pack_name, " (", questions.size(), " questions)")
 			
-			print("  Question: ", question_text, " (weight: %.3f)" % weight_result.weight)
+			# Calculate weights for all questions in this track
+			for question in questions:
+				var question_key = get_question_key(question)
+				available_questions.append(question_key)
+				
+				var weight_result = calculate_question_weight(question)
+				question_weights[question_key] = weight_result.weight
+				
+				# Format question display for debug
+				var question_text = ""
+				if not question.has("operands") or question.operands == null or question.operands.size() < 2:
+					# Mixed fraction or expression-based question
+					question_text = question.expression if question.has("expression") else ""
+				elif typeof(question.operands[0]) == TYPE_ARRAY:
+					# Regular fraction question
+					question_text = question.expression if question.has("expression") else ""
+				else:
+					# Regular question with numeric operands
+					var operand1 = question.operands[0]
+					var operand2 = question.operands[1]
+					if typeof(operand1) == TYPE_FLOAT and operand1 == int(operand1):
+						operand1 = int(operand1)
+					if typeof(operand2) == TYPE_FLOAT and operand2 == int(operand2):
+						operand2 = int(operand2)
+					question_text = str(operand1) + " " + question.operator + " " + str(operand2) + " = " + str(question.result)
+				
+				print("  Question: ", question_text, " (weight: %.3f)" % weight_result.weight)
 	
 	print("Total questions available across all tracks: ", available_questions.size())
 	print("==========================================")
@@ -3418,54 +3704,72 @@ func animate_drill_score_scale():
 	scale_tween.tween_property(drill_score_label, "scale", Vector2(1.0, 1.0), drill_score_shrink_duration)
 
 func update_level_availability():
-	"""Update level button availability based on progression"""
-	for level in range(1, track_progression.size() + 1):
-		var button_name = "LevelButton" + str(level)
-		var level_button = main_menu_node.get_node(button_name)
+	"""Update level button availability based on pack-based progression"""
+	for button_data in level_buttons:
+		var button = button_data.button
+		var pack_name = button_data.pack_name
+		var pack_level_index = button_data.pack_level_index
 		
-		if level_button:
-			var should_be_available = true
-			
-			# Level 1 is always available
-			if level > 1:
-				# Check if previous level has at least 1 star
-				var prev_level_key = str(level - 1)
-				if save_data.levels.has(prev_level_key):
-					var prev_stars = save_data.levels[prev_level_key].highest_stars
+		var should_be_available = true
+		
+		# First level of each pack is always available
+		if pack_level_index > 0:
+			# Check if previous level in this pack has at least 1 star
+			var prev_level_key = str(pack_level_index - 1)
+			if save_data.packs.has(pack_name) and save_data.packs[pack_name].has("levels"):
+				if save_data.packs[pack_name].levels.has(prev_level_key):
+					var prev_stars = save_data.packs[pack_name].levels[prev_level_key].highest_stars
 					should_be_available = prev_stars > 0
 				else:
 					should_be_available = false
-			
-			# Set button state
-			level_button.disabled = not should_be_available
-			
-			# Update visual state
-			var contents = level_button.get_node("Contents")
-			if contents:
-				if should_be_available:
-					contents.modulate = Color(1, 1, 1, 1)  # Fully opaque
-				else:
-					contents.modulate = Color(1, 1, 1, 0.5)  # Half transparent
+			else:
+				should_be_available = false
+		
+		# Set button state
+		button.disabled = not should_be_available
+		
+		# Update visual state
+		var contents = button.get_node("Contents")
+		if contents:
+			if should_be_available:
+				contents.modulate = Color(1, 1, 1, 1)  # Fully opaque
+			else:
+				contents.modulate = Color(1, 1, 1, 0.5)  # Half transparent
 	
 	# Update drill mode button availability
 	update_drill_mode_availability()
 
 func update_drill_mode_availability():
-	"""Update drill mode button availability based on level completion"""
+	"""Update drill mode button availability based on level completion across all packs"""
 	var drill_mode_button = main_menu_node.get_node("DrillModeButton")
 	if not drill_mode_button:
 		return
 	
-	# Check if all levels have at least 1 star
+	# Check if all levels across all packs have at least 1 star
 	var all_levels_completed = true
-	for level in range(1, track_progression.size() + 1):
-		var level_key = str(level)
-		if not save_data.levels.has(level_key):
+	for pack_name in level_pack_order:
+		var pack_config = level_packs[pack_name]
+		if not save_data.packs.has(pack_name):
 			all_levels_completed = false
 			break
-		var stars = save_data.levels[level_key].highest_stars
-		if stars < 1:
+		
+		var pack_data = save_data.packs[pack_name]
+		if not pack_data.has("levels"):
 			all_levels_completed = false
+			break
+		
+		# Check each level in the pack
+		for level_index in range(pack_config.levels.size()):
+			var level_key = str(level_index)
+			if not pack_data.levels.has(level_key):
+				all_levels_completed = false
+				break
+			var stars = pack_data.levels[level_key].highest_stars
+			if stars < 1:
+				all_levels_completed = false
+				break
+		
+		if not all_levels_completed:
 			break
 	
 	# Set button state
