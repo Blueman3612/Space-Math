@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://dgsyvy33jqe6f"]
+[gd_scene load_steps=18 format=3 uid="uid://dgsyvy33jqe6f"]
 
 [ext_resource type="Script" uid="uid://b7dgkimpo8qo0" path="res://scripts/main.gd" id="1_8k3xf"]
 [ext_resource type="Theme" uid="uid://qx67shaxna0a" path="res://assets/themes/classic/classic.tres" id="1_jyhfs"]
@@ -14,6 +14,7 @@
 [ext_resource type="LabelSettings" uid="uid://cfexrs5iigrqq" path="res://assets/label settings/GravityBold32.tres" id="9_85g3d"]
 [ext_resource type="Texture2D" uid="uid://etg2ex4n2k8r" path="res://assets/sprites/Audio Icons.png" id="9_a8y0u"]
 [ext_resource type="LabelSettings" uid="uid://nqkc5o1v0fhc" path="res://assets/label settings/GravityBold256.tres" id="13_trceg"]
+[ext_resource type="Texture2D" uid="uid://caeyuu1ydiffh" path="res://assets/sprites/Key Icons.png" id="15_jkv2x"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_85g3d"]
 font = ExtResource("6_tipki")
@@ -228,9 +229,9 @@ vertical_alignment = 2
 [node name="VolumeControls" type="Control" parent="MainMenu"]
 anchors_preset = 0
 offset_left = 32.0
-offset_top = 248.0
+offset_top = 216.0
 offset_right = 672.0
-offset_bottom = 488.0
+offset_bottom = 456.0
 mouse_filter = 2
 
 [node name="SFXIcon" type="Sprite2D" parent="MainMenu/VolumeControls"]
@@ -265,6 +266,7 @@ mouse_default_cursor_shape = 7
 theme = ExtResource("1_jyhfs")
 
 [node name="GameOver" type="Control" parent="."]
+visible = false
 anchors_preset = 0
 offset_top = -1144.0
 offset_right = 1920.0
@@ -673,3 +675,80 @@ position = Vector2(0, 1076)
 points = PackedVector2Array(0, 0, 0, 0)
 width = 8.0
 default_color = Color(0, 1, 1, 1)
+
+[node name="ControlGuide" type="Control" parent="Play"]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[node name="Enter" type="Control" parent="Play/ControlGuide"]
+anchors_preset = 0
+offset_left = 1576.0
+offset_top = 980.0
+offset_right = 1896.0
+offset_bottom = 1044.0
+mouse_filter = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="Play/ControlGuide/Enter"]
+position = Vector2(64, 32)
+scale = Vector2(4, 4)
+texture = ExtResource("15_jkv2x")
+hframes = 4
+
+[node name="Label" type="Label" parent="Play/ControlGuide/Enter/Sprite2D"]
+offset_left = 20.0
+offset_top = -4.0
+offset_right = 188.0
+offset_bottom = 28.0
+scale = Vector2(0.25, 0.25)
+text = "Submit"
+label_settings = ExtResource("9_85g3d")
+
+[node name="Tab" type="Control" parent="Play/ControlGuide"]
+anchors_preset = 0
+offset_left = 1064.0
+offset_top = 980.0
+offset_right = 1544.0
+offset_bottom = 1044.0
+mouse_filter = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="Play/ControlGuide/Tab"]
+position = Vector2(64, 32)
+scale = Vector2(4, 4)
+texture = ExtResource("15_jkv2x")
+hframes = 4
+frame = 1
+
+[node name="Label" type="Label" parent="Play/ControlGuide/Tab/Sprite2D"]
+offset_left = 20.0
+offset_top = -4.0
+offset_right = 188.0
+offset_bottom = 28.0
+scale = Vector2(0.25, 0.25)
+text = "Add Fraction"
+label_settings = ExtResource("9_85g3d")
+
+[node name="Divide" type="Control" parent="Play/ControlGuide"]
+anchors_preset = 0
+offset_left = 576.0
+offset_top = 980.0
+offset_right = 1032.0
+offset_bottom = 1044.0
+mouse_filter = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="Play/ControlGuide/Divide"]
+position = Vector2(32, 32)
+scale = Vector2(4, 4)
+texture = ExtResource("15_jkv2x")
+hframes = 4
+frame = 3
+
+[node name="Label" type="Label" parent="Play/ControlGuide/Divide/Sprite2D"]
+offset_left = 12.0
+offset_top = -4.0
+offset_right = 340.0
+offset_bottom = 28.0
+scale = Vector2(0.25, 0.25)
+text = "Make Fraction"
+label_settings = ExtResource("9_85g3d")

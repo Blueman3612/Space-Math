@@ -71,6 +71,11 @@ var drill_score_expand_scale = 2.0  # Scale factor for drill score expansion
 var drill_score_expand_duration = 0.1  # Duration for drill score expansion
 var drill_score_shrink_duration = 0.9  # Duration for drill score shrink back to normal
 
+# Control guide variables
+var control_guide_max_x = 1896.0  # Maximum x position for the right side of the rightmost control node
+var control_guide_padding = 32.0  # Space between control nodes
+var control_guide_animation_duration = 0  # Duration for control slide animations
+
 # Audio settings
 var default_sfx_volume = 0.85  # Default SFX volume (85%)
 var default_music_volume = 0.5  # Default music volume (50%)
@@ -213,6 +218,11 @@ var drill_score_label: Label  # Reference to the DrillScore label
 var drill_mode_score_label: Label  # Reference to the DrillModeScore label in GameOver
 var drill_accuracy_label: Label  # Reference to the DrillAccuracy label in GameOver
 
+# Control guide node references
+var control_guide_enter: Control  # Reference to the Enter control node
+var control_guide_tab: Control  # Reference to the Tab control node
+var control_guide_divide: Control  # Reference to the Divide control node
+
 func _ready():
 	# Load and parse the math facts JSON
 	var file = FileAccess.open("res://tools/all_problems.json", FileAccess.READ)
@@ -286,6 +296,11 @@ func _ready():
 	# Get references to volume sliders
 	sfx_slider = main_menu_node.get_node("VolumeControls/SFXIcon/SFXSlider")
 	music_slider = main_menu_node.get_node("VolumeControls/MusicIcon/MusicSlider")
+	
+	# Get references to control guide nodes
+	control_guide_enter = play_node.get_node("ControlGuide/Enter")
+	control_guide_tab = play_node.get_node("ControlGuide/Tab")
+	control_guide_divide = play_node.get_node("ControlGuide/Divide")
 	
 	# Store the original position of the title for animation
 	if title_sprite:
@@ -378,8 +393,13 @@ func _input(event):
 				if is_mixed_fraction_input:
 					# Already in mixed fraction mode - transition from numerator to denominator
 					if editing_numerator:
-						editing_numerator = false
-						AudioManager.play_tick()
+						# Only allow transition if numerator is not empty
+						var parts = user_answer.split(" ")
+						if parts.size() == 2:
+							var fraction_parts = parts[1].split("/")
+							if fraction_parts.size() == 2 and fraction_parts[0] != "" and fraction_parts[0] != "-":
+								editing_numerator = false
+								AudioManager.play_tick()
 				elif not is_fraction_input and user_answer != "" and user_answer != "-":
 					# Convert current answer to whole number of mixed fraction
 					is_fraction_input = true
@@ -396,8 +416,13 @@ func _input(event):
 				if is_mixed_fraction_input:
 					# In mixed fraction mode - transition from numerator to denominator
 					if editing_numerator:
-						editing_numerator = false
-						AudioManager.play_tick()
+						# Only allow transition if numerator is not empty
+						var parts = user_answer.split(" ")
+						if parts.size() == 2:
+							var fraction_parts = parts[1].split("/")
+							if fraction_parts.size() == 2 and fraction_parts[0] != "" and fraction_parts[0] != "-":
+								editing_numerator = false
+								AudioManager.play_tick()
 				elif not is_fraction_input and user_answer != "" and user_answer != "-":
 					# Convert current answer to numerator of regular fraction
 					is_fraction_input = true
@@ -622,6 +647,9 @@ func _process(delta):
 		
 		# Update UI labels
 		update_play_ui(delta)
+		
+		# Update control guide visibility and positions
+		update_control_guide_visibility()
 
 func is_fraction_display_type(question_type: String) -> bool:
 	"""Check if a question type should be displayed in fraction format"""
@@ -983,6 +1011,7 @@ func create_new_problem_label():
 	new_label.position = off_screen_bottom
 	new_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	new_label.self_modulate = Color(1, 1, 1)  # Reset to white color
+	new_label.z_index = -1  # Render behind UI elements
 	
 	# Add to Play node so it renders behind Play UI elements
 	play_node.add_child(new_label)
@@ -1192,6 +1221,7 @@ func create_incorrect_answer_label():
 	incorrect_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	incorrect_label.text = current_question.expression  # Set to the expression
 	incorrect_label.self_modulate = Color(0, 0.5, 0)  # Dark green color
+	incorrect_label.z_index = -1  # Render behind UI elements
 	
 	# Add as child to current problem label
 	current_problem_label.add_child(incorrect_label)
@@ -1343,9 +1373,11 @@ func create_incorrect_fraction_answer():
 	fraction1.position = Vector2(fraction1_x, target_y) + fraction_offset
 	fraction2.position = Vector2(fraction2_x, target_y) + fraction_offset
 	
-	# Apply dark green color
+	# Apply dark green color and z_index
 	fraction1.modulate = Color(0, 0.5, 0)
 	fraction2.modulate = Color(0, 0.5, 0)
+	fraction1.z_index = -1  # Render behind UI elements
+	fraction2.z_index = -1  # Render behind UI elements
 	
 	correct_answer_nodes.append(fraction1)
 	correct_answer_nodes.append(fraction2)
@@ -1365,6 +1397,7 @@ func create_incorrect_fraction_answer():
 		# Position is already calculated correctly from the problem layout, no extra offset needed
 		answer_fraction.position = Vector2(answer_x + (width_diff / 2.0), target_y) + fraction_offset
 		answer_fraction.modulate = Color(0, 0.5, 0)
+		answer_fraction.z_index = -1  # Render behind UI elements
 		correct_answer_nodes.append(answer_fraction)
 	else:
 		# Create a label for the whole number answer (or parse result string directly)
@@ -1375,6 +1408,7 @@ func create_incorrect_fraction_answer():
 		answer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		answer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		answer_label.self_modulate = Color(0, 0.5, 0)  # Dark green
+		answer_label.z_index = -1  # Render behind UI elements
 		play_node.add_child(answer_label)
 		correct_answer_nodes.append(answer_label)
 	
@@ -1389,6 +1423,7 @@ func create_incorrect_fraction_answer():
 	operator_label.position = Vector2(operator_x - fraction1_x, 0) + op_offset - fraction_offset
 	operator_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	operator_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	operator_label.z_index = -1  # Render behind UI elements
 	# Don't set self_modulate - inherit dark green from parent fraction
 	fraction1.add_child(operator_label)
 	correct_answer_nodes.append(operator_label)
@@ -1400,6 +1435,7 @@ func create_incorrect_fraction_answer():
 	equals_label.position = Vector2(equals_x - fraction2_x, 0) + operator_offset - fraction_offset
 	equals_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	equals_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	equals_label.z_index = -1  # Render behind UI elements
 	# Don't set self_modulate - inherit dark green from parent fraction
 	fraction2.add_child(equals_label)
 	correct_answer_nodes.append(equals_label)
@@ -1932,6 +1968,92 @@ func _on_continue_button_pressed():
 		return
 	
 	return_to_menu()
+
+func update_control_guide_visibility():
+	"""Update visibility and positions of control guide nodes based on game state"""
+	if not control_guide_enter or not control_guide_tab or not control_guide_divide:
+		return
+	
+	# Only update during PLAY or DRILL_PLAY states
+	if current_state != GameState.PLAY and current_state != GameState.DRILL_PLAY:
+		return
+	
+	var is_fraction_problem = current_question and is_fraction_display_type(current_question.get("type", ""))
+	var has_valid_input = user_answer != "" and user_answer != "-"
+	
+	# Determine visibility for each control
+	var show_enter = true
+	var show_tab = false
+	var show_divide = false
+	
+	# Enter visibility: hide if answer is empty/invalid or already submitted
+	if user_answer == "" or user_answer == "-" or answer_submitted:
+		show_enter = false
+	
+	# Check for incomplete fraction input
+	if is_mixed_fraction_input:
+		var parts = user_answer.split(" ")
+		if parts.size() != 2:
+			show_enter = false
+		else:
+			var fraction_parts = parts[1].split("/")
+			if fraction_parts.size() != 2:
+				show_enter = false
+			elif editing_numerator:
+				# Still editing numerator, can't submit yet
+				show_enter = false
+			elif fraction_parts[0] == "" or fraction_parts[1] == "":
+				# Empty numerator or denominator
+				show_enter = false
+	elif is_fraction_input and not is_mixed_fraction_input:
+		var parts = user_answer.split("/")
+		if parts.size() != 2 or parts[1] == "":
+			show_enter = false
+	
+	# Tab (Fraction key) visibility: only for fraction problems with valid input, not already in any fraction mode
+	if is_fraction_problem and has_valid_input and not answer_submitted:
+		# Only show if not in fraction mode yet (don't show when already in fraction mode, even if editing numerator)
+		show_tab = not is_fraction_input and not is_mixed_fraction_input
+	
+	# Divide visibility: only for fraction problems with valid input, not already in any fraction mode
+	if is_fraction_problem and has_valid_input and not answer_submitted:
+		# Only show if not in fraction mode yet (don't show when already in fraction mode, even if editing numerator)
+		show_divide = not is_fraction_input and not is_mixed_fraction_input
+	
+	# Update visibility
+	control_guide_enter.visible = show_enter
+	control_guide_tab.visible = show_tab
+	control_guide_divide.visible = show_divide
+	
+	# Calculate positions from right to left
+	# Maintain order: Divide -> Tab -> Enter
+	var visible_controls = []
+	if show_divide:
+		visible_controls.append(control_guide_divide)
+	if show_tab:
+		visible_controls.append(control_guide_tab)
+	if show_enter:
+		visible_controls.append(control_guide_enter)
+	
+	# Position controls from right to left, clamping the RIGHT side of the rightmost control to control_guide_max_x
+	var current_x = control_guide_max_x
+	for i in range(visible_controls.size()):
+		var control = visible_controls[i]
+		var control_width = control.size.x
+		
+		# Calculate the left position (current_x is the right edge)
+		var target_x = current_x - control_width
+		var target_position = Vector2(target_x, control.position.y)
+		
+		# Animate to target position if different
+		if control.position.distance_to(target_position) > 0.1:
+			var tween = create_tween()
+			tween.set_ease(Tween.EASE_OUT)
+			tween.set_trans(Tween.TRANS_EXPO)
+			tween.tween_property(control, "position", target_position, control_guide_animation_duration)
+		
+		# Move current_x left for next control (subtract width + padding)
+		current_x = target_x - control_guide_padding
 
 func update_play_ui(delta: float):
 	"""Update the Timer and Accuracy labels during gameplay"""
@@ -3555,6 +3677,8 @@ func create_fraction_problem():
 	# Now position all the fractions at their calculated positions (off-screen initially)
 	fraction1.position = Vector2(fraction1_x, start_y) + fraction_offset
 	fraction2.position = Vector2(fraction2_x, start_y) + fraction_offset
+	fraction1.z_index = -1  # Render behind UI elements
+	fraction2.z_index = -1  # Render behind UI elements
 	current_problem_nodes.append(fraction1)
 	current_problem_nodes.append(fraction2)
 	
@@ -3565,6 +3689,7 @@ func create_fraction_problem():
 	operator_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	operator_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	operator_label.self_modulate = Color(1, 1, 1)
+	operator_label.z_index = -1  # Render behind UI elements
 	# Position relative to fraction1
 	# Apply unicode offset for × and ÷ symbols to center them properly
 	var op_offset = operator_offset
@@ -3581,6 +3706,7 @@ func create_fraction_problem():
 	equals_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	equals_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	equals_label.self_modulate = Color(1, 1, 1)
+	equals_label.z_index = -1  # Render behind UI elements
 	# Position relative to fraction2
 	equals_label.position = Vector2(equals_x - fraction2_x, 0) + operator_offset - fraction_offset
 	fraction2.add_child(equals_label)
@@ -3594,6 +3720,7 @@ func create_fraction_problem():
 	current_problem_label.position = Vector2(answer_number_x, start_y) + operator_offset  # Use number position
 	current_problem_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	current_problem_label.self_modulate = Color(1, 1, 1)
+	current_problem_label.z_index = -1  # Render behind UI elements
 	play_node.add_child(current_problem_label)
 	current_problem_nodes.append(current_problem_label)
 	
@@ -3634,6 +3761,7 @@ func create_answer_fraction():
 	# Create the answer fraction at the aligned position
 	answer_fraction_node = create_fraction(answer_pos, 0, 1, play_node)
 	answer_fraction_node.set_input_mode(true)
+	answer_fraction_node.z_index = -1  # Render behind UI elements
 	current_problem_nodes.append(answer_fraction_node)
 	
 	# Store initial position and width for dynamic positioning
@@ -3666,6 +3794,7 @@ func create_answer_mixed_fraction():
 	answer_fraction_node.set_input_mode(true)
 	answer_fraction_node.set_mixed_fraction(whole_num, 0, 1)
 	answer_fraction_node.editing_numerator = true
+	answer_fraction_node.z_index = -1  # Render behind UI elements
 	current_problem_nodes.append(answer_fraction_node)
 	
 	# Get the baseline width (a fraction with just "0/1")
