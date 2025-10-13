@@ -175,9 +175,9 @@ The system sends progress data including:
 - Correct/total questions
 - Time spent (active time only)
 - Stars earned
-- Metadata: CQPM, multiplier, idle time, etc.
+- Activity ID and name
 
-This data is sent to `PlaycademySdk.timeback.record_progress()` and appears in the Playcademy dashboard for analytics.
+This data is sent to `PlaycademySdk.timeback.record_progress()` and appears in the Playcademy dashboard for analytics. Additional metrics (CQPM, multipliers, idle time) are logged locally but not sent to avoid API compatibility issues.
 
 ## Notes
 

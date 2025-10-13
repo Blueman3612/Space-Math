@@ -307,17 +307,7 @@ func award_timeback_xp(xp: int, details: Dictionary, pack_name: String, pack_lev
 		"activityId": "level-" + pack_name + "-" + str(pack_level_index),
 		"activityName": activity_name,
 		"stars": stars_earned,
-		"timeSeconds": int(details.active_time),
-		# Additional metadata for analytics
-		"metadata": {
-			"cqpm": details.cqpm,
-			"cqpm_multiplier": details.cqpm_multiplier,
-			"total_duration": details.total_duration,
-			"idle_time": details.idle_time,
-			"active_time": details.active_time,
-			"game_time": details.game_time,
-			"level_number": level_number
-		}
+		"timeSeconds": int(details.active_time)
 	}
 	
 	print("[TimeBack] ✓ Recording progress with %d XP to Playcademy..." % xp)
@@ -338,16 +328,7 @@ func award_drill_mode_timeback_xp(xp: int, details: Dictionary):
 		"activityId": "drill-mode",
 		"activityName": "Drill Mode",
 		"timeSeconds": int(details.active_time),
-		"mode": "drill",
-		# Additional metadata for analytics
-		"metadata": {
-			"cqpm": details.cqpm,
-			"cqpm_multiplier": details.cqpm_multiplier,
-			"total_duration": details.total_duration,
-			"idle_time": details.idle_time,
-			"active_time": details.active_time,
-			"game_time": details.game_time
-		}
+		"mode": "drill"
 	}
 	
 	print("[TimeBack] ✓ Recording drill mode progress with %d XP to Playcademy..." % xp)
