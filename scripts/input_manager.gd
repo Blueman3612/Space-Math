@@ -37,6 +37,10 @@ func reset_for_new_question():
 
 func handle_input_event(event: InputEvent, user_answer: String, answer_submitted: bool, current_state: int) -> String:
 	"""Handle input events and return the modified user_answer"""
+	# Record input for TimeBack tracking
+	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY):
+		PlaycademyManager.record_player_input()
+	
 	# Handle number input and negative sign (only during PLAY or DRILL_PLAY state and if not submitted)
 	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY) and not answer_submitted:
 		# Only process key events

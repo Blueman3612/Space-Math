@@ -83,6 +83,9 @@ func start_play_state(pack_name: String, pack_level_index: int):
 	# Initialize weighted question system for this track
 	QuestionManager.initialize_question_weights_for_track(QuestionManager.current_track)
 	
+	# Start TimeBack session tracking
+	PlaycademyManager.start_session_tracking(pack_name, pack_level_index)
+	
 	# Generate question first, then create the problem display
 	QuestionManager.generate_new_question()
 	DisplayManager.create_new_problem_label()
@@ -132,6 +135,9 @@ func start_drill_mode():
 	# Initialize weighted question system for all tracks
 	QuestionManager.initialize_question_weights_for_all_tracks()
 	
+	# Start TimeBack session tracking for drill mode
+	PlaycademyManager.start_session_tracking("Drill Mode", 0)
+	
 	# Generate question first, then create the problem display
 	QuestionManager.generate_new_question()
 	DisplayManager.create_new_problem_label()
@@ -147,9 +153,9 @@ func go_to_game_over():
 	var stars_earned = ScoreManager.evaluate_stars(current_level_number).size()
 	SaveManager.update_level_data(current_pack_name, current_pack_level_index, ScoreManager.correct_answers, ScoreManager.current_level_time, stars_earned)
 	
-	# Record progress to Playcademy TimeBack (1 minute = 1 XP)
+	# End session tracking and award XP through TimeBack
 	if PlaycademyManager:
-		PlaycademyManager.record_level_progress(current_pack_name, current_pack_level_index, current_level_number, QuestionManager.current_track, stars_earned)
+		PlaycademyManager.end_session_and_award_xp(current_pack_name, current_pack_level_index, current_level_number, QuestionManager.current_track, stars_earned)
 	
 	# Update GameOver labels with player performance
 	UIManager.update_game_over_labels(current_level_number)
@@ -195,9 +201,9 @@ func go_to_drill_mode_game_over():
 	# Update GameOver labels with drill mode performance
 	UIManager.update_drill_mode_game_over_labels()
 	
-	# Record drill mode progress to Playcademy TimeBack
+	# End session tracking and award XP through TimeBack
 	if PlaycademyManager:
-		PlaycademyManager.record_drill_mode_progress()
+		PlaycademyManager.end_drill_session_and_award_xp()
 	
 	# Set drill mode game over UI visibility
 	UIManager.update_drill_mode_game_over_ui_visibility()
