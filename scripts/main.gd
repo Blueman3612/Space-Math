@@ -214,6 +214,8 @@ func submit_answer():
 		if UIManager.accuracy_label:
 			UIManager.accuracy_label.visible = false
 		
+		# Wait for the problem to finish animating off screen before transitioning
+		await get_tree().create_timer(GameConfig.animation_duration).timeout
 		StateManager.go_to_game_over()
 	else:
 		# Resume timer after transition delay or start it if grace period completed during transition
