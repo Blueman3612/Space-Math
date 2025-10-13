@@ -196,6 +196,15 @@ var timeback_min_session_duration = 5.0  # Minimum seconds for a session to coun
 var timeback_max_multiplier = 4.0  # Cap on CQPM multiplier
 var timeback_min_multiplier = 0.1  # Floor for CQPM multiplier (for very poor performance)
 
+# Star-based XP gating (discourages farming easy/mastered levels)
+# Applied as final multiplier to normal level XP (not drill mode)
+var timeback_star_multipliers = {
+	0: 1.0,   # 0 stars = 100% XP (still learning)
+	1: 1.0,   # 1 star = 100% XP (still learning)
+	2: 0.75,  # 2 stars = 75% XP (getting good)
+	3: 0.25   # 3 stars = 25% XP (mastered, move on)
+}
+
 # CQPM multiplier scales per individual level
 # Format: {level_number: [[cqpm_threshold, multiplier], ...]}
 # Thresholds are checked in descending order; first match wins

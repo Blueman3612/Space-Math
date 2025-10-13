@@ -107,9 +107,13 @@ func end_session_and_award_xp(pack_name: String, pack_level_index: int, current_
 	# Get CQPM multiplier for this level
 	var cqpm_multiplier = get_cqpm_multiplier_for_level(current_level_number, cqpm)
 	
-	# Calculate XP
+	# Get star-based multiplier (discourages farming mastered levels)
+	var star_multiplier = GameConfig.timeback_star_multipliers.get(stars_earned, 1.0)
+	
+	# Calculate XP with both CQPM and star multipliers
 	var base_xp = active_minutes * GameConfig.timeback_base_xp_per_minute
-	var final_xp = round(base_xp * cqpm_multiplier)
+	var xp_before_star_gate = base_xp * cqpm_multiplier
+	var final_xp = round(xp_before_star_gate * star_multiplier)
 	
 	# Build detailed breakdown
 	var details = {
@@ -121,6 +125,8 @@ func end_session_and_award_xp(pack_name: String, pack_level_index: int, current_
 		"correct_answers": correct_answers,
 		"cqpm": cqpm,
 		"cqpm_multiplier": cqpm_multiplier,
+		"star_multiplier": star_multiplier,
+		"xp_before_star_gate": xp_before_star_gate,
 		"base_xp": base_xp,
 		"final_xp": final_xp,
 		"stars_earned": stars_earned,
@@ -145,10 +151,12 @@ func end_session_and_award_xp(pack_name: String, pack_level_index: int, current_
 	print("  Correct answers: %d" % correct_answers)
 	print("  CQPM (%.0f / %.1fs × 60): %.2f" % [correct_answers, game_time, cqpm])
 	print("  CQPM Multiplier for Level %d: %.2fx" % [current_level_number, cqpm_multiplier])
+	print("  Already Earned Star Multiplier (%d stars): %.2fx" % [stars_earned, star_multiplier])
 	print("")
 	print("XP CALCULATION:")
 	print("  Base XP (%.2f min × %.1f XP/min) = %.2f" % [active_minutes, GameConfig.timeback_base_xp_per_minute, base_xp])
-	print("  Final XP (%.2f × %.2fx multiplier) = %d XP" % [base_xp, cqpm_multiplier, final_xp])
+	print("  After CQPM (%.2f × %.2fx) = %.2f" % [base_xp, cqpm_multiplier, xp_before_star_gate])
+	print("  After Star Gate (%.2f × %.2fx) = %d XP" % [xp_before_star_gate, star_multiplier, final_xp])
 	print("=".repeat(60) + "\n")
 	
 	# Only award if session meets minimum duration
@@ -307,7 +315,19 @@ func award_timeback_xp(xp: int, details: Dictionary, pack_name: String, pack_lev
 		"activityId": "level-" + pack_name + "-" + str(pack_level_index),
 		"activityName": activity_name,
 		"stars": stars_earned,
-		"timeSeconds": int(details.active_time)
+		"timeSeconds": int(details.active_time),
+		# Additional metadata for analytics
+		"metadata": {
+			"cqpm": details.cqpm,
+			"cqpm_multiplier": details.cqpm_multiplier,
+			"star_multiplier": details.star_multiplier,
+			"xp_before_star_gate": details.xp_before_star_gate,
+			"total_duration": details.total_duration,
+			"idle_time": details.idle_time,
+			"active_time": details.active_time,
+			"game_time": details.game_time,
+			"level_number": level_number
+		}
 	}
 	
 	print("[TimeBack] ✓ Recording progress with %d XP to Playcademy..." % xp)
@@ -328,7 +348,16 @@ func award_drill_mode_timeback_xp(xp: int, details: Dictionary):
 		"activityId": "drill-mode",
 		"activityName": "Drill Mode",
 		"timeSeconds": int(details.active_time),
-		"mode": "drill"
+		"mode": "drill",
+		# Additional metadata for analytics
+		"metadata": {
+			"cqpm": details.cqpm,
+			"cqpm_multiplier": details.cqpm_multiplier,
+			"total_duration": details.total_duration,
+			"idle_time": details.idle_time,
+			"active_time": details.active_time,
+			"game_time": details.game_time
+		}
 	}
 	
 	print("[TimeBack] ✓ Recording drill mode progress with %d XP to Playcademy..." % xp)

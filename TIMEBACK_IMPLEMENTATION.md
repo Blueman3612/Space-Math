@@ -29,8 +29,16 @@ Each of the 11 levels has its own CQPM multiplier scale:
 - **Division Level (8)**: 15+ CQPM = 3x, 12+ = 2x, 8+ = 1.5x, etc.
 - **Fraction Levels (9-11)**: 10+ CQPM = 3x (Level 9), scales down for harder levels
 
-### 4. Drill Mode Multiplier
-Separate multiplier scale for drill mode:
+### 4. Star-Based XP Gating (Normal Levels Only)
+Reduces XP rewards for mastered levels to encourage progression:
+- **0-1 stars**: 100% XP (still learning)
+- **2 stars**: 75% XP (getting good)
+- **3 stars**: 25% XP (mastered, move on to harder content)
+
+This prevents farming easy/mastered levels for XP.
+
+### 5. Drill Mode Multiplier
+Separate multiplier scale for drill mode (no star gating):
 - 25+ CQPM = 3x
 - 18+ CQPM = 2.5x
 - 12+ CQPM = 2x
@@ -48,19 +56,27 @@ All settings in `scripts/game_config.gd`:
 timeback_base_xp_per_minute = 1.0     # Base XP rate
 timeback_idle_threshold = 10.0         # Seconds before idle
 timeback_min_session_duration = 5.0    # Minimum session to count
-timeback_max_multiplier = 5.0          # Cap on multiplier
-timeback_min_multiplier = 0.5          # Floor for multiplier
+timeback_max_multiplier = 4.0          # Cap on multiplier
+timeback_min_multiplier = 0.1          # Floor for multiplier
+
+# Star-based XP gating (normal levels only)
+timeback_star_multipliers = {
+    0: 1.0,   # 0 stars = 100% XP
+    1: 1.0,   # 1 star = 100% XP
+    2: 0.75,  # 2 stars = 75% XP
+    3: 0.25   # 3 stars = 25% XP
+}
 
 # Level-specific multipliers
 timeback_level_multipliers = {
-    1: [[30.0, 3.0], [20.0, 2.0], ...],
-    2: [[30.0, 3.0], [20.0, 2.0], ...],
+    1: [[60.0, 4.0], [45.0, 2.0], ...],
+    2: [[60.0, 4.0], [45.0, 2.0], ...],
     # ... for all 11 levels
 }
 
 # Drill mode multipliers
 timeback_drill_mode_multipliers = [
-    [25.0, 3.0], [18.0, 2.5], ...
+    [60.0, 3.0], [50.0, 2.0], ...
 ]
 ```
 
@@ -71,9 +87,11 @@ Active Time = Total Session Time - Idle Time
 Active Minutes = Active Time / 60
 Game Time = In-game timer (pauses during transitions)
 CQPM = (Correct Answers / Game Time) × 60
-Multiplier = lookup from level-specific scale based on CQPM
+CQPM Multiplier = lookup from level-specific scale based on CQPM
+Star Multiplier = lookup from star count (normal levels only, drill = 1.0)
 Base XP = Active Minutes × Base XP Per Minute (1.0)
-Final XP = Base XP × Multiplier (rounded to nearest integer)
+XP After CQPM = Base XP × CQPM Multiplier
+Final XP = XP After CQPM × Star Multiplier (rounded to nearest integer)
 ```
 
 **Key distinction:**
@@ -105,11 +123,13 @@ TIME METRICS:
 PERFORMANCE METRICS:
   Correct answers: 35
   CQPM (35 / 68.0s × 60): 30.88
-  CQPM Multiplier for Level 1: 3.00x
+  CQPM Multiplier for Level 1: 2.00x
+  Star Multiplier (3 stars): 0.25x
 
 XP CALCULATION:
   Base XP (1.21 min × 1.0 XP/min) = 1.21
-  Final XP (1.21 × 3.00x multiplier) = 3 XP
+  After CQPM (1.21 × 2.00x) = 2.42
+  After Star Gate (2.42 × 0.25x) = 1 XP
 ============================================================
 ```
 
@@ -151,10 +171,15 @@ XP CALCULATION:
 2. **Change idle threshold**: Modify `timeback_idle_threshold` (default: 10.0 seconds)
 3. **Adjust level multipliers**: Edit the arrays in `timeback_level_multipliers`
 4. **Cap multipliers**: Change `timeback_max_multiplier` or `timeback_min_multiplier`
+5. **Adjust star gating**: Modify `timeback_star_multipliers` to change how much mastered levels are penalized
 
 ### To make a level more rewarding:
 - Lower the CQPM thresholds for higher multipliers
 - Example: Change `[20.0, 2.0]` to `[15.0, 2.0]` to give 2x at 15 CQPM instead of 20
+
+### To reduce/increase farming penalties:
+- Increase star multipliers for more XP on replays (e.g., 3 stars: 0.25 → 0.5)
+- Decrease star multipliers to further discourage farming (e.g., 3 stars: 0.25 → 0.1)
 
 ### To make drill mode more challenging:
 - Raise the CQPM thresholds in `timeback_drill_mode_multipliers`
@@ -175,15 +200,17 @@ The system sends progress data including:
 - Correct/total questions
 - Time spent (active time only)
 - Stars earned
-- Activity ID and name
+- Metadata: CQPM, multiplier, idle time, etc.
 
-This data is sent to `PlaycademySdk.timeback.record_progress()` and appears in the Playcademy dashboard for analytics. Additional metrics (CQPM, multipliers, idle time) are logged locally but not sent to avoid API compatibility issues.
+This data is sent to `PlaycademySdk.timeback.record_progress()` and appears in the Playcademy dashboard for analytics.
 
 ## Notes
 
 - Minimum session duration (5 seconds) prevents trivial sessions from awarding XP
 - Session tracking is independent of the game's paused timer
 - Idle time detection starts after the configurable threshold (10 seconds)
-- All multipliers are clamped between min (0.5x) and max (5.0x)
+- All CQPM multipliers are clamped between min (0.1x) and max (4.0x)
+- Star-based gating only applies to normal levels, NOT drill mode
+- Star gating encourages players to progress to new content rather than farm mastered levels
 - The system gracefully handles missing SDK or network issues
 
