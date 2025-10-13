@@ -1,0 +1,187 @@
+extends Node
+
+# Game configuration constants - centralized for easy tuning
+
+# ============================================
+# Game State
+# ============================================
+enum GameState { MENU, PLAY, DRILL_PLAY, GAME_OVER }
+
+# ============================================
+# Animation & Timing
+# ============================================
+var blink_interval = 0.5  # Time for underscore blink cycle (fade in/out)
+var animation_duration = 0.5  # Duration for label animations in seconds
+var transition_delay = 0.1  # Delay before generating new question
+var transition_delay_incorrect = 1.5  # Delay for incorrect answers (1.5 seconds)
+var incorrect_label_animation_time = 0.25  # Time for incorrect label animation
+var incorrect_label_move_distance = 192.0  # Distance to move incorrect label down
+var incorrect_label_move_distance_fractions = 256.0  # Distance to move incorrect label down for fractions
+var backspace_hold_time = 0.15  # Time to hold backspace before it repeats
+var timer_grace_period = 0.5  # Grace period before timer starts in seconds
+
+# ============================================
+# Input
+# ============================================
+var max_answer_chars = 4  # Maximum characters for answer input
+
+# ============================================
+# Visual Effects
+# ============================================
+var scroll_boost_multiplier = 80.0  # How much to boost background scroll speed on submission
+var feedback_max_alpha = 0.1  # Maximum alpha for feedback color overlay
+
+# ============================================
+# Fraction Problem Layout
+# ============================================
+var fraction_element_spacing = 112.0  # Spacing between fractions and operators
+var fraction_answer_offset = 88.0  # Horizontal offset for answer positioning (fraction mode)
+var fraction_answer_number_offset = -40.0  # Additional leftward offset for non-fractionalized answers
+var fraction_mixed_answer_extra_offset = 4.0  # Additional rightward offset for mixed fraction answers to prevent overlap
+var fraction_offset = Vector2(48, 64.0)  # Position offset for fraction elements (x, y)
+var operator_offset = Vector2(0, 0.0)  # Position offset for operators and equals sign (x, y)
+var unicode_operator_offset = Vector2(10, -30)  # Additional offset for unicode operators (× and ÷) to center them properly
+var simple_operator_offset = Vector2(-12, 0)  # Additional offset for simple character operators (x and /) when converted from unicode
+var fraction_problem_x_offset = -64.0  # Horizontal offset from primary_position for the entire fraction problem
+var fraction_problem_min_x = 32.0  # Minimum x position for fraction problems to prevent going off-screen
+
+# ============================================
+# Star Animation
+# ============================================
+var star_delay = 0.4  # Delay between each star animation in seconds
+var star_expand_time = 0.2  # Time for star to expand to max scale
+var star_shrink_time = 0.5  # Time for star to shrink to final scale
+var star_max_scale = 32.0  # Maximum scale during star animation
+var star_final_scale = 8.0  # Final scale for earned stars
+var label_fade_time = 0.5  # Time for star labels to fade in
+
+# ============================================
+# Title Animation
+# ============================================
+var title_bounce_speed = 2.0  # Speed of the sin wave animation
+var title_bounce_distance = 16.0  # Distance of the bounce in pixels
+
+# ============================================
+# Drill Mode
+# ============================================
+var drill_mode_duration = 60.0  # Duration for drill mode in seconds (1 minute)
+var drill_score_bounce_speed = 3.0  # Speed of the sin wave animation for drill score
+var drill_score_bounce_distance = 16.0  # Distance of the bounce in pixels for drill score
+var flying_score_move_distance = 320.0  # Distance flying score labels move down in pixels
+var flying_score_move_duration = 2.0  # Duration for flying score movement animation
+var flying_score_fade_duration = 0.5  # Duration for flying score fade out animation
+var drill_score_expand_scale = 2.0  # Scale factor for drill score expansion
+var drill_score_expand_duration = 0.1  # Duration for drill score expansion
+var drill_score_shrink_duration = 0.9  # Duration for drill score shrink back to normal
+
+# ============================================
+# High Score Celebration
+# ============================================
+var high_score_pop_scale = 8.0  # Scale factor for high score text pop effect
+var high_score_expand_duration = 0.1  # Duration for high score text expansion
+var high_score_shrink_duration = 0.25  # Duration for high score text shrink back to normal
+var high_score_flicker_speed = 12.0  # Speed of color flickering between blue and turquoise
+
+# ============================================
+# Control Guide
+# ============================================
+var control_guide_max_x = 1896.0  # Maximum x position for the right side of the rightmost control node
+var control_guide_padding = 32.0  # Space between control nodes
+var control_guide_animation_duration = 0  # Duration for control slide animations
+enum ControlGuideType { DIVIDE, TAB, ENTER }
+const CONTROL_GUIDE_ORDER = [ControlGuideType.ENTER, ControlGuideType.TAB, ControlGuideType.DIVIDE]
+
+# ============================================
+# Audio Settings
+# ============================================
+var default_sfx_volume = 0.85  # Default SFX volume (85%)
+var default_music_volume = 0.5  # Default music volume (50%)
+
+# ============================================
+# Menu Positioning
+# ============================================
+const menu_above_screen = Vector2(0, -1144)
+const menu_below_screen = Vector2(0, 1144)
+const menu_on_screen = Vector2(0, 0)
+
+# ============================================
+# Problem Positioning
+# ============================================
+var primary_position = Vector2(480, 476)  # Main problem position
+var off_screen_top = Vector2(480, 1276)   # Off-screen top position
+var off_screen_bottom = Vector2(480, -324) # Off-screen bottom position
+
+# ============================================
+# Level Button Layout
+# ============================================
+var level_button_start_position = Vector2(-960, -32)  # Starting position for first button (top-left of screen)
+var level_button_spacing = Vector2(208, 256)  # Horizontal and vertical spacing between buttons
+var level_button_size = Vector2(192, 192)  # Size of each level button
+var minimum_padding = 64  # Minimum padding on left and right edges of screen
+var max_row_width = 1792  # Maximum width for a row (1920 - 2*minimum_padding)
+
+# ============================================
+# Level Pack Outline
+# ============================================
+var pack_outline_offset = Vector2(-48, -48)  # Offset from top-left of first button in pack
+var pack_outline_base_width = 160.0  # Base width for ShapeHorizontal (for 1 button)
+var pack_outline_height = 32.0  # Height of ShapeHorizontal
+var pack_outline_vertical_height = 128.0  # Height of ShapeVertical
+
+# ============================================
+# Level Configuration (per-level star requirements)
+# ============================================
+var level_configs = {
+	1: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	2: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	3: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	4: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	5: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	6: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	7: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	8: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
+	9: {"problems": 20, "star1": {"accuracy": 12, "time": 120.0}, "star2": {"accuracy": 14, "time": 100.0}, "star3": {"accuracy": 16, "time": 80.0}},
+	10: {"problems": 20, "star1": {"accuracy": 12, "time": 180.0}, "star2": {"accuracy": 14, "time": 150.0}, "star3": {"accuracy": 16, "time": 120.0}},
+	11: {"problems": 20, "star1": {"accuracy": 12, "time": 210.0}, "star2": {"accuracy": 14, "time": 180.0}, "star3": {"accuracy": 16, "time": 150.0}}
+}
+
+# ============================================
+# Level Packs
+# ============================================
+const level_pack_order = ["Addition", "Subtraction", "Multiplication", "Division", "Fractions"]
+
+const level_packs = {
+	"Addition": {
+		"levels": [12, 9, 6],
+		"theme_color": Color(0, 0.5, 1)
+	},
+	"Subtraction": {
+		"levels": [10, 8],
+		"theme_color": Color(1, 0.25, 0.25)
+	},
+	"Multiplication": {
+		"levels": [11, 7],
+		"theme_color": Color(1, 0.75, 0.25)
+	},
+	"Division": {
+		"levels": [5],
+		"theme_color": Color(1, 0.5, 1)
+	},
+	"Fractions": {
+		"levels": ["4.NF.B", "5.NF.A", "5.NF.B"],
+		"theme_color": Color(0, 0.75, 0)
+	}
+}
+
+# ============================================
+# Problem Type Display Formats
+# ============================================
+const PROBLEM_DISPLAY_FORMATS = {
+	"Like-denominator addition/subtraction": "fraction",
+	"Mixed numbers (like denominators)": "fraction",
+	"Multiply fraction by whole number": "fraction",
+	"Add unlike denominators": "fraction",
+	"Subtract unlike denominators": "fraction",
+	"Multiply fraction by fraction": "fraction",
+	"Division with unit fractions": "fraction"
+}

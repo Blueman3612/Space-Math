@@ -20,6 +20,16 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+GameConfig="*res://scripts/game_config.gd"
+SaveManager="*res://scripts/save_manager.gd"
+ScoreManager="*res://scripts/score_manager.gd"
+QuestionManager="*res://scripts/question_manager.gd"
+DisplayManager="*res://scripts/display_manager.gd"
+InputManager="*res://scripts/input_manager.gd"
+LevelManager="*res://scripts/level_manager.gd"
+StateManager="*res://scripts/state_manager.gd"
+UIManager="*res://scripts/ui_manager.gd"
+PlaycademyManager="*res://scripts/playcademy_manager.gd"
 AudioManager="*res://scripts/audio_manager.gd"
 PlaycademySdk="*res://addons/playcademy/sdk/playcademy_sdk.gd"
 
