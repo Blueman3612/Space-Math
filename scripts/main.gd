@@ -214,8 +214,6 @@ func submit_answer():
 		if UIManager.accuracy_label:
 			UIManager.accuracy_label.visible = false
 		
-		# Wait for the same transition delay used above, then go to game over
-		await get_tree().create_timer(delay_to_use).timeout
 		StateManager.go_to_game_over()
 	else:
 		# Resume timer after transition delay or start it if grace period completed during transition
