@@ -24,6 +24,7 @@ var timer_grace_period = 0.5  # Grace period before timer starts in seconds
 # Input
 # ============================================
 var max_answer_chars = 4  # Maximum characters for answer input
+var require_submit_after_incorrect = true  # Whether player must press Submit to continue after incorrect answer delay
 
 # ============================================
 # Visual Effects
@@ -88,8 +89,8 @@ var high_score_flicker_speed = 12.0  # Speed of color flickering between blue an
 var control_guide_max_x = 1896.0  # Maximum x position for the right side of the rightmost control node
 var control_guide_padding = 32.0  # Space between control nodes
 var control_guide_animation_duration = 0  # Duration for control slide animations
-enum ControlGuideType { DIVIDE, TAB, ENTER }
-const CONTROL_GUIDE_ORDER = [ControlGuideType.ENTER, ControlGuideType.TAB, ControlGuideType.DIVIDE]
+enum ControlGuideType { DIVIDE, TAB, ENTER, ENTER2 }
+const CONTROL_GUIDE_ORDER = [ControlGuideType.ENTER, ControlGuideType.TAB, ControlGuideType.DIVIDE, ControlGuideType.ENTER2]
 
 # ============================================
 # Audio Settings

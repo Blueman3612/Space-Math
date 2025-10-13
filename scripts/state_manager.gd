@@ -16,6 +16,7 @@ var problems_completed = 0  # Number of problems completed in current level
 var user_answer = ""
 var answer_submitted = false  # Track if current problem has been submitted
 var in_transition_delay = false  # Whether we're currently in a transition delay
+var waiting_for_continue_after_incorrect = false  # Whether we're waiting for player to press Submit to continue after incorrect answer
 var is_drill_mode = false  # Whether we're currently in drill mode
 
 func initialize(main_node: Control):
@@ -50,6 +51,7 @@ func start_play_state(pack_name: String, pack_level_index: int):
 	user_answer = ""
 	answer_submitted = false
 	in_transition_delay = false
+	waiting_for_continue_after_incorrect = false
 	
 	# First animate menu down off screen (downward)
 	var tween = main_menu_node.create_tween()
@@ -101,6 +103,7 @@ func start_drill_mode():
 	user_answer = ""
 	answer_submitted = false
 	in_transition_delay = false
+	waiting_for_continue_after_incorrect = false
 	
 	# First animate menu down off screen (downward)
 	var tween = main_menu_node.create_tween()

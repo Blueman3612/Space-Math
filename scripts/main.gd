@@ -78,6 +78,13 @@ func _process(delta):
 		InputManager.update_control_guide_visibility(StateManager.user_answer, StateManager.answer_submitted)
 
 func submit_answer():
+	# Handle continuing after incorrect answer
+	if StateManager.waiting_for_continue_after_incorrect:
+		StateManager.waiting_for_continue_after_incorrect = false
+		AudioManager.play_select()  # Play select sound when continuing
+		continue_after_incorrect()
+		return
+	
 	if StateManager.user_answer == "" or StateManager.user_answer == "-" or StateManager.answer_submitted:
 		return  # Don't submit empty answers, just minus sign, or already submitted
 	
@@ -190,6 +197,28 @@ func submit_answer():
 	# Clear transition delay flag
 	StateManager.in_transition_delay = false
 	
+	# If incorrect and require_submit_after_incorrect is true, wait for player to press Submit to continue
+	if not is_correct and GameConfig.require_submit_after_incorrect:
+		StateManager.waiting_for_continue_after_incorrect = true
+		# Store timer state for later restoration
+		StateManager.set_meta("timer_was_active", timer_was_active)
+		StateManager.set_meta("should_start_timer", should_start_timer)
+		return  # Wait for player to press Submit to continue
+	
+	# Continue immediately if correct or if require_submit_after_incorrect is false
+	continue_after_incorrect_internal(is_correct, timer_was_active, should_start_timer)
+
+func continue_after_incorrect():
+	"""Called when player presses Submit to continue after incorrect answer"""
+	# Retrieve stored timer state
+	var timer_was_active = StateManager.get_meta("timer_was_active", false)
+	var should_start_timer = StateManager.get_meta("should_start_timer", false)
+	
+	# Note: is_correct is always false when this is called (only called after incorrect answers)
+	continue_after_incorrect_internal(false, timer_was_active, should_start_timer)
+
+func continue_after_incorrect_internal(is_correct: bool, timer_was_active: bool, should_start_timer: bool):
+	"""Internal function to handle the continuation logic after incorrect answer delay"""
 	# Trigger scroll speed boost effect after transition delay
 	var space_bg = get_node("BackgroundLayer/SpaceBackground")
 	if space_bg and space_bg.has_method("boost_scroll_speed"):

@@ -16,6 +16,7 @@ var backspace_just_pressed = false  # Track if backspace was just pressed this f
 var control_guide_enter: Control  # Reference to the Enter control node
 var control_guide_tab: Control  # Reference to the Tab control node
 var control_guide_divide: Control  # Reference to the Divide control node
+var control_guide_enter2: Control  # Reference to the Enter2 control node (for continuing after incorrect answers)
 
 func initialize(main_node: Control):
 	"""Initialize input manager with references to needed nodes"""
@@ -23,6 +24,10 @@ func initialize(main_node: Control):
 	control_guide_enter = play_node.get_node("ControlGuide/Enter")
 	control_guide_tab = play_node.get_node("ControlGuide/Tab")
 	control_guide_divide = play_node.get_node("ControlGuide/Divide")
+	control_guide_enter2 = play_node.get_node("ControlGuide/Enter2")
+	
+	# Initially hide Enter2 (only shown when waiting for continue after incorrect answer)
+	control_guide_enter2.visible = false
 
 func reset_for_new_question():
 	"""Reset input state for a new question"""
@@ -240,7 +245,7 @@ func process_single_backspace(user_answer: String) -> String:
 
 func update_control_guide_visibility(user_answer: String, answer_submitted: bool):
 	"""Update visibility and positions of control guide nodes based on game state"""
-	if not control_guide_enter or not control_guide_tab or not control_guide_divide:
+	if not control_guide_enter or not control_guide_tab or not control_guide_divide or not control_guide_enter2:
 		return
 	
 	var is_fraction_problem = QuestionManager.current_question and QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", ""))
@@ -250,45 +255,55 @@ func update_control_guide_visibility(user_answer: String, answer_submitted: bool
 	var show_enter = true
 	var show_tab = false
 	var show_divide = false
+	var show_enter2 = false
 	
-	# Enter visibility: hide if answer is empty/invalid or already submitted
-	if user_answer == "" or user_answer == "-" or answer_submitted:
+	# Enter2 visibility: only show when waiting for continue after incorrect
+	if StateManager.waiting_for_continue_after_incorrect:
+		show_enter2 = true
+		# Hide all other controls when Enter2 is shown
 		show_enter = false
-	
-	# Check for incomplete fraction input
-	if is_mixed_fraction_input:
-		var parts = user_answer.split(" ")
-		if parts.size() != 2:
+		show_tab = false
+		show_divide = false
+	else:
+		# Enter visibility: hide if answer is empty/invalid or already submitted
+		if user_answer == "" or user_answer == "-" or answer_submitted:
 			show_enter = false
-		else:
-			var fraction_parts = parts[1].split("/")
-			if fraction_parts.size() != 2:
+		
+		# Check for incomplete fraction input
+		if is_mixed_fraction_input:
+			var parts = user_answer.split(" ")
+			if parts.size() != 2:
 				show_enter = false
-			elif editing_numerator:
-				# Still editing numerator, can't submit yet
+			else:
+				var fraction_parts = parts[1].split("/")
+				if fraction_parts.size() != 2:
+					show_enter = false
+				elif editing_numerator:
+					# Still editing numerator, can't submit yet
+					show_enter = false
+				elif fraction_parts[0] == "" or fraction_parts[1] == "":
+					# Empty numerator or denominator
+					show_enter = false
+		elif is_fraction_input and not is_mixed_fraction_input:
+			var parts = user_answer.split("/")
+			if parts.size() != 2 or parts[1] == "":
 				show_enter = false
-			elif fraction_parts[0] == "" or fraction_parts[1] == "":
-				# Empty numerator or denominator
-				show_enter = false
-	elif is_fraction_input and not is_mixed_fraction_input:
-		var parts = user_answer.split("/")
-		if parts.size() != 2 or parts[1] == "":
-			show_enter = false
-	
-	# Tab (Fraction key) visibility: only for fraction problems with valid input, not already in any fraction mode
-	if is_fraction_problem and has_valid_input and not answer_submitted:
-		# Only show if not in fraction mode yet (don't show when already in fraction mode, even if editing numerator)
-		show_tab = not is_fraction_input and not is_mixed_fraction_input
-	
-	# Divide visibility: only for fraction problems with valid input, not already in any fraction mode
-	if is_fraction_problem and has_valid_input and not answer_submitted:
-		# Only show if not in fraction mode yet (don't show when already in fraction mode, even if editing numerator)
-		show_divide = not is_fraction_input and not is_mixed_fraction_input
+		
+		# Tab (Fraction key) visibility: only for fraction problems with valid input, not already in any fraction mode
+		if is_fraction_problem and has_valid_input and not answer_submitted:
+			# Only show if not in fraction mode yet (don't show when already in fraction mode, even if editing numerator)
+			show_tab = not is_fraction_input and not is_mixed_fraction_input
+		
+		# Divide visibility: only for fraction problems with valid input, not already in any fraction mode
+		if is_fraction_problem and has_valid_input and not answer_submitted:
+			# Only show if not in fraction mode yet (don't show when already in fraction mode, even if editing numerator)
+			show_divide = not is_fraction_input and not is_mixed_fraction_input
 	
 	# Update visibility
 	control_guide_enter.visible = show_enter
 	control_guide_tab.visible = show_tab
 	control_guide_divide.visible = show_divide
+	control_guide_enter2.visible = show_enter2
 	
 	# Calculate positions from right to left using the constant ordering
 	var visible_controls = []
@@ -303,6 +318,9 @@ func update_control_guide_visibility(user_answer: String, answer_submitted: bool
 			GameConfig.ControlGuideType.ENTER:
 				if show_enter:
 					visible_controls.append(control_guide_enter)
+			GameConfig.ControlGuideType.ENTER2:
+				if show_enter2:
+					visible_controls.append(control_guide_enter2)
 	
 	# Position controls from right to left, clamping the RIGHT side of the rightmost control to control_guide_max_x
 	var current_x = GameConfig.control_guide_max_x

@@ -751,3 +751,26 @@ offset_bottom = 28.0
 scale = Vector2(0.25, 0.25)
 text = "Make Fraction"
 label_settings = ExtResource("9_85g3d")
+
+[node name="Enter2" type="Control" parent="Play/ControlGuide"]
+anchors_preset = 0
+offset_left = 164.0
+offset_top = 980.0
+offset_right = 544.0
+offset_bottom = 1044.0
+mouse_filter = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="Play/ControlGuide/Enter2"]
+position = Vector2(64, 32)
+scale = Vector2(4, 4)
+texture = ExtResource("15_jkv2x")
+hframes = 4
+
+[node name="Label" type="Label" parent="Play/ControlGuide/Enter2/Sprite2D"]
+offset_left = 20.0
+offset_top = -4.0
+offset_right = 188.0
+offset_bottom = 28.0
+scale = Vector2(0.25, 0.25)
+text = "Continue"
+label_settings = ExtResource("9_85g3d")
