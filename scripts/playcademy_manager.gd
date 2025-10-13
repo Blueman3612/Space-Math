@@ -109,7 +109,7 @@ func end_session_and_award_xp(pack_name: String, pack_level_index: int, current_
 	
 	# Calculate XP
 	var base_xp = active_minutes * GameConfig.timeback_base_xp_per_minute
-	var final_xp = int(base_xp * cqpm_multiplier)
+	var final_xp = round(base_xp * cqpm_multiplier)
 	
 	# Build detailed breakdown
 	var details = {
@@ -193,7 +193,7 @@ func end_drill_session_and_award_xp() -> Dictionary:
 	
 	# Calculate XP
 	var base_xp = active_minutes * GameConfig.timeback_base_xp_per_minute
-	var final_xp = int(base_xp * cqpm_multiplier)
+	var final_xp = round(base_xp * cqpm_multiplier)
 	
 	# Build detailed breakdown
 	var details = {

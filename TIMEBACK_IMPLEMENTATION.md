@@ -73,7 +73,7 @@ Game Time = In-game timer (pauses during transitions)
 CQPM = (Correct Answers / Game Time) × 60
 Multiplier = lookup from level-specific scale based on CQPM
 Base XP = Active Minutes × Base XP Per Minute (1.0)
-Final XP = Base XP × Multiplier (rounded to integer)
+Final XP = Base XP × Multiplier (rounded to nearest integer)
 ```
 
 **Key distinction:**

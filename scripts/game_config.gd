@@ -193,34 +193,34 @@ const PROBLEM_DISPLAY_FORMATS = {
 var timeback_base_xp_per_minute = 1.0  # Base XP: 1 minute = 1 XP
 var timeback_idle_threshold = 10.0  # Seconds of no input before considered idle
 var timeback_min_session_duration = 5.0  # Minimum seconds for a session to count
-var timeback_max_multiplier = 5.0  # Cap on CQPM multiplier
-var timeback_min_multiplier = 0.5  # Floor for CQPM multiplier (for very poor performance)
+var timeback_max_multiplier = 4.0  # Cap on CQPM multiplier
+var timeback_min_multiplier = 0.1  # Floor for CQPM multiplier (for very poor performance)
 
 # CQPM multiplier scales per individual level
 # Format: {level_number: [[cqpm_threshold, multiplier], ...]}
 # Thresholds are checked in descending order; first match wins
 var timeback_level_multipliers = {
-	1: [[30.0, 3.0], [20.0, 2.0], [15.0, 1.5], [10.0, 1.2], [5.0, 1.0], [0.0, 0.5]],  # Addition Level 1
-	2: [[30.0, 3.0], [20.0, 2.0], [15.0, 1.5], [10.0, 1.2], [5.0, 1.0], [0.0, 0.5]],  # Addition Level 2
-	3: [[30.0, 3.0], [20.0, 2.0], [15.0, 1.5], [10.0, 1.2], [5.0, 1.0], [0.0, 0.5]],  # Addition Level 3
-	4: [[25.0, 3.0], [18.0, 2.0], [12.0, 1.5], [8.0, 1.2], [4.0, 1.0], [0.0, 0.5]],   # Subtraction Level 1
-	5: [[25.0, 3.0], [18.0, 2.0], [12.0, 1.5], [8.0, 1.2], [4.0, 1.0], [0.0, 0.5]],   # Subtraction Level 2
-	6: [[20.0, 3.0], [15.0, 2.0], [10.0, 1.5], [6.0, 1.2], [3.0, 1.0], [0.0, 0.5]],   # Multiplication Level 1
-	7: [[20.0, 3.0], [15.0, 2.0], [10.0, 1.5], [6.0, 1.2], [3.0, 1.0], [0.0, 0.5]],   # Multiplication Level 2
-	8: [[15.0, 3.0], [12.0, 2.0], [8.0, 1.5], [5.0, 1.2], [2.5, 1.0], [0.0, 0.5]],    # Division Level 1
-	9: [[10.0, 3.0], [8.0, 2.0], [5.0, 1.5], [3.0, 1.2], [1.5, 1.0], [0.0, 0.5]],     # Fractions Level 1
-	10: [[8.0, 3.0], [6.0, 2.0], [4.0, 1.5], [2.5, 1.2], [1.2, 1.0], [0.0, 0.5]],     # Fractions Level 2
-	11: [[6.0, 3.0], [5.0, 2.0], [3.0, 1.5], [2.0, 1.2], [1.0, 1.0], [0.0, 0.5]]      # Fractions Level 3
+	1: [[60.0, 4.0], [45.0, 2.0], [30.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],  # Addition Level 1
+	2: [[60.0, 4.0], [45.0, 2.0], [30.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],  # Addition Level 2
+	3: [[60.0, 4.0], [45.0, 2.0], [30.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],  # Addition Level 3
+	4: [[60.0, 4.0], [45.0, 2.0], [30.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],   # Subtraction Level 1
+	5: [[60.0, 4.0], [45.0, 2.0], [30.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],   # Subtraction Level 2
+	6: [[55.0, 4.0], [40.0, 2.0], [25.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],   # Multiplication Level 1
+	7: [[50.0, 4.0], [40.0, 2.0], [25.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],   # Multiplication Level 2
+	8: [[50.0, 4.0], [40.0, 2.0], [25.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],    # Division Level 1
+	9: [[30.0, 4.0], [20.0, 2.0], [15.0, 1.0], [8.0, 0.5], [5.0, 0.25], [0.0, 0.1]],     # Fractions Level 1
+	10: [[15.0, 4.0], [10.0, 2.0], [8.0, 1.0], [5.0, 0.5], [3.0, 0.25], [0.0, 0.1]],     # Fractions Level 2
+	11: [[15.0, 4.0], [10.0, 2.0], [8.0, 1.0], [5.0, 0.5], [3.0, 0.25], [0.0, 0.1]]      # Fractions Level 3
 }
 
 # Drill mode CQPM multiplier scale
 # Uses average difficulty across all included packs
 var timeback_drill_mode_multipliers = [
-	[25.0, 3.0],   # 25+ CQPM = 3x multiplier
-	[18.0, 2.5],   # 18+ CQPM = 2.5x multiplier
-	[12.0, 2.0],   # 12+ CQPM = 2x multiplier
-	[8.0, 1.5],    # 8+ CQPM = 1.5x multiplier
-	[5.0, 1.2],    # 5+ CQPM = 1.2x multiplier
-	[2.0, 1.0],    # 2+ CQPM = 1x multiplier (baseline)
-	[0.0, 0.5]     # < 2 CQPM = 0.5x multiplier
+	[60.0, 3.0],   # 25+ CQPM = 3x multiplier
+	[50.0, 2.0],   # 18+ CQPM = 2.5x multiplier
+	[40.0, 1.5],   # 12+ CQPM = 2x multiplier
+	[30.0, 1.0],    # 8+ CQPM = 1.5x multiplier
+	[20.0, 0.5],    # 5+ CQPM = 1.2x multiplier
+	[10.0, 0.25],    # 2+ CQPM = 1x multiplier (baseline)
+	[0.0, 0.1]     # < 2 CQPM = 0.5x multiplier
 ]
