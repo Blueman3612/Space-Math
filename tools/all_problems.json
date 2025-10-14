@@ -17358,6 +17358,2502 @@
           "result_mixed": "24"
         }
       ]
+    },
+    {
+      "id": "4.NF.A.1",
+      "title": "Equivalence & Ordering",
+      "domain": "4.NF",
+      "grade": "4",
+      "description": "Generate equivalent fractions and compare unlike denominators.",
+      "standards": [
+        "4.NF.1",
+        "4.NF.2"
+      ],
+      "mastery": {
+        "cqpm": 40,
+        "accuracy": 0.8,
+        "sessions": 3
+      },
+      "factCount": 33,
+      "facts": [
+        {
+          "index": 0,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "5/6 = 25/30",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 5,
+          "given_denominator": 6,
+          "target_numerator": 25,
+          "result_denominator": 30
+        },
+        {
+          "index": 1,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "4/12 = 24/72",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 4,
+          "given_denominator": 12,
+          "target_numerator": 24,
+          "result_denominator": 72
+        },
+        {
+          "index": 2,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "5/2 = 15/6",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 5,
+          "given_denominator": 2,
+          "target_numerator": 15,
+          "result_denominator": 6
+        },
+        {
+          "index": 3,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "5/2 = 10/4",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "numerator",
+          "given_numerator": 5,
+          "given_denominator": 2
+        },
+        {
+          "index": 4,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "3/12 = 18/72",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "numerator",
+          "given_numerator": 3,
+          "given_denominator": 12
+        },
+        {
+          "index": 5,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "8/10 = 64/80",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 8,
+          "given_denominator": 10,
+          "target_numerator": 64,
+          "result_denominator": 80
+        },
+        {
+          "index": 6,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "2/3 = 8/12",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 2,
+          "given_denominator": 3,
+          "target_numerator": 8,
+          "result_denominator": 12
+        },
+        {
+          "index": 7,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "6/11 = 24/44",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "numerator",
+          "given_numerator": 6,
+          "given_denominator": 11
+        },
+        {
+          "index": 8,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "1/6 = 7/42",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 1,
+          "given_denominator": 6,
+          "target_numerator": 7,
+          "result_denominator": 42
+        },
+        {
+          "index": 9,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "1/7 = 5/35",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 1,
+          "given_denominator": 7,
+          "target_numerator": 5,
+          "result_denominator": 35
+        },
+        {
+          "index": 10,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "2/7 = 16/56",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 2,
+          "given_denominator": 7,
+          "target_numerator": 16,
+          "result_denominator": 56
+        },
+        {
+          "index": 11,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "3/5 = 12/20",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 3,
+          "given_denominator": 5,
+          "target_numerator": 12,
+          "result_denominator": 20
+        },
+        {
+          "index": 12,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "3/8 = 6/16",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "numerator",
+          "given_numerator": 3,
+          "given_denominator": 8
+        },
+        {
+          "index": 13,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "6/8 = 30/40",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "numerator",
+          "given_numerator": 6,
+          "given_denominator": 8
+        },
+        {
+          "index": 14,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "2/8 = 4/16",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 2,
+          "given_denominator": 8,
+          "target_numerator": 4,
+          "result_denominator": 16
+        },
+        {
+          "index": 15,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "4/5 = 36/45",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "numerator",
+          "given_numerator": 4,
+          "given_denominator": 5
+        },
+        {
+          "index": 16,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "4/5 = 8/10",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 4,
+          "given_denominator": 5,
+          "target_numerator": 8,
+          "result_denominator": 10
+        },
+        {
+          "index": 17,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "7/7 = 42/42",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 7,
+          "given_denominator": 7,
+          "target_numerator": 42,
+          "result_denominator": 42
+        },
+        {
+          "index": 18,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "5/7 = 40/56",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 5,
+          "given_denominator": 7,
+          "target_numerator": 40,
+          "result_denominator": 56
+        },
+        {
+          "index": 19,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "9/7 = 18/14",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "numerator",
+          "given_numerator": 9,
+          "given_denominator": 7
+        },
+        {
+          "index": 20,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "5/4 = 30/24",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "numerator",
+          "given_numerator": 5,
+          "given_denominator": 4
+        },
+        {
+          "index": 21,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "7/7 = 49/49",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "numerator",
+          "given_numerator": 7,
+          "given_denominator": 7
+        },
+        {
+          "index": 22,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "9/3 = 72/24",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 9,
+          "given_denominator": 3,
+          "target_numerator": 72,
+          "result_denominator": 24
+        },
+        {
+          "index": 23,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "4/6 = 8/12",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 4,
+          "given_denominator": 6,
+          "target_numerator": 8,
+          "result_denominator": 12
+        },
+        {
+          "index": 24,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "1/10 = 5/50",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "numerator",
+          "given_numerator": 1,
+          "given_denominator": 10
+        },
+        {
+          "index": 25,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "2/12 = 14/84",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 2,
+          "given_denominator": 12,
+          "target_numerator": 14,
+          "result_denominator": 84
+        },
+        {
+          "index": 26,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "2/6 = 12/36",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 2,
+          "given_denominator": 6,
+          "target_numerator": 12,
+          "result_denominator": 36
+        },
+        {
+          "index": 27,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "6/8 = 36/48",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 6,
+          "given_denominator": 8,
+          "target_numerator": 36,
+          "result_denominator": 48
+        },
+        {
+          "index": 28,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "4/8 = 32/64",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 4,
+          "given_denominator": 8,
+          "target_numerator": 32,
+          "result_denominator": 64
+        },
+        {
+          "index": 29,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "3/11 = 18/66",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "numerator",
+          "given_numerator": 3,
+          "given_denominator": 11
+        },
+        {
+          "index": 30,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "1/6 = 6/36",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "numerator",
+          "given_numerator": 1,
+          "given_denominator": 6
+        },
+        {
+          "index": 31,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "6/9 = 54/81",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "numerator",
+          "given_numerator": 6,
+          "given_denominator": 9
+        },
+        {
+          "index": 32,
+          "type": "Equivalence (4.NF.A)",
+          "result": "",
+          "expression": "4/10 = 36/90",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "generate equivalent fractions via multiplication; reasoning about same whole",
+          "operator": "equivalent_missing",
+          "missing_part": "denominator",
+          "given_numerator": 4,
+          "given_denominator": 10,
+          "target_numerator": 36,
+          "result_denominator": 90
+        }
+      ]
+    },
+    {
+      "id": "4.NF.A.2",
+      "title": "Equivalence & Ordering",
+      "domain": "4.NF",
+      "grade": "4",
+      "description": "Generate equivalent fractions and compare unlike denominators.",
+      "standards": [
+        "4.NF.1",
+        "4.NF.2"
+      ],
+      "mastery": {
+        "cqpm": 40,
+        "accuracy": 0.8,
+        "sessions": 3
+      },
+      "factCount": 33,
+      "facts": [
+        {
+          "index": 0,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "3/12 ? 2/6 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 1,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "9/12 ? 6/3 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 2,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "4/12 ? 5/5 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 3,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": ">",
+          "expression": "4/4 ? 1/2 = >",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 4,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": ">",
+          "expression": "4/9 ? 2/9 = >",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 5,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": ">",
+          "expression": "7/12 ? 4/8 = >",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 6,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "1/3 ? 4/4 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 7,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": ">",
+          "expression": "7/5 ? 3/10 = >",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 8,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": ">",
+          "expression": "8/2 ? 9/5 = >",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 9,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "2/9 ? 3/9 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 10,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": ">",
+          "expression": "9/10 ? 6/9 = >",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 11,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": ">",
+          "expression": "9/8 ? 9/9 = >",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 12,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "3/9 ? 8/6 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 13,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "4/12 ? 5/10 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 14,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": ">",
+          "expression": "8/3 ? 4/6 = >",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 15,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": ">",
+          "expression": "5/5 ? 5/7 = >",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 16,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": ">",
+          "expression": "6/10 ? 2/4 = >",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 17,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "3/5 ? 7/4 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 18,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": ">",
+          "expression": "4/3 ? 7/8 = >",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 19,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "6/10 ? 8/8 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 20,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "1/5 ? 7/8 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 21,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "1/11 ? 7/9 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 22,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "1/7 ? 5/8 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 23,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "7/10 ? 9/11 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 24,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "4/9 ? 4/6 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 25,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": ">",
+          "expression": "7/9 ? 1/8 = >",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 26,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "6/12 ? 7/4 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 27,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "8/4 ? 9/2 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 28,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": ">",
+          "expression": "7/11 ? 1/3 = >",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 29,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "7/4 ? 8/4 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 30,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "1/6 ? 7/7 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 31,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "4/9 ? 6/7 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        },
+        {
+          "index": 32,
+          "type": "Compare unlike denominators (4.NF.A)",
+          "result": "<",
+          "expression": "2/9 ? 7/6 = <",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "medium",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "compare by creating common denominators or using benchmarks",
+          "operator": "compare"
+        }
+      ]
+    },
+    {
+      "id": "4.NF.A.2",
+      "title": "Equivalence & Ordering",
+      "domain": "4.NF",
+      "grade": "4",
+      "description": "Generate equivalent fractions and compare unlike denominators.",
+      "standards": [
+        "4.NF.1",
+        "4.NF.2"
+      ],
+      "mastery": {
+        "cqpm": 40,
+        "accuracy": 0.8,
+        "sessions": 3
+      },
+      "factCount": 33,
+      "facts": [
+        {
+          "index": 66,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/2",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 67,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/7 + 1/7",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 68,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/12 + 1/12",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 69,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/12",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 70,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/5 + 1/5 + 1/5",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 71,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/5",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 72,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/11 + 1/11 + 1/11",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 73,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/5 + 1/5",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 74,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/9 + 1/9",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 75,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/11 + 1/11 + 1/11 + 1/11",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 76,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/9 + 1/9 + 1/9 + 1/9 + 1/9",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 77,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/7 + 1/7 + 1/7",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 78,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/11 + 1/11",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 79,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/4 + 1/4",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 80,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/3",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 81,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/6 + 1/6 + 1/6 + 1/6 + 1/6",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 82,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/12 + 1/12 + 1/12 + 1/12 + 1/12 + 1/12 + 1/12",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 83,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/8 + 1/8 + 1/8 + 1/8 + 1/8 + 1/8",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 84,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/4",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 85,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/11 + 1/11 + 1/11 + 1/11 + 1/11",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 86,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/3 + 1/3",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 87,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/12 + 1/12 + 1/12",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 88,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/11",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 89,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/7 + 1/7 + 1/7 + 1/7 + 1/7",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 90,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/8 + 1/8 + 1/8 + 1/8 + 1/8",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 91,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/7",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 92,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/10 + 1/10 + 1/10 + 1/10 + 1/10 + 1/10",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 93,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/5 + 1/5 + 1/5 + 1/5",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 94,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/9 + 1/9 + 1/9 + 1/9",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 95,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/8 + 1/8 + 1/8",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 96,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/12 + 1/12 + 1/12 + 1/12 + 1/12 + 1/12 + 1/12 + 1/12",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 97,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/6",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 98,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/4 + 1/4 + 1/4",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        },
+        {
+          "index": 99,
+          "type": "Decompose into unit fractions (4.NF.A)",
+          "result": "",
+          "expression": "1/10 + 1/10 + 1/10 + 1/10 + 1/10",
+          "subject": "Math",
+          "grade": "4",
+          "difficulty": "easy",
+          "learningObjectiveSet": [
+            {
+              "source": "CCSS",
+              "learningObjectiveIds": [
+                "4.NF.A"
+              ]
+            }
+          ],
+          "domain": "4.NF",
+          "domainTitle": "Number and Operations—Fractions",
+          "cluster": "4.NF.A",
+          "clusterDescription": "Generate equivalent fractions and compare unlike denominators.",
+          "skills": "understand a/b as a sums of 1/b; equivalence of decompositions",
+          "operator": "decompose_unit"
+        }
+      ]
     }
   ]
 }

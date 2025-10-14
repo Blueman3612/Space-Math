@@ -51,11 +51,32 @@ def similarity(a, b):
 
 def find_similar_keys(target_key, available_keys, threshold=0.6):
     """Find keys similar to the target key."""
+    # Known synonyms for common fields
+    synonyms = {
+        'facts': ['assessmentItems', 'problems', 'questions', 'items'],
+        'index': ['identifier', 'id', 'number', 'position'],
+        'result': ['answer', 'correctAnswer', 'solution', 'correct_response'],
+        'expression': ['question', 'problem', 'prompt', 'equation'],
+        'id': ['cluster', 'identifier', 'level_id', 'track_id', 'code'],
+        'title': ['name', 'label', 'description', 'heading'],
+    }
+    
     similar = []
+    
+    # First, check for exact synonym matches
+    if target_key in synonyms:
+        for synonym in synonyms[target_key]:
+            if synonym in available_keys:
+                similar.append((synonym, 0.95))  # High score for known synonyms
+    
+    # Then check for text similarity
     for key in available_keys:
         score = similarity(target_key, key)
         if score >= threshold:
-            similar.append((key, score))
+            # Don't duplicate if already added as synonym
+            if not any(k == key for k, _ in similar):
+                similar.append((key, score))
+    
     return sorted(similar, key=lambda x: x[1], reverse=True)
 
 def prompt_user_for_field(field_name, available_keys, context=""):
@@ -152,25 +173,55 @@ def prompt_for_optional_fields(available_fields, context="level"):
         print(f"   {Colors.WARNING}Invalid input. Skipping optional fields.{Colors.ENDC}")
         return []
 
-def map_fact(source_fact, field_mapping, optional_fields, level_context, skip_invalid=False):
+def map_fact(source_fact, field_mapping, optional_fields, level_context, skip_invalid=False, use_metadata=False, fact_index=None):
     """Map a single fact to the target format."""
     try:
+        # If using metadata field, extract it as the source
+        if use_metadata and 'metadata' in source_fact and isinstance(source_fact['metadata'], dict):
+            fact_data = source_fact['metadata']
+        else:
+            fact_data = source_fact
+        
         target_fact = {}
         missing_fields = []
         
-        # Map essential fields
+        # First, handle index (to ensure it's first in order)
+        index_mapped_key = field_mapping.get('index', 'index')
+        if index_mapped_key is None:
+            # Auto-generate from position as integer
+            if fact_index is not None:
+                target_fact['index'] = fact_index
+            else:
+                target_fact['index'] = 0  # Fallback
+        elif index_mapped_key and index_mapped_key in fact_data:
+            target_fact['index'] = fact_data[index_mapped_key]
+        elif 'index' in fact_data:
+            target_fact['index'] = fact_data['index']
+        else:
+            # Missing index, will be handled below
+            missing_fields.append('index')
+        
+        # Second, add 'type' field for QTI format (to ensure it's second in order)
+        if use_metadata and 'title' in source_fact:
+            target_fact['type'] = source_fact['title']
+        
+        # Map remaining essential fields
         for essential_field in ESSENTIAL_FACT_FIELDS:
+            if essential_field == 'index':
+                continue  # Already handled
+            
             mapped_key = field_mapping.get(essential_field, essential_field)
             
             # First try the mapped key
-            if mapped_key in source_fact:
-                target_fact[essential_field] = source_fact[mapped_key]
+            if mapped_key and mapped_key in fact_data:
+                target_fact[essential_field] = fact_data[mapped_key]
             # Fallback: try the essential field name itself (in case mapping is wrong for this specific fact)
-            elif essential_field in source_fact:
-                target_fact[essential_field] = source_fact[essential_field]
+            elif essential_field in fact_data:
+                target_fact[essential_field] = fact_data[essential_field]
             else:
-                # Essential field missing
-                missing_fields.append(essential_field)
+                # Essential field missing (unless it's auto-generated)
+                if mapped_key is not None:  # Only report missing if not auto-generated
+                    missing_fields.append(essential_field)
         
         # If there are missing fields, handle interactively or skip
         if missing_fields:
@@ -183,23 +234,23 @@ def map_fact(source_fact, field_mapping, optional_fields, level_context, skip_in
                 return None
             else:
                 # Interactive resolution
-                print(f"\n   {Colors.WARNING}⚠️  Problem with fact #{source_fact.get('index', '?')} in '{level_context}'{Colors.ENDC}")
+                print(f"\n   {Colors.WARNING}⚠️  Problem with fact #{fact_data.get('index', '?')} in '{level_context}'{Colors.ENDC}")
                 print(f"   Missing essential field(s): {', '.join(missing_fields)}")
                 print(f"\n   {Colors.OKBLUE}Fact contents:{Colors.ENDC}")
-                for key, value in source_fact.items():
+                for key, value in fact_data.items():
                     value_str = str(value)
                     if len(value_str) > 70:
                         value_str = value_str[:67] + "..."
                     print(f"      • {key}: {value_str}")
                 
-                available_keys = list(source_fact.keys())
+                available_keys = list(fact_data.keys())
                 
                 # Try to map each missing field
                 for missing_field in missing_fields:
-                    mapped = prompt_user_for_field(missing_field, available_keys, f"fact #{source_fact.get('index', '?')}")
+                    mapped = prompt_user_for_field(missing_field, available_keys, f"fact #{fact_data.get('index', '?')}")
                     if mapped:
                         field_mapping[missing_field] = mapped
-                        target_fact[missing_field] = source_fact[mapped]
+                        target_fact[missing_field] = fact_data[mapped]
                         stats['field_mappings'][f"fact.{missing_field}"] = mapped
                         print(f"   📝 {Colors.OKCYAN}This mapping will be applied to all future facts (with fallback to '{missing_field}' if available){Colors.ENDC}")
                     else:
@@ -208,7 +259,7 @@ def map_fact(source_fact, field_mapping, optional_fields, level_context, skip_in
                             response = input(f"\n   Skip this fact? (y/n): ").strip().lower()
                             if response in ['y', 'yes']:
                                 stats['warnings'].append(
-                                    f"Level '{level_context}' fact #{source_fact.get('index', '?')}: User skipped - missing '{missing_field}'"
+                                    f"Level '{level_context}' fact #{fact_data.get('index', '?')}: User skipped - missing '{missing_field}'"
                                 )
                                 return None
                             elif response in ['n', 'no']:
@@ -219,10 +270,10 @@ def map_fact(source_fact, field_mapping, optional_fields, level_context, skip_in
         
         # Map optional fields
         for opt_field in optional_fields:
-            if opt_field in source_fact:
-                target_fact[opt_field] = source_fact[opt_field]
-            elif opt_field in field_mapping and field_mapping[opt_field] in source_fact:
-                target_fact[opt_field] = source_fact[field_mapping[opt_field]]
+            if opt_field in fact_data:
+                target_fact[opt_field] = fact_data[opt_field]
+            elif opt_field in field_mapping and field_mapping[opt_field] in fact_data:
+                target_fact[opt_field] = fact_data[field_mapping[opt_field]]
         
         stats['facts_processed'] += 1
         return target_fact
@@ -265,68 +316,86 @@ def convert_json(input_data, include_all_optional=False, selective_mode=False, s
     # Step 1: Find the levels/tracks container
     print(f"\n📦 {Colors.OKBLUE}Step 1: Identifying levels container...{Colors.ENDC}")
     
-    levels_key = None
-    if 'levels' in input_data:
-        levels_key = 'levels'
-        print(f"   ✅ Found 'levels' key")
-    else:
-        print(f"   ⚠️  'levels' key not found")
-        potential_keys = [k for k in input_data.keys() if isinstance(input_data[k], (dict, list))]
+    # Check for QTI format (single level with assessmentItems at root)
+    is_qti_format = False
+    if 'assessmentItems' in input_data and isinstance(input_data['assessmentItems'], list):
+        # Check if this looks like a QTI file (has typical QTI root fields)
+        qti_indicators = ['cluster', 'domain', 'grade', 'standards', 'title']
+        matching_indicators = sum(1 for indicator in qti_indicators if indicator in input_data)
         
-        if potential_keys:
-            print(f"\n   Potential container keys:")
-            for i, key in enumerate(potential_keys, 1):
-                data_type = "array" if isinstance(input_data[key], list) else "object"
-                print(f"   {i}. '{key}' ({data_type})")
+        if matching_indicators >= 3:  # If at least 3 indicators match
+            print(f"   🔍 {Colors.OKCYAN}Detected QTI format (single level with assessmentItems){Colors.ENDC}")
+            print(f"   📦 Will treat root as level container, assessmentItems as facts")
+            is_qti_format = True
             
-            while True:
-                choice = input(f"\n   Select the key containing levels (1-{len(potential_keys)}): ").strip()
-                try:
-                    choice_num = int(choice)
-                    if 1 <= choice_num <= len(potential_keys):
-                        levels_key = potential_keys[choice_num - 1]
-                        print(f"   ✅ Using '{levels_key}' as levels container")
-                        break
-                    else:
-                        print(f"   {Colors.FAIL}Invalid choice. Try again.{Colors.ENDC}")
-                except ValueError:
-                    print(f"   {Colors.FAIL}Please enter a number.{Colors.ENDC}")
+            # Wrap the root data as a single level in an array
+            levels_array = [input_data]
+            print(f"   📊 Found 1 level with {len(input_data['assessmentItems'])} assessment items")
     
-    if not levels_key:
-        print(f"   {Colors.FAIL}❌ Could not identify levels container. Aborting.{Colors.ENDC}")
-        return None
-    
-    # Get levels data and convert to array if needed
-    levels_data = input_data[levels_key]
-    if isinstance(levels_data, dict):
-        print(f"   🔄 Converting object to array...")
-        levels_array = list(levels_data.values())
-    else:
-        levels_array = levels_data
-    
-    print(f"   📊 Found {len(levels_array)} level(s)")
-    
-    if not levels_array:
-        print(f"   {Colors.FAIL}❌ No levels found. Aborting.{Colors.ENDC}")
-        return None
-    
-    # Step 1.5: Check if we need to flatten nested tracks structure
-    sample_level = levels_array[0]
-    available_level_keys = list(sample_level.keys())
-    
-    # Detect if this is a nested structure (e.g., grades → tracks)
-    if 'tracks' in available_level_keys and isinstance(sample_level['tracks'], dict):
-        print(f"\n🔍 {Colors.OKCYAN}Detected nested structure with 'tracks'...{Colors.ENDC}")
-        print(f"   📦 Flattening: extracting tracks from each container")
+    if not is_qti_format:
+        levels_key = None
+        if 'levels' in input_data:
+            levels_key = 'levels'
+            print(f"   ✅ Found 'levels' key")
+        else:
+            print(f"   ⚠️  'levels' key not found")
+            potential_keys = [k for k in input_data.keys() if isinstance(input_data[k], (dict, list))]
+            
+            if potential_keys:
+                print(f"\n   Potential container keys:")
+                for i, key in enumerate(potential_keys, 1):
+                    data_type = "array" if isinstance(input_data[key], list) else "object"
+                    print(f"   {i}. '{key}' ({data_type})")
+                
+                while True:
+                    choice = input(f"\n   Select the key containing levels (1-{len(potential_keys)}): ").strip()
+                    try:
+                        choice_num = int(choice)
+                        if 1 <= choice_num <= len(potential_keys):
+                            levels_key = potential_keys[choice_num - 1]
+                            print(f"   ✅ Using '{levels_key}' as levels container")
+                            break
+                        else:
+                            print(f"   {Colors.FAIL}Invalid choice. Try again.{Colors.ENDC}")
+                    except ValueError:
+                        print(f"   {Colors.FAIL}Please enter a number.{Colors.ENDC}")
         
-        flattened_levels = []
-        for container in levels_array:
-            if 'tracks' in container and isinstance(container['tracks'], dict):
-                for track in container['tracks'].values():
-                    flattened_levels.append(track)
+        if not levels_key:
+            print(f"   {Colors.FAIL}❌ Could not identify levels container. Aborting.{Colors.ENDC}")
+            return None
         
-        levels_array = flattened_levels
-        print(f"   ✅ Flattened to {len(levels_array)} track(s)")
+        # Get levels data and convert to array if needed
+        levels_data = input_data[levels_key]
+        if isinstance(levels_data, dict):
+            print(f"   🔄 Converting object to array...")
+            levels_array = list(levels_data.values())
+        else:
+            levels_array = levels_data
+        
+        print(f"   📊 Found {len(levels_array)} level(s)")
+        
+        if not levels_array:
+            print(f"   {Colors.FAIL}❌ No levels found. Aborting.{Colors.ENDC}")
+            return None
+    
+    # Step 1.5: Check if we need to flatten nested tracks structure (skip for QTI format)
+    if not is_qti_format:
+        sample_level = levels_array[0]
+        available_level_keys = list(sample_level.keys())
+        
+        # Detect if this is a nested structure (e.g., grades → tracks)
+        if 'tracks' in available_level_keys and isinstance(sample_level['tracks'], dict):
+            print(f"\n🔍 {Colors.OKCYAN}Detected nested structure with 'tracks'...{Colors.ENDC}")
+            print(f"   📦 Flattening: extracting tracks from each container")
+            
+            flattened_levels = []
+            for container in levels_array:
+                if 'tracks' in container and isinstance(container['tracks'], dict):
+                    for track in container['tracks'].values():
+                        flattened_levels.append(track)
+            
+            levels_array = flattened_levels
+            print(f"   ✅ Flattened to {len(levels_array)} track(s)")
     
     # Step 1.6: Selective mode - let user choose which levels to include BEFORE field mapping
     selected_levels = []
@@ -346,7 +415,7 @@ def convert_json(input_data, include_all_optional=False, selective_mode=False, s
             
             # Show all level fields
             print(f"\n   {Colors.OKBLUE}Level Fields:{Colors.ENDC}")
-            facts_keys = ['facts', 'problems', 'questions', 'items']  # Common names for facts arrays
+            facts_keys = ['facts', 'problems', 'questions', 'items', 'assessmentItems']  # Common names for facts arrays
             facts_key_found = None
             
             for key, value in level.items():
@@ -362,12 +431,19 @@ def convert_json(input_data, include_all_optional=False, selective_mode=False, s
             # Show first fact if available
             if facts_key_found and level[facts_key_found]:
                 first_fact = level[facts_key_found][0]
+                
+                # Check if facts use metadata field (QTI format)
+                fact_display = first_fact
+                if 'metadata' in first_fact and isinstance(first_fact['metadata'], dict):
+                    print(f"\n   {Colors.OKCYAN}Note: Facts have 'metadata' field (QTI format) - showing metadata contents{Colors.ENDC}")
+                    fact_display = first_fact['metadata']
+                
                 print(f"\n   {Colors.OKBLUE}Fact Fields (from first fact):{Colors.ENDC}")
-                for key in first_fact.keys():
+                for key in fact_display.keys():
                     print(f"      • {key}")
                 
                 print(f"\n   {Colors.OKBLUE}First Fact Example:{Colors.ENDC}")
-                for key, value in first_fact.items():
+                for key, value in fact_display.items():
                     value_str = str(value)
                     if len(value_str) > 70:
                         value_str = value_str[:67] + "..."
@@ -445,13 +521,31 @@ def convert_json(input_data, include_all_optional=False, selective_mode=False, s
         return None
     
     sample_fact = sample_level[facts_key][0]
-    available_fact_keys = list(sample_fact.keys())
+    
+    # Check if facts are nested under a 'metadata' field (common in QTI format)
+    use_metadata_field = False
+    if 'metadata' in sample_fact and isinstance(sample_fact['metadata'], dict):
+        print(f"   🔍 {Colors.OKCYAN}Detected 'metadata' field in facts (QTI format){Colors.ENDC}")
+        print(f"   📦 Will extract fact data from 'metadata' field")
+        use_metadata_field = True
+        # Use metadata as the source for field mapping
+        available_fact_keys = list(sample_fact['metadata'].keys())
+    else:
+        available_fact_keys = list(sample_fact.keys())
     print(f"   Available fields: {', '.join(available_fact_keys)}")
     
     # Map fact fields
     fact_field_mapping = {}
     for essential_field in ESSENTIAL_FACT_FIELDS:
-        if essential_field == 'operator':
+        if essential_field == 'index':
+            # Index is special - can be auto-generated from position
+            if 'index' in available_fact_keys:
+                fact_field_mapping['index'] = 'index'
+                print(f"   ✅ 'index' found")
+            else:
+                print(f"   ⚠️  'index' not found - will auto-generate from position")
+                fact_field_mapping['index'] = None
+        elif essential_field == 'operator':
             # Operator is special - can be auto-generated
             if 'operator' in available_fact_keys:
                 fact_field_mapping['operator'] = 'operator'
@@ -508,8 +602,8 @@ def convert_json(input_data, include_all_optional=False, selective_mode=False, s
         source_facts = source_level.get(facts_key, [])
         target_facts = []
         
-        for source_fact in source_facts:
-            mapped_fact = map_fact(source_fact, fact_field_mapping, optional_fact_fields, level_title, skip_invalid_facts)
+        for fact_idx, source_fact in enumerate(source_facts):
+            mapped_fact = map_fact(source_fact, fact_field_mapping, optional_fact_fields, level_title, skip_invalid_facts, use_metadata_field, fact_idx)
             if mapped_fact:
                 target_facts.append(mapped_fact)
             else:
