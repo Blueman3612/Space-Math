@@ -78,17 +78,18 @@ func start_sandbox():
 	var runtime_type = runtime_info["type"]
 	
 	# Prepare command arguments based on runtime
+	print("[PlaycademySandbox] Using runtime: %s" % [runtime_type])
+	
 	var args = []
 	if runtime_type == "npm":
 		args = [
-			"npx",  # npm package runner
 			"@playcademy/sandbox",
 			"--port", str(port)
 		]
 	else:  # bun
 		args = [
-			"x",  # bunx command to run packages
-			"@playcademy/sandbox@0.1.0-beta.12",
+			"x",
+			"@playcademy/sandbox",
 			"--port", str(port)
 		]
 	
@@ -100,6 +101,9 @@ func start_sandbox():
 	var project_slug = project_name.to_lower().replace(" ", "-")
 	args.append_array(["--project-name", project_name])
 	args.append_array(["--project-slug", project_slug])
+	
+	# Log the command being run
+	print("[PlaycademySandbox] Starting sandbox with command: %s %s" % [runtime_path, " ".join(args)])
 	
 	# Start the process
 	sandbox_process = OS.create_process(runtime_path, args)
@@ -123,8 +127,15 @@ func stop_sandbox():
 	_set_status(SandboxStatus.STOPPING)
 	
 	if sandbox_process != -1:
-		OS.kill(sandbox_process)
+		# Kill the process and all its children
+		# The PID from create_process is just the wrapper (npx/bun), 
+		# so we need to kill the entire process group
+		_kill_process_tree(sandbox_process)
 		sandbox_process = -1
+	
+	# Also try to kill any process listening on the sandbox port as a backup
+	if sandbox_port > 0:
+		_kill_process_on_port(sandbox_port)
 	
 	sandbox_url = ""
 	_set_status(SandboxStatus.STOPPED)
@@ -167,17 +178,19 @@ func _handle_error(error_message: String):
 	emit_signal("sandbox_failed", error_message)
 
 func _find_js_runtime() -> Dictionary:
-	# Try npm first (more common), then bun as fallback
+	# Try bun first (faster), then npm/npx as fallback
 	var runtimes = [
-		{"type": "npm", "cmd": "npm"},
-		{"type": "bun", "cmd": "bun"}
+		{"type": "bun", "detect_cmd": "bun", "run_cmd": "bun"},
+		{"type": "npm", "detect_cmd": "npm", "run_cmd": "npx"}
 	]
 	
 	for runtime in runtimes:
-		var paths = _get_runtime_paths(runtime.cmd)
+		var paths = _get_runtime_paths(runtime.detect_cmd)
 		for path in paths:
 			if _test_runtime_executable(path):
-				return {"type": runtime.type, "path": path}
+				# Replace the detection command with the run command in the path
+				var run_path = path.replace(runtime.detect_cmd, runtime.run_cmd)
+				return {"type": runtime.type, "path": run_path}
 	
 	return {}
 
@@ -288,6 +301,44 @@ func _on_port_scan_completed(result: int, response_code: int, headers: PackedStr
 func _try_next_port():
 	_port_scan_index += 1
 	_discover_sandbox_port()
+
+func _kill_process_tree(pid: int):
+	"""Kill a process and all its children"""
+	print("[PlaycademySandbox] Killing process tree for PID %d" % pid)
+	
+	if OS.get_name() == "Windows":
+		# Windows: Use taskkill to kill process tree
+		OS.execute("taskkill", ["/F", "/T", "/PID", str(pid)])
+	else:
+		# Unix-like (macOS, Linux): Kill the process group
+		# First try with SIGTERM (graceful)
+		OS.execute("kill", ["-TERM", str(pid)])
+		# Wait a moment
+		OS.delay_msec(500)
+		# Then force kill with SIGKILL if still running
+		OS.execute("kill", ["-9", str(pid)])
+
+func _kill_process_on_port(port: int):
+	"""Kill any process listening on the specified port"""
+	print("[PlaycademySandbox] Killing process on port %d" % port)
+	
+	if OS.get_name() == "Windows":
+		# Windows: Find and kill process on port
+		var output = []
+		OS.execute("cmd", ["/c", "netstat -ano | findstr :%d" % port], output)
+		if output.size() > 0:
+			var line = output[0]
+			# Extract PID from netstat output
+			var parts = line.split(" ", false)
+			if parts.size() > 0:
+				var pid = parts[-1].strip_edges()
+				OS.execute("taskkill", ["/F", "/PID", pid])
+	elif OS.get_name() == "macOS":
+		# macOS: Use lsof to find and kill process
+		OS.execute("sh", ["-c", "lsof -ti tcp:%d | xargs kill -9" % port])
+	else:
+		# Linux: Use fuser to kill process on port
+		OS.execute("fuser", ["-k", "%d/tcp" % port])
 
 func _exit_tree():
 	stop_sandbox() 

@@ -22,6 +22,23 @@ func _init(client_js_object: JavaScriptObject):
 
 # Start tracking an activity
 func start_activity(metadata: Dictionary):
+	if _main_client == null:
+		printerr("[TimebackAPI] Main client not set. Cannot call start_activity().")
+		return
+	
+	if not ('timeback' in _main_client and 
+			_main_client.timeback is JavaScriptObject and 
+			'startActivity' in _main_client.timeback):
+		printerr("[TimebackAPI] client.timeback.startActivity() path not found.")
+		return
+	
+	# Build metadata object for JavaScript
+	var js_metadata = JavaScriptBridge.create_object("Object")
+	js_metadata["activityId"] = metadata.get("activityId", "unknown")
+	
+	# Call JavaScript SDK's startActivity
+	_main_client.timeback.startActivity(js_metadata)
+	
 	_activity_start_time = Time.get_ticks_msec()
 	_activity_metadata = metadata.duplicate()
 	_activity_in_progress = true
@@ -119,13 +136,22 @@ func end_activity(score_data: Dictionary):
 	if xp_awarded != null:
 		js_score_data["xpAwarded"] = xp_awarded
 	
+	print("[TimebackAPI] Calling client.timeback.endActivity() with score data...")
 	var promise = _main_client.timeback.endActivity(js_score_data)
 
+	if promise == null:
+		printerr("[TimebackAPI] timeback.endActivity() returned null.")
+		emit_signal("end_activity_failed", "NULL_RETURN")
+		_activity_in_progress = false
+		return
+	
 	if not promise is JavaScriptObject:
-		printerr("[TimebackAPI] timeback.endActivity() did not return a Promise.")
+		printerr("[TimebackAPI] timeback.endActivity() did not return a Promise (returned: ", typeof(promise), ")")
 		emit_signal("end_activity_failed", "NOT_A_PROMISE")
 		_activity_in_progress = false
 		return
+	
+	print("[TimebackAPI] endActivity() returned a Promise, setting up callbacks...")
 
 	var on_resolve = Callable(self, "_on_end_activity_resolved").bind()
 	var on_reject = Callable(self, "_on_end_activity_rejected").bind()
@@ -145,11 +171,52 @@ func _on_end_activity_resolved(args: Array):
 	_clear_end_activity_callbacks()
 
 func _on_end_activity_rejected(args: Array):
-	printerr("[TimebackAPI] End activity failed: ", args[0] if args.size() > 0 else "Unknown error")
 	_activity_in_progress = false
 	var error_message = "END_ACTIVITY_PROMISE_REJECTED"
+	
 	if args.size() > 0:
-		error_message = str(args[0])
+		var error_obj = args[0]
+		# Try to extract meaningful error information from JavaScript Error object
+		if error_obj is JavaScriptObject:
+			# Try to get error.message, error.toString(), or JSON.stringify(error)
+			var error_str = ""
+			
+			# Try error.message first (standard for Error objects)
+			if "message" in error_obj:
+				error_str = str(error_obj.message)
+			
+			# Try error.toString() as fallback
+			if error_str.is_empty() and "toString" in error_obj:
+				var to_string_result = error_obj.toString()
+				if to_string_result != null:
+					error_str = str(to_string_result)
+			
+			# If we got something useful, use it
+			if not error_str.is_empty():
+				error_message = error_str
+				printerr("[TimebackAPI] End activity failed: ", error_str)
+			else:
+				# Last resort: try to access common error properties
+				var error_parts = []
+				if "name" in error_obj:
+					error_parts.append("name: " + str(error_obj.name))
+				if "code" in error_obj:
+					error_parts.append("code: " + str(error_obj.code))
+				if "status" in error_obj:
+					error_parts.append("status: " + str(error_obj.status))
+				
+				if error_parts.size() > 0:
+					error_message = ", ".join(error_parts)
+					printerr("[TimebackAPI] End activity failed: ", error_message)
+				else:
+					printerr("[TimebackAPI] End activity failed with unknown JavaScript error (unable to extract message)")
+		else:
+			# Not a JavaScript object, just convert to string
+			error_message = str(error_obj)
+			printerr("[TimebackAPI] End activity failed: ", error_message)
+	else:
+		printerr("[TimebackAPI] End activity failed: Unknown error (no error details provided)")
+	
 	emit_signal("end_activity_failed", error_message)
 	_clear_end_activity_callbacks()
 
