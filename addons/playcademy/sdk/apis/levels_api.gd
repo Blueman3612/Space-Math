@@ -38,7 +38,6 @@ var _config_get_reject_cb_js: JavaScriptObject = null
 
 func _init(client_js_object: JavaScriptObject):
 	_main_client = client_js_object
-	print("[LevelsAPI] Initialized with client.")
 	
 	# TODO: Subscribe to the JS SDK's event bus for 'levelUp' and 'xpGained' events
 	# and emit the corresponding Godot signals when those JS events fire.
@@ -63,7 +62,6 @@ func get_level():
 		emit_signal("get_failed", "METHOD_PATH_INVALID")
 		return
 
-	print("[LevelsAPI] Calling _main_client.levels.get()...")
 	var promise = _main_client.levels.get()
 
 	if not promise is JavaScriptObject:
@@ -78,10 +76,8 @@ func get_level():
 	_get_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
 	promise.then(_get_resolve_cb_js, _get_reject_cb_js)
-	print("[LevelsAPI] .then() called on levels.get() promise.")
 
 func _on_get_resolved(args: Array):
-	print("[LevelsAPI] Get level promise resolved. Args: ", args)
 	if args.size() > 0:
 		emit_signal("get_succeeded", args[0])
 	else:
@@ -89,7 +85,7 @@ func _on_get_resolved(args: Array):
 	_clear_get_callbacks()
 
 func _on_get_rejected(args: Array):
-	print("[LevelsAPI] Get level promise rejected. Args: ", args)
+	printerr("[LevelsAPI] Get level failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_msg = "GET_REJECTED_UNKNOWN"
 	if args.size() > 0: error_msg = str(args[0])
 	emit_signal("get_failed", error_msg)
@@ -114,7 +110,6 @@ func progress():
 		emit_signal("progress_failed", "METHOD_PATH_INVALID")
 		return
 
-	print("[LevelsAPI] Calling _main_client.levels.progress()...")
 	var promise = _main_client.levels.progress()
 
 	if not promise is JavaScriptObject:
@@ -129,10 +124,8 @@ func progress():
 	_progress_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
 	promise.then(_progress_resolve_cb_js, _progress_reject_cb_js)
-	print("[LevelsAPI] .then() called on levels.progress() promise.")
 
 func _on_progress_resolved(args: Array):
-	print("[LevelsAPI] Progress promise resolved. Args: ", args)
 	if args.size() > 0:
 		emit_signal("progress_succeeded", args[0])
 	else:
@@ -140,7 +133,7 @@ func _on_progress_resolved(args: Array):
 	_clear_progress_callbacks()
 
 func _on_progress_rejected(args: Array):
-	print("[LevelsAPI] Progress promise rejected. Args: ", args)
+	printerr("[LevelsAPI] Progress failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_msg = "PROGRESS_REJECTED_UNKNOWN"
 	if args.size() > 0: error_msg = str(args[0])
 	emit_signal("progress_failed", error_msg)
@@ -165,7 +158,6 @@ func add_xp(amount: int):
 		emit_signal("add_xp_failed", "METHOD_PATH_INVALID")
 		return
 
-	print("[LevelsAPI] Calling _main_client.levels.addXP(%d)..." % amount)
 	var promise = _main_client.levels.addXP(amount)
 
 	if not promise is JavaScriptObject:
@@ -180,10 +172,8 @@ func add_xp(amount: int):
 	_add_xp_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
 	promise.then(_add_xp_resolve_cb_js, _add_xp_reject_cb_js)
-	print("[LevelsAPI] .then() called on levels.addXP() promise.")
 
 func _on_add_xp_resolved(args: Array):
-	print("[LevelsAPI] Add XP promise resolved. Args: ", args)
 	if args.size() > 0:
 		var result_data = args[0]
 		emit_signal("add_xp_succeeded", result_data)
@@ -201,7 +191,7 @@ func _on_add_xp_resolved(args: Array):
 	_clear_add_xp_callbacks()
 
 func _on_add_xp_rejected(args: Array):
-	print("[LevelsAPI] Add XP promise rejected. Args: ", args)
+	printerr("[LevelsAPI] Add XP failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_msg = "ADD_XP_REJECTED_UNKNOWN"
 	if args.size() > 0: error_msg = str(args[0])
 	emit_signal("add_xp_failed", error_msg)
@@ -228,7 +218,6 @@ func config_list():
 		emit_signal("config_list_failed", "METHOD_PATH_INVALID")
 		return
 
-	print("[LevelsAPI] Calling _main_client.levels.config.list()...")
 	var promise = _main_client.levels.config.list()
 
 	if not promise is JavaScriptObject:
@@ -243,10 +232,8 @@ func config_list():
 	_config_list_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
 	promise.then(_config_list_resolve_cb_js, _config_list_reject_cb_js)
-	print("[LevelsAPI] .then() called on levels.config.list() promise.")
 
 func _on_config_list_resolved(args: Array):
-	print("[LevelsAPI] Config list promise resolved. Args: ", args)
 	if args.size() > 0:
 		emit_signal("config_list_succeeded", args[0])
 	else:
@@ -254,7 +241,7 @@ func _on_config_list_resolved(args: Array):
 	_clear_config_list_callbacks()
 
 func _on_config_list_rejected(args: Array):
-	print("[LevelsAPI] Config list promise rejected. Args: ", args)
+	printerr("[LevelsAPI] Config list failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_msg = "CONFIG_LIST_REJECTED_UNKNOWN"
 	if args.size() > 0: error_msg = str(args[0])
 	emit_signal("config_list_failed", error_msg)
@@ -281,7 +268,6 @@ func config_get(level: int):
 		emit_signal("config_get_failed", "METHOD_PATH_INVALID")
 		return
 
-	print("[LevelsAPI] Calling _main_client.levels.config.get(%d)..." % level)
 	var promise = _main_client.levels.config.get(level)
 
 	if not promise is JavaScriptObject:
@@ -296,10 +282,8 @@ func config_get(level: int):
 	_config_get_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
 	promise.then(_config_get_resolve_cb_js, _config_get_reject_cb_js)
-	print("[LevelsAPI] .then() called on levels.config.get() promise.")
 
 func _on_config_get_resolved(args: Array):
-	print("[LevelsAPI] Config get promise resolved. Args: ", args)
 	if args.size() > 0:
 		emit_signal("config_get_succeeded", args[0])
 	else:
@@ -307,7 +291,7 @@ func _on_config_get_resolved(args: Array):
 	_clear_config_get_callbacks()
 
 func _on_config_get_rejected(args: Array):
-	print("[LevelsAPI] Config get promise rejected. Args: ", args)
+	printerr("[LevelsAPI] Config get failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_msg = "CONFIG_GET_REJECTED_UNKNOWN"
 	if args.size() > 0: error_msg = str(args[0])
 	emit_signal("config_get_failed", error_msg)

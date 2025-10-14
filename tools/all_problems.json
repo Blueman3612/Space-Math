@@ -17361,7 +17361,7 @@
     },
     {
       "id": "4.NF.A.1",
-      "title": "Equivalence & Ordering",
+      "title": "Fraction Equivalence",
       "domain": "4.NF",
       "grade": "4",
       "description": "Generate equivalent fractions and compare unlike denominators.",
@@ -19055,7 +19055,7 @@
       ]
     },
     {
-      "id": "4.NF.A.2",
+      "id": "4.NF.A.3",
       "title": "Equivalence & Ordering",
       "domain": "4.NF",
       "grade": "4",
@@ -19069,10 +19069,10 @@
         "accuracy": 0.8,
         "sessions": 3
       },
-      "factCount": 33,
+      "factCount": 34,
       "facts": [
         {
-          "index": 66,
+          "index": 0,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/2",
@@ -19095,7 +19095,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 67,
+          "index": 1,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/7 + 1/7",
@@ -19118,7 +19118,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 68,
+          "index": 2,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/12 + 1/12",
@@ -19141,7 +19141,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 69,
+          "index": 3,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/12",
@@ -19164,7 +19164,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 70,
+          "index": 4,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/5 + 1/5 + 1/5",
@@ -19187,7 +19187,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 71,
+          "index": 5,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/5",
@@ -19210,7 +19210,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 72,
+          "index": 6,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/11 + 1/11 + 1/11",
@@ -19233,7 +19233,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 73,
+          "index": 7,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/5 + 1/5",
@@ -19256,7 +19256,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 74,
+          "index": 8,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/9 + 1/9",
@@ -19279,7 +19279,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 75,
+          "index": 9,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/11 + 1/11 + 1/11 + 1/11",
@@ -19302,7 +19302,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 76,
+          "index": 10,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/9 + 1/9 + 1/9 + 1/9 + 1/9",
@@ -19325,7 +19325,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 77,
+          "index": 11,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/7 + 1/7 + 1/7",
@@ -19348,7 +19348,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 78,
+          "index": 12,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/11 + 1/11",
@@ -19371,7 +19371,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 79,
+          "index": 13,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/4 + 1/4",
@@ -19394,7 +19394,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 80,
+          "index": 14,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/3",
@@ -19417,7 +19417,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 81,
+          "index": 15,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/6 + 1/6 + 1/6 + 1/6 + 1/6",
@@ -19440,7 +19440,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 82,
+          "index": 16,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/12 + 1/12 + 1/12 + 1/12 + 1/12 + 1/12 + 1/12",
@@ -19463,7 +19463,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 83,
+          "index": 17,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/8 + 1/8 + 1/8 + 1/8 + 1/8 + 1/8",
@@ -19486,7 +19486,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 84,
+          "index": 18,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/4",
@@ -19509,7 +19509,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 85,
+          "index": 19,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/11 + 1/11 + 1/11 + 1/11 + 1/11",
@@ -19532,7 +19532,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 86,
+          "index": 20,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/3 + 1/3",
@@ -19555,7 +19555,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 87,
+          "index": 21,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/12 + 1/12 + 1/12",
@@ -19578,7 +19578,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 88,
+          "index": 22,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/11",
@@ -19601,7 +19601,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 89,
+          "index": 23,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/7 + 1/7 + 1/7 + 1/7 + 1/7",
@@ -19624,7 +19624,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 90,
+          "index": 24,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/8 + 1/8 + 1/8 + 1/8 + 1/8",
@@ -19647,7 +19647,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 91,
+          "index": 25,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/7",
@@ -19670,7 +19670,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 92,
+          "index": 26,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/10 + 1/10 + 1/10 + 1/10 + 1/10 + 1/10",
@@ -19693,7 +19693,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 93,
+          "index": 27,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/5 + 1/5 + 1/5 + 1/5",
@@ -19716,7 +19716,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 94,
+          "index": 28,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/9 + 1/9 + 1/9 + 1/9",
@@ -19739,7 +19739,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 95,
+          "index": 29,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/8 + 1/8 + 1/8",
@@ -19762,7 +19762,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 96,
+          "index": 30,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/12 + 1/12 + 1/12 + 1/12 + 1/12 + 1/12 + 1/12 + 1/12",
@@ -19785,7 +19785,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 97,
+          "index": 31,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/6",
@@ -19808,7 +19808,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 98,
+          "index": 32,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/4 + 1/4 + 1/4",
@@ -19831,7 +19831,7 @@
           "operator": "decompose_unit"
         },
         {
-          "index": 99,
+          "index": 33,
           "type": "Decompose into unit fractions (4.NF.A)",
           "result": "",
           "expression": "1/10 + 1/10 + 1/10 + 1/10 + 1/10",

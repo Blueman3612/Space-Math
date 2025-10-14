@@ -9,7 +9,6 @@ var _reject_cb_js: JavaScriptObject = null
 
 func _init(client_js_object: JavaScriptObject):
 	_main_client = client_js_object
-	print("[UsersAPI] Initialized with client.")
 
 func me():
 	if _main_client == null:
@@ -22,7 +21,6 @@ func me():
 		emit_signal("profile_fetch_failed", "METHOD_PATH_INVALID")
 		return
 
-	print("[UsersAPI] Calling _main_client.users.me()...")
 	var promise = _main_client.users.me()
 
 	if not promise is JavaScriptObject:
@@ -38,10 +36,8 @@ func me():
 	_reject_cb_js = JavaScriptBridge.create_callback(on_reject_cb)
 
 	promise.then(_resolve_cb_js, _reject_cb_js)
-	print("[UsersAPI] .then() called on users.me() promise.")
 
 func _on_profile_resolved(args: Array):
-	print("[UsersAPI] User profile promise resolved. Args: ", args)
 	if args.size() > 0:
 		# Godot side (e.g., Main.gd) will handle this in a function connected to 'profile_received',
 		emit_signal("profile_received", args[0])
@@ -53,7 +49,7 @@ func _on_profile_resolved(args: Array):
 	_reject_cb_js = null
 
 func _on_profile_rejected(args: Array):
-	print("[UsersAPI] User profile promise rejected. Args: ", args)
+	printerr("[UsersAPI] Profile fetch failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_msg = "PROFILE_REJECTED_UNKNOWN"
 	if args.size() > 0:
 		error_msg = str(args[0])

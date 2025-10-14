@@ -12,7 +12,6 @@ var _request_reject_cb_js: JavaScriptObject = null
 
 func _init(client_js_object: JavaScriptObject):
 	_main_client = client_js_object
-	print("[BackendAPI] Initialized with client.")
 
 # Call any custom game backend route
 # Example: backend.request("/custom-route", "POST", {"data": "value"})
@@ -28,8 +27,6 @@ func request(path: String, method: String = "GET", body: Dictionary = {}):
 		printerr("[BackendAPI] client.backend.request() path not found.")
 		emit_signal("request_failed", "METHOD_PATH_INVALID")
 		return
-
-	print("[BackendAPI] Calling _main_client.backend.request(%s, %s)..." % [path, method])
 	
 	var promise
 	if body.is_empty():
@@ -52,10 +49,8 @@ func request(path: String, method: String = "GET", body: Dictionary = {}):
 	_request_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
 	promise.then(_request_resolve_cb_js, _request_reject_cb_js)
-	print("[BackendAPI] .then() called on backend.request() promise.")
 
 func _on_request_resolved(args: Array):
-	print("[BackendAPI] Request promise resolved. Args: ", args)
 	if args.size() > 0:
 		var result_data = args[0]
 		emit_signal("request_succeeded", result_data)
@@ -64,7 +59,7 @@ func _on_request_resolved(args: Array):
 	_clear_request_callbacks()
 
 func _on_request_rejected(args: Array):
-	print("[BackendAPI] Request promise rejected. Args: ", args)
+	printerr("[BackendAPI] Request failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_message = "REQUEST_PROMISE_REJECTED"
 	if args.size() > 0:
 		error_message = str(args[0])

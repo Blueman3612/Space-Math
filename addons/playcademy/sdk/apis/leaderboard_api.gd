@@ -18,7 +18,6 @@ var _get_user_rank_reject_cb_js: JavaScriptObject = null
 
 func _init(client_js_object: JavaScriptObject):
 	_main_client = client_js_object
-	print("[LeaderboardAPI] Initialized with client.")
 
 # Corresponds to client.leaderboard.fetch(options?) - gameId auto-injected
 func fetch(options: Dictionary = {}):
@@ -41,7 +40,6 @@ func fetch(options: Dictionary = {}):
 		if game_id != null:
 			merged_options["gameId"] = game_id
 
-	print("[LeaderboardAPI] Calling _main_client.leaderboard.fetch() with gameId...")
 	var promise
 	if merged_options.is_empty():
 		promise = _main_client.leaderboard.fetch()
@@ -64,10 +62,8 @@ func fetch(options: Dictionary = {}):
 	_fetch_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
 	promise.then(_fetch_resolve_cb_js, _fetch_reject_cb_js)
-	print("[LeaderboardAPI] .then() called on leaderboard.fetch() promise.")
 
 func _on_fetch_resolved(args: Array):
-	print("[LeaderboardAPI] Fetch promise resolved. Args: ", args)
 	if args.size() > 0:
 		var result_data = args[0]
 		emit_signal("fetch_succeeded", result_data)
@@ -76,7 +72,7 @@ func _on_fetch_resolved(args: Array):
 	_clear_fetch_callbacks()
 
 func _on_fetch_rejected(args: Array):
-	print("[LeaderboardAPI] Fetch promise rejected. Args: ", args)
+	printerr("[LeaderboardAPI] Fetch failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_message = "FETCH_PROMISE_REJECTED"
 	if args.size() > 0:
 		error_message = str(args[0])
@@ -124,7 +120,6 @@ func get_user_rank(user_id: String, game_id: String = ""):
 			emit_signal("get_user_rank_failed", "NO_GAME_ID_CONTEXT")
 			return
 
-	print("[LeaderboardAPI] Calling _main_client.leaderboard.getUserRank(%s, %s)..." % [resolved_game_id, user_id])
 	var promise = _main_client.leaderboard.getUserRank(resolved_game_id, user_id)
 
 	if not promise is JavaScriptObject:
@@ -139,10 +134,8 @@ func get_user_rank(user_id: String, game_id: String = ""):
 	_get_user_rank_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
 	promise.then(_get_user_rank_resolve_cb_js, _get_user_rank_reject_cb_js)
-	print("[LeaderboardAPI] .then() called on leaderboard.getUserRank() promise.")
 
 func _on_get_user_rank_resolved(args: Array):
-	print("[LeaderboardAPI] Get user rank promise resolved. Args: ", args)
 	if args.size() > 0:
 		var result_data = args[0]
 		emit_signal("get_user_rank_succeeded", result_data)
@@ -151,7 +144,7 @@ func _on_get_user_rank_resolved(args: Array):
 	_clear_get_user_rank_callbacks()
 
 func _on_get_user_rank_rejected(args: Array):
-	print("[LeaderboardAPI] Get user rank promise rejected. Args: ", args)
+	printerr("[LeaderboardAPI] Get user rank failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_message = "GET_USER_RANK_PROMISE_REJECTED"
 	if args.size() > 0:
 		error_message = str(args[0])

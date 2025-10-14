@@ -18,7 +18,6 @@ var _get_by_user_reject_cb_js: JavaScriptObject = null
 
 func _init(client_js_object: JavaScriptObject):
 	_main_client = client_js_object
-	print("[ScoresAPI] Initialized with client.")
 
 # Corresponds to client.scores.submit(gameId, score, metadata?) - gameId auto-injected
 func submit(score: int, metadata: Dictionary = {}):
@@ -41,7 +40,6 @@ func submit(score: int, metadata: Dictionary = {}):
 		emit_signal("submit_failed", "NO_GAME_ID_CONTEXT")
 		return
 
-	print("[ScoresAPI] Calling _main_client.scores.submit(%s, %d)..." % [game_id, score])
 	var promise
 	if metadata.is_empty():
 		promise = _main_client.scores.submit(game_id, score)
@@ -64,10 +62,8 @@ func submit(score: int, metadata: Dictionary = {}):
 	_submit_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
 	promise.then(_submit_resolve_cb_js, _submit_reject_cb_js)
-	print("[ScoresAPI] .then() called on scores.submit() promise.")
 
 func _on_submit_resolved(args: Array):
-	print("[ScoresAPI] Submit promise resolved. Args: ", args)
 	if args.size() > 0:
 		var result_data = args[0]
 		emit_signal("submit_succeeded", result_data)
@@ -76,7 +72,7 @@ func _on_submit_resolved(args: Array):
 	_clear_submit_callbacks()
 
 func _on_submit_rejected(args: Array):
-	print("[ScoresAPI] Submit promise rejected. Args: ", args)
+	printerr("[ScoresAPI] Submit failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_message = "SUBMIT_PROMISE_REJECTED"
 	if args.size() > 0:
 		error_message = str(args[0])
@@ -108,7 +104,6 @@ func get_by_user(user_id: String, options: Dictionary = {}):
 		emit_signal("get_by_user_failed", "NO_GAME_ID_CONTEXT")
 		return
 
-	print("[ScoresAPI] Calling _main_client.scores.getByUser(%s, %s)..." % [game_id, user_id])
 	var promise
 	if options.is_empty():
 		promise = _main_client.scores.getByUser(game_id, user_id)
@@ -131,10 +126,8 @@ func get_by_user(user_id: String, options: Dictionary = {}):
 	_get_by_user_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
 	promise.then(_get_by_user_resolve_cb_js, _get_by_user_reject_cb_js)
-	print("[ScoresAPI] .then() called on scores.getByUser() promise.")
 
 func _on_get_by_user_resolved(args: Array):
-	print("[ScoresAPI] Get by user promise resolved. Args: ", args)
 	if args.size() > 0:
 		var result_data = args[0]
 		emit_signal("get_by_user_succeeded", result_data)
@@ -143,7 +136,7 @@ func _on_get_by_user_resolved(args: Array):
 	_clear_get_by_user_callbacks()
 
 func _on_get_by_user_rejected(args: Array):
-	print("[ScoresAPI] Get by user promise rejected. Args: ", args)
+	printerr("[ScoresAPI] Get by user failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_message = "GET_BY_USER_PROMISE_REJECTED"
 	if args.size() > 0:
 		error_message = str(args[0])

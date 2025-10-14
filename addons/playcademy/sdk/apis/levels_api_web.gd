@@ -40,7 +40,6 @@ func _init(playcademy_client: JavaScriptObject):
 	_levels_api.config_get_failed.connect(_on_original_config_get_failed)
 	_levels_api.level_up.connect(_on_original_level_up)
 	_levels_api.xp_gained.connect(_on_original_xp_gained)
-	print("[LevelsAPIWeb] Web-specific levels API initialized.")
 
 func get_level():
 	_levels_api.get_level()

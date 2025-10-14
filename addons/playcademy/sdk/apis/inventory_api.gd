@@ -26,7 +26,6 @@ var _remove_reject_cb_js: JavaScriptObject = null
 
 func _init(client_js_object: JavaScriptObject):
 	_main_client = client_js_object
-	print("[InventoryAPI] Initialized with client.")
 	
 	# TODO: Subscribe to the JS SDK's event bus for 'inventoryChange' events
 	# and emit the Godot 'changed' signal when those JS events fire.
@@ -52,7 +51,6 @@ func get_all():
 		emit_signal("get_all_failed", "METHOD_PATH_INVALID")
 		return
 
-	print("[InventoryAPI] Calling _main_client.users.inventory.get() for get_all()...")
 	var promise = _main_client.users.inventory.get()
 
 	if not promise is JavaScriptObject:
@@ -67,10 +65,8 @@ func get_all():
 	_get_all_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
 	promise.then(_get_all_resolve_cb_js, _get_all_reject_cb_js)
-	print("[InventoryAPI] .then() called on inventory.get() promise for get_all().")
 
 func _on_get_all_resolved(args: Array):
-	print("[InventoryAPI] Get inventory promise resolved. Args: ", args)
 	if args.size() == 0:
 		printerr("[InventoryAPI] Get inventory promise resolved with no data arguments.")
 		emit_signal("get_all_succeeded", [])
@@ -126,7 +122,7 @@ func _on_get_all_resolved(args: Array):
 	_clear_get_all_callbacks()
 
 func _on_get_all_rejected(args: Array):
-	print("[InventoryAPI] Get inventory promise rejected. Args: ", args)
+	printerr("[InventoryAPI] Get inventory failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_msg = "FETCH_REJECTED_UNKNOWN"
 	if args.size() > 0: error_msg = str(args[0])
 	emit_signal("get_all_failed", error_msg)
@@ -153,7 +149,6 @@ func add(item_id: String, quantity: int = 1):
 		emit_signal("add_failed", "METHOD_PATH_INVALID")
 		return
 
-	print("[InventoryAPI] Calling _main_client.users.inventory.add('%s', %d)..." % [item_id, quantity])
 	var promise = _main_client.users.inventory.add(item_id, quantity)
 
 	if not promise is JavaScriptObject:
@@ -168,10 +163,8 @@ func add(item_id: String, quantity: int = 1):
 	_add_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
 	promise.then(_add_resolve_cb_js, _add_reject_cb_js)
-	print("[InventoryAPI] .then() called on inventory.add() promise.")
 
 func _on_add_resolved(args: Array):
-	print("[InventoryAPI] Add item promise resolved. Args: ", args)
 	var response_data = null
 	if args.size() > 0: response_data = args[0]
 	emit_signal("add_succeeded", response_data)
@@ -179,7 +172,7 @@ func _on_add_resolved(args: Array):
 	_clear_add_callbacks()
 
 func _on_add_rejected(args: Array):
-	print("[InventoryAPI] Add item promise rejected. Args: ", args)
+	printerr("[InventoryAPI] Add item failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_msg = "ADD_REJECTED_UNKNOWN"
 	if args.size() > 0: error_msg = str(args[0])
 	emit_signal("add_failed", error_msg)
@@ -206,7 +199,6 @@ func remove(item_id: String, quantity: int = 1):
 		emit_signal("remove_failed", "METHOD_PATH_INVALID")
 		return
 
-	print("[InventoryAPI] Calling _main_client.users.inventory.remove('%s', %d)..." % [item_id, quantity])
 	var promise = _main_client.users.inventory.remove(item_id, quantity)
 
 	if not promise is JavaScriptObject:
@@ -221,10 +213,8 @@ func remove(item_id: String, quantity: int = 1):
 	_remove_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
 	promise.then(_remove_resolve_cb_js, _remove_reject_cb_js)
-	print("[InventoryAPI] .then() called on inventory.remove() promise.")
 
 func _on_remove_resolved(args: Array):
-	print("[InventoryAPI] Remove item promise resolved. Args: ", args)
 	var response_data = null
 	if args.size() > 0: response_data = args[0]
 	emit_signal("remove_succeeded", response_data)
@@ -232,7 +222,7 @@ func _on_remove_resolved(args: Array):
 	_clear_remove_callbacks()
 
 func _on_remove_rejected(args: Array):
-	print("[InventoryAPI] Remove item promise rejected. Args: ", args)
+	printerr("[InventoryAPI] Remove item failed: ", args[0] if args.size() > 0 else "Unknown error")
 	var error_msg = "REMOVE_REJECTED_UNKNOWN"
 	if args.size() > 0: error_msg = str(args[0])
 	emit_signal("remove_failed", error_msg)

@@ -18,7 +18,6 @@ func _init(playcademy_client: JavaScriptObject):
 	_scores_api.submit_failed.connect(_on_original_submit_failed)
 	_scores_api.get_by_user_succeeded.connect(_on_original_get_by_user_succeeded)
 	_scores_api.get_by_user_failed.connect(_on_original_get_by_user_failed)
-	print("[ScoresAPIWeb] Web-specific scores API initialized.")
 
 func submit(score: int, metadata: Dictionary = {}):
 	_scores_api.submit(score, metadata)

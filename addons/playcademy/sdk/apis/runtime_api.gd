@@ -4,7 +4,6 @@ var _main_client: JavaScriptObject
 
 func _init(client_js_object: JavaScriptObject):
 	_main_client = client_js_object
-	print("[RuntimeAPI] Initialized with client.")
 
 func exit():
 	if _main_client == null:

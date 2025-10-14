@@ -18,7 +18,6 @@ func _init(playcademy_client: JavaScriptObject):
 	_leaderboard_api.fetch_failed.connect(_on_original_fetch_failed)
 	_leaderboard_api.get_user_rank_succeeded.connect(_on_original_get_user_rank_succeeded)
 	_leaderboard_api.get_user_rank_failed.connect(_on_original_get_user_rank_failed)
-	print("[LeaderboardAPIWeb] Web-specific leaderboard API initialized.")
 
 func fetch(options: Dictionary = {}):
 	_leaderboard_api.fetch(options)

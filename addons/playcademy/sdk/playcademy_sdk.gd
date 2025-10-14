@@ -126,7 +126,6 @@ func _on_sdk_initialized_from_js(args_array: Array):
 
 		print("[PlaycademySDK.gd] Main Client assigned. Sub-APIs (Users, Runtime, Inventory, Levels, Credits, Leaderboard, Scores, Timeback, Backend) instantiated.")
 		emit_signal("sdk_ready")
-		test_sdk_ping()
 	else:
 		var error_msg = "SDK init callback: Invalid or no client argument."
 		if args_array.size() > 0:
@@ -161,17 +160,8 @@ func ping() -> String:
 		printerr("[PlaycademySDK] Cannot ping: SDK not ready or client null.")
 		return "ERROR: SDK_NOT_READY"
 	
-	print("[PlaycademySDK] GDScript wrapper calling client.ping()...")
 	var result = playcademy_client.ping()
-	print("[PlaycademySDK] Ping direct result from JS: ", result)
 	return str(result)
-
-func test_sdk_ping():
-	if not is_ready() or playcademy_client == null:
-		print("[PlaycademySDK] test_sdk_ping (auto): SDK not ready or client null.")
-		return
-	var ping_result = ping()
-	print("[PlaycademySDK] Auto-Ping result (via wrapper): ", ping_result)
 
 
 func _cleanup_js_callbacks():

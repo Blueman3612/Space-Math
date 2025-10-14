@@ -1,196 +1,158 @@
 class_name TimebackAPI extends RefCounted
 
-# Signals for recordProgress operation
-signal record_progress_succeeded(response_data)
-signal record_progress_failed(error_message)
-
-# Signals for recordSessionEnd operation
-signal record_session_end_succeeded(response_data)
-signal record_session_end_failed(error_message)
-
-# Signals for awardXP operation
-signal award_xp_succeeded(response_data)
-signal award_xp_failed(error_message)
+# Signals for activity operations
+signal end_activity_succeeded(response_data)
+signal end_activity_failed(error_message)
+signal pause_activity_failed(error_message)
+signal resume_activity_failed(error_message)
 
 var _main_client: JavaScriptObject
 
 # To keep JS callbacks alive for ongoing operations
-var _record_progress_resolve_cb_js: JavaScriptObject = null
-var _record_progress_reject_cb_js: JavaScriptObject = null
-var _record_session_end_resolve_cb_js: JavaScriptObject = null
-var _record_session_end_reject_cb_js: JavaScriptObject = null
-var _award_xp_resolve_cb_js: JavaScriptObject = null
-var _award_xp_reject_cb_js: JavaScriptObject = null
+var _end_activity_resolve_cb_js: JavaScriptObject = null
+var _end_activity_reject_cb_js: JavaScriptObject = null
+
+# Internal state for tracking current activity
+var _activity_start_time: int = 0
+var _activity_metadata: Dictionary = {}
+var _activity_in_progress: bool = false
 
 func _init(client_js_object: JavaScriptObject):
 	_main_client = client_js_object
-	print("[TimebackAPI] Initialized with client.")
 
-# Corresponds to client.timeback.recordProgress(progressData)
-func record_progress(progress_data: Dictionary):
+# Start tracking an activity
+func start_activity(metadata: Dictionary):
+	_activity_start_time = Time.get_ticks_msec()
+	_activity_metadata = metadata.duplicate()
+	_activity_in_progress = true
+	print("[TimebackAPI] Started activity: ", _activity_metadata.get("activityId", "unknown"))
+
+# Pause the current activity timer
+# Paused time is not counted toward the activity duration
+func pause_activity():
+	if not _activity_in_progress:
+		printerr("[TimebackAPI] No activity in progress. Call start_activity() first.")
+		emit_signal("pause_activity_failed", "NO_ACTIVITY_IN_PROGRESS")
+		return
+	
 	if _main_client == null:
-		printerr("[TimebackAPI] Main client not set. Cannot call record_progress().")
-		emit_signal("record_progress_failed", "MAIN_CLIENT_NULL")
+		printerr("[TimebackAPI] Main client not set. Cannot call pause_activity().")
+		emit_signal("pause_activity_failed", "MAIN_CLIENT_NULL")
+		return
+	
+	if not ('timeback' in _main_client and 
+			_main_client.timeback is JavaScriptObject and 
+			'pauseActivity' in _main_client.timeback):
+		printerr("[TimebackAPI] client.timeback.pauseActivity() path not found.")
+		emit_signal("pause_activity_failed", "METHOD_PATH_INVALID")
+		return
+	
+	# Call JavaScript SDK's pauseActivity
+	_main_client.timeback.pauseActivity()
+	print("[TimebackAPI] Activity paused")
+
+# Resume the current activity timer after a pause
+func resume_activity():
+	if not _activity_in_progress:
+		printerr("[TimebackAPI] No activity in progress. Call start_activity() first.")
+		emit_signal("resume_activity_failed", "NO_ACTIVITY_IN_PROGRESS")
+		return
+	
+	if _main_client == null:
+		printerr("[TimebackAPI] Main client not set. Cannot call resume_activity().")
+		emit_signal("resume_activity_failed", "MAIN_CLIENT_NULL")
+		return
+	
+	if not ('timeback' in _main_client and 
+			_main_client.timeback is JavaScriptObject and 
+			'resumeActivity' in _main_client.timeback):
+		printerr("[TimebackAPI] client.timeback.resumeActivity() path not found.")
+		emit_signal("resume_activity_failed", "METHOD_PATH_INVALID")
+		return
+	
+	# Call JavaScript SDK's resumeActivity
+	_main_client.timeback.resumeActivity()
+	print("[TimebackAPI] Activity resumed")
+
+# End the current activity and submit results
+# XP is calculated server-side with attempt-aware multipliers
+# score_data should contain: { correctQuestions: int, totalQuestions: int, xpAwarded: int (optional) }
+func end_activity(score_data: Dictionary):
+	if not _activity_in_progress:
+		printerr("[TimebackAPI] No activity in progress. Call start_activity() first.")
+		emit_signal("end_activity_failed", "NO_ACTIVITY_IN_PROGRESS")
+		return
+	
+	if _main_client == null:
+		printerr("[TimebackAPI] Main client not set. Cannot call end_activity().")
+		emit_signal("end_activity_failed", "MAIN_CLIENT_NULL")
+		_activity_in_progress = false
 		return
 
 	if not ('timeback' in _main_client and 
 			_main_client.timeback is JavaScriptObject and 
-			'recordProgress' in _main_client.timeback):
-		printerr("[TimebackAPI] client.timeback.recordProgress() path not found.")
-		emit_signal("record_progress_failed", "METHOD_PATH_INVALID")
+			'endActivity' in _main_client.timeback):
+		printerr("[TimebackAPI] client.timeback.endActivity() path not found.")
+		emit_signal("end_activity_failed", "METHOD_PATH_INVALID")
+		_activity_in_progress = false
 		return
 
-	print("[TimebackAPI] Calling _main_client.timeback.recordProgress()...")
+	var correct_questions = score_data.get("correctQuestions", 0)
+	var total_questions = score_data.get("totalQuestions", 1)
+	var xp_awarded = score_data.get("xpAwarded", null)
 	
-	var js_progress_data = JavaScriptBridge.create_object("Object")
-	for key in progress_data:
-		js_progress_data[key] = progress_data[key]
-	var promise = _main_client.timeback.recordProgress(js_progress_data)
+	var score_percentage = (float(correct_questions) / float(total_questions) * 100.0) if total_questions > 0 else 0.0
+	
+	print("[TimebackAPI] Ending activity: %.1f%% (%d/%d)%s" % [
+		score_percentage, 
+		correct_questions, 
+		total_questions,
+		(" - XP Override: %d" % xp_awarded) if xp_awarded != null else ""
+	])
+	
+	# Build score data object for JavaScript (matching browser SDK API)
+	var js_score_data = JavaScriptBridge.create_object("Object")
+	js_score_data["correctQuestions"] = correct_questions
+	js_score_data["totalQuestions"] = total_questions
+	
+	# Add optional XP override
+	if xp_awarded != null:
+		js_score_data["xpAwarded"] = xp_awarded
+	
+	var promise = _main_client.timeback.endActivity(js_score_data)
 
 	if not promise is JavaScriptObject:
-		printerr("[TimebackAPI] timeback.recordProgress() did not return a Promise.")
-		emit_signal("record_progress_failed", "NOT_A_PROMISE")
+		printerr("[TimebackAPI] timeback.endActivity() did not return a Promise.")
+		emit_signal("end_activity_failed", "NOT_A_PROMISE")
+		_activity_in_progress = false
 		return
 
-	var on_resolve = Callable(self, "_on_record_progress_resolved").bind()
-	var on_reject = Callable(self, "_on_record_progress_rejected").bind()
+	var on_resolve = Callable(self, "_on_end_activity_resolved").bind()
+	var on_reject = Callable(self, "_on_end_activity_rejected").bind()
 
-	_record_progress_resolve_cb_js = JavaScriptBridge.create_callback(on_resolve)
-	_record_progress_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
+	_end_activity_resolve_cb_js = JavaScriptBridge.create_callback(on_resolve)
+	_end_activity_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
 
-	promise.then(_record_progress_resolve_cb_js, _record_progress_reject_cb_js)
-	print("[TimebackAPI] .then() called on timeback.recordProgress() promise.")
+	promise.then(_end_activity_resolve_cb_js, _end_activity_reject_cb_js)
 
-func _on_record_progress_resolved(args: Array):
-	print("[TimebackAPI] Record progress promise resolved. Args: ", args)
+func _on_end_activity_resolved(args: Array):
+	_activity_in_progress = false
 	if args.size() > 0:
 		var result_data = args[0]
-		emit_signal("record_progress_succeeded", result_data)
+		emit_signal("end_activity_succeeded", result_data)
 	else:
-		emit_signal("record_progress_failed", "RECORD_PROGRESS_RESOLVED_NO_DATA")
-	_clear_record_progress_callbacks()
+		emit_signal("end_activity_failed", "END_ACTIVITY_RESOLVED_NO_DATA")
+	_clear_end_activity_callbacks()
 
-func _on_record_progress_rejected(args: Array):
-	print("[TimebackAPI] Record progress promise rejected. Args: ", args)
-	var error_message = "RECORD_PROGRESS_PROMISE_REJECTED"
+func _on_end_activity_rejected(args: Array):
+	printerr("[TimebackAPI] End activity failed: ", args[0] if args.size() > 0 else "Unknown error")
+	_activity_in_progress = false
+	var error_message = "END_ACTIVITY_PROMISE_REJECTED"
 	if args.size() > 0:
 		error_message = str(args[0])
-	emit_signal("record_progress_failed", error_message)
-	_clear_record_progress_callbacks()
+	emit_signal("end_activity_failed", error_message)
+	_clear_end_activity_callbacks()
 
-func _clear_record_progress_callbacks():
-	_record_progress_resolve_cb_js = null
-	_record_progress_reject_cb_js = null
-
-# Corresponds to client.timeback.recordSessionEnd(sessionData)
-func record_session_end(session_data: Dictionary):
-	if _main_client == null:
-		printerr("[TimebackAPI] Main client not set. Cannot call record_session_end().")
-		emit_signal("record_session_end_failed", "MAIN_CLIENT_NULL")
-		return
-
-	if not ('timeback' in _main_client and 
-			_main_client.timeback is JavaScriptObject and 
-			'recordSessionEnd' in _main_client.timeback):
-		printerr("[TimebackAPI] client.timeback.recordSessionEnd() path not found.")
-		emit_signal("record_session_end_failed", "METHOD_PATH_INVALID")
-		return
-
-	print("[TimebackAPI] Calling _main_client.timeback.recordSessionEnd()...")
-	
-	var js_session_data = JavaScriptBridge.create_object("Object")
-	for key in session_data:
-		js_session_data[key] = session_data[key]
-	var promise = _main_client.timeback.recordSessionEnd(js_session_data)
-
-	if not promise is JavaScriptObject:
-		printerr("[TimebackAPI] timeback.recordSessionEnd() did not return a Promise.")
-		emit_signal("record_session_end_failed", "NOT_A_PROMISE")
-		return
-
-	var on_resolve = Callable(self, "_on_record_session_end_resolved").bind()
-	var on_reject = Callable(self, "_on_record_session_end_rejected").bind()
-
-	_record_session_end_resolve_cb_js = JavaScriptBridge.create_callback(on_resolve)
-	_record_session_end_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
-
-	promise.then(_record_session_end_resolve_cb_js, _record_session_end_reject_cb_js)
-	print("[TimebackAPI] .then() called on timeback.recordSessionEnd() promise.")
-
-func _on_record_session_end_resolved(args: Array):
-	print("[TimebackAPI] Record session end promise resolved. Args: ", args)
-	if args.size() > 0:
-		var result_data = args[0]
-		emit_signal("record_session_end_succeeded", result_data)
-	else:
-		emit_signal("record_session_end_failed", "RECORD_SESSION_END_RESOLVED_NO_DATA")
-	_clear_record_session_end_callbacks()
-
-func _on_record_session_end_rejected(args: Array):
-	print("[TimebackAPI] Record session end promise rejected. Args: ", args)
-	var error_message = "RECORD_SESSION_END_PROMISE_REJECTED"
-	if args.size() > 0:
-		error_message = str(args[0])
-	emit_signal("record_session_end_failed", error_message)
-	_clear_record_session_end_callbacks()
-
-func _clear_record_session_end_callbacks():
-	_record_session_end_resolve_cb_js = null
-	_record_session_end_reject_cb_js = null
-
-# Corresponds to client.timeback.awardXP(xpAmount, metadata)
-func award_xp(xp_amount: int, metadata: Dictionary):
-	if _main_client == null:
-		printerr("[TimebackAPI] Main client not set. Cannot call award_xp().")
-		emit_signal("award_xp_failed", "MAIN_CLIENT_NULL")
-		return
-
-	if not ('timeback' in _main_client and 
-			_main_client.timeback is JavaScriptObject and 
-			'awardXP' in _main_client.timeback):
-		printerr("[TimebackAPI] client.timeback.awardXP() path not found.")
-		emit_signal("award_xp_failed", "METHOD_PATH_INVALID")
-		return
-
-	print("[TimebackAPI] Calling _main_client.timeback.awardXP(%d)..." % xp_amount)
-	
-	var js_metadata = JavaScriptBridge.create_object("Object")
-	for key in metadata:
-		js_metadata[key] = metadata[key]
-	var promise = _main_client.timeback.awardXP(xp_amount, js_metadata)
-
-	if not promise is JavaScriptObject:
-		printerr("[TimebackAPI] timeback.awardXP() did not return a Promise.")
-		emit_signal("award_xp_failed", "NOT_A_PROMISE")
-		return
-
-	var on_resolve = Callable(self, "_on_award_xp_resolved").bind()
-	var on_reject = Callable(self, "_on_award_xp_rejected").bind()
-
-	_award_xp_resolve_cb_js = JavaScriptBridge.create_callback(on_resolve)
-	_award_xp_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
-
-	promise.then(_award_xp_resolve_cb_js, _award_xp_reject_cb_js)
-	print("[TimebackAPI] .then() called on timeback.awardXP() promise.")
-
-func _on_award_xp_resolved(args: Array):
-	print("[TimebackAPI] Award XP promise resolved. Args: ", args)
-	if args.size() > 0:
-		var result_data = args[0]
-		emit_signal("award_xp_succeeded", result_data)
-	else:
-		emit_signal("award_xp_failed", "AWARD_XP_RESOLVED_NO_DATA")
-	_clear_award_xp_callbacks()
-
-func _on_award_xp_rejected(args: Array):
-	print("[TimebackAPI] Award XP promise rejected. Args: ", args)
-	var error_message = "AWARD_XP_PROMISE_REJECTED"
-	if args.size() > 0:
-		error_message = str(args[0])
-	emit_signal("award_xp_failed", error_message)
-	_clear_award_xp_callbacks()
-
-func _clear_award_xp_callbacks():
-	_award_xp_resolve_cb_js = null
-	_award_xp_reject_cb_js = null
-
+func _clear_end_activity_callbacks():
+	_end_activity_resolve_cb_js = null
+	_end_activity_reject_cb_js = null

@@ -17,7 +17,6 @@ const PLAYCADEMY_CREDITS_SLUG = "PLAYCADEMY_CREDITS"
 
 func _init(inventory_api):
 	_inventory_api = inventory_api
-	print("[LocalCreditsAPI] Initialized with inventory API.")
 	
 	# Connect to inventory signals to handle our operations
 	_inventory_api.get_all_succeeded.connect(_on_inventory_get_all_succeeded)
@@ -41,7 +40,6 @@ var _pending_spend_amount: int = 0
 
 # Gets the current balance of Playcademy Credits
 func balance():
-	print("[LocalCreditsAPI] Getting credits balance...")
 	_current_operation = Operation.BALANCE
 	_inventory_api.get_all()
 
@@ -51,7 +49,6 @@ func add(amount: int):
 		emit_signal("add_failed", "Amount must be positive")
 		return
 	
-	print("[LocalCreditsAPI] Adding %d credits..." % amount)
 	_current_operation = Operation.ADD
 	_pending_add_amount = amount
 	
@@ -68,7 +65,6 @@ func spend(amount: int):
 		emit_signal("spend_failed", "Amount must be positive")
 		return
 	
-	print("[LocalCreditsAPI] Spending %d credits..." % amount)
 	_current_operation = Operation.SPEND
 	_pending_spend_amount = amount
 	
