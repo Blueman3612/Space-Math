@@ -14,6 +14,8 @@ var is_input_mode = false  # Whether this fraction is used for user input
 var show_underscore = false  # Whether to show blinking underscore in denominator
 var is_mixed_fraction = false  # Whether this is a mixed fraction (has whole number)
 var editing_numerator = false  # For mixed fractions: whether we're editing numerator (vs denominator)
+var is_locked_input_mode = false  # Whether this fraction is locked to only one field (equivalence problems)
+var locked_to_numerator = false  # For locked mode: whether user can only edit numerator (vs denominator)
 
 # Layout tracking
 var current_divisor_width = 0.0  # Current width of the divisor line (for dynamic positioning)
@@ -73,48 +75,67 @@ func set_fraction(numerator: int = 1, denominator: int = 1):
 	shadow_line.set_point_position(1, Vector2(half_size, 0))
 
 func set_fraction_text(numerator_text: String, denominator_text: String, add_underscore: bool = false):
-	"""Set fraction text with strings (for input mode), optionally adding underscore to denominator"""
+	"""Set fraction text with strings (for input mode), optionally adding underscore to the appropriate field"""
+	# Determine which field gets the underscore in locked mode
+	var underscore_in_numerator = is_locked_input_mode and locked_to_numerator
+	var underscore_in_denominator = is_locked_input_mode and not locked_to_numerator
+	
 	# Set the label text temporarily WITHOUT underscore for measurement
-	numerator_label.text = numerator_text if numerator_text != "" else "0"
-	denominator_label.text = denominator_text if denominator_text != "" else " "
+	numerator_label.text = numerator_text if numerator_text != "" else ("0" if not underscore_in_numerator else " ")
+	denominator_label.text = denominator_text if denominator_text != "" else ("0" if not underscore_in_denominator else " ")
 	
 	# Force labels to update their minimum size
 	numerator_label.reset_size()
 	denominator_label.reset_size()
 	
 	# Measure the width of both labels (WITHOUT underscore for base measurement)
-	var numerator_width = numerator_label.get_minimum_size().x
+	var numerator_width_base = numerator_label.get_minimum_size().x
 	var denominator_width_base = denominator_label.get_minimum_size().x
 	
 	# NOW add the underscore to the display (after measurement)
-	var underscore_shift = 0.0
-	if add_underscore:
+	var numerator_underscore_shift = 0.0
+	var denominator_underscore_shift = 0.0
+	
+	if add_underscore and underscore_in_numerator:
+		# Underscore goes in numerator (locked mode)
+		if show_underscore:
+			numerator_label.text = (numerator_text if numerator_text != "" else "") + "_"
+			numerator_label.reset_size()
+			var numerator_width_with_underscore = numerator_label.get_minimum_size().x
+			numerator_underscore_shift = (numerator_width_with_underscore - numerator_width_base) / 2.0
+		else:
+			numerator_label.text = numerator_text if numerator_text != "" else " "
+		# Denominator stays as-is
+		denominator_label.text = denominator_text if denominator_text != "" else "0"
+	elif add_underscore and (underscore_in_denominator or not is_locked_input_mode):
+		# Underscore goes in denominator (regular mode or locked denominator editing)
 		if show_underscore:
 			denominator_label.text = (denominator_text if denominator_text != "" else "") + "_"
-			# Measure width WITH underscore
 			denominator_label.reset_size()
 			var denominator_width_with_underscore = denominator_label.get_minimum_size().x
-			# Calculate how much to shift RIGHT so the number stays in place and underscore grows to the right
-			underscore_shift = (denominator_width_with_underscore - denominator_width_base) / 2.0
+			denominator_underscore_shift = (denominator_width_with_underscore - denominator_width_base) / 2.0
 		else:
-			# Underscore not visible - show text without underscore (or empty if no text)
 			denominator_label.text = denominator_text if denominator_text != "" else " "
+		# Numerator stays as-is
+		numerator_label.text = numerator_text if numerator_text != "" else "0"
 	else:
 		# Not in input mode - show static underscore if empty
+		numerator_label.text = numerator_text if numerator_text != "" else "0"
 		denominator_label.text = denominator_text if denominator_text != "" else "_"
 	
-	# Use base width for divisor calculations
+	# Use base widths for divisor calculations
+	var numerator_width = numerator_width_base
 	var denominator_width = denominator_width_base
 	
-	# Center the numerator label horizontally around x=0 with offset
+	# Center the numerator label horizontally around x=0 with offset, plus underscore shift
 	var numerator_half_width = numerator_width / 2.0
-	numerator_label.offset_left = -numerator_half_width + label_x_offset
-	numerator_label.offset_right = numerator_half_width + label_x_offset
+	numerator_label.offset_left = -numerator_half_width + label_x_offset + numerator_underscore_shift
+	numerator_label.offset_right = numerator_half_width + label_x_offset + numerator_underscore_shift
 	
 	# Center the denominator label horizontally around x=0 with offset, plus underscore shift
 	var denominator_half_width = denominator_width / 2.0
-	denominator_label.offset_left = -denominator_half_width + label_x_offset + underscore_shift
-	denominator_label.offset_right = denominator_half_width + label_x_offset + underscore_shift
+	denominator_label.offset_left = -denominator_half_width + label_x_offset + denominator_underscore_shift
+	denominator_label.offset_right = denominator_half_width + label_x_offset + denominator_underscore_shift
 	
 	# Check if denominator is 1 (whole number display)
 	# Only hide fraction elements if NOT in input mode (to avoid hiding while user is typing "1")
@@ -162,6 +183,26 @@ func set_fraction_text(numerator_text: String, denominator_text: String, add_und
 func set_input_mode(enabled: bool):
 	"""Enable or disable input mode for this fraction"""
 	is_input_mode = enabled
+
+func set_locked_input_mode(lock_numerator: bool, initial_numerator: String = "", initial_denominator: String = ""):
+	"""Enable locked input mode where only one field can be edited"""
+	is_input_mode = true
+	is_locked_input_mode = true
+	locked_to_numerator = lock_numerator
+	show_underscore = true  # Start with underscore visible
+	
+	# Set initial values - the non-editable field gets its value, the editable field starts empty
+	if lock_numerator:
+		# User can only edit numerator, denominator is locked
+		numerator_label.text = ""
+		denominator_label.text = initial_denominator if initial_denominator != "" else "1"
+	else:
+		# User can only edit denominator, numerator is locked
+		numerator_label.text = initial_numerator if initial_numerator != "" else "1"
+		denominator_label.text = ""
+	
+	# Update layout
+	set_fraction_text(numerator_label.text, denominator_label.text, true)
 
 func update_underscore(underscore_visible: bool):
 	"""Update whether the underscore should be visible (for blinking effect)"""

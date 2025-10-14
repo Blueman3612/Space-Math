@@ -28,9 +28,11 @@ func get_default_save_data():
 			"levels": {}
 		}
 		
-		# Initialize each level in the pack
-		for level_index in range(pack_config.levels.size()):
-			default_data.packs[pack_name].levels[str(level_index)] = {
+		# Initialize each level in the pack using track ID as key
+		for level_track in pack_config.levels:
+			# Convert to string track ID (e.g., "4.NF.A.1" or "TRACK12")
+			var track_id = str(level_track) if typeof(level_track) == TYPE_STRING else "TRACK" + str(level_track)
+			default_data.packs[pack_name].levels[track_id] = {
 				"highest_stars": 0,
 				"best_accuracy": 0,
 				"best_time": 999999.0,
@@ -111,11 +113,12 @@ func migrate_save_data():
 			if not pack_data.has("levels"):
 				pack_data.levels = {}
 			
-			# Ensure all levels in pack have data
-			for level_index in range(pack_config.levels.size()):
-				var level_key = str(level_index)
-				if not pack_data.levels.has(level_key):
-					pack_data.levels[level_key] = {
+			# Ensure all levels in pack have data using track ID as key
+			for level_track in pack_config.levels:
+				# Convert to string track ID (e.g., "4.NF.A.1" or "TRACK12")
+				var track_id = str(level_track) if typeof(level_track) == TYPE_STRING else "TRACK" + str(level_track)
+				if not pack_data.levels.has(track_id):
+					pack_data.levels[track_id] = {
 						"highest_stars": 0,
 						"best_accuracy": 0,
 						"best_time": 999999.0,
@@ -123,7 +126,7 @@ func migrate_save_data():
 					}
 				else:
 					# Ensure all fields exist for existing levels
-					var level_data = pack_data.levels[level_key]
+					var level_data = pack_data.levels[track_id]
 					if not level_data.has("best_cqpm"):
 						level_data.best_cqpm = 0.0
 		
@@ -157,7 +160,7 @@ func save_question_data(question_data, player_answer, time_taken):
 	save_save_data()
 
 func update_level_data(pack_name: String, pack_level_index: int, accuracy: int, time_taken: float, stars_earned: int):
-	"""Update the saved data for a level using pack-based structure"""
+	"""Update the saved data for a level using pack-based structure with track ID as key"""
 	# Ensure pack exists
 	if not save_data.packs.has(pack_name):
 		save_data.packs[pack_name] = {"levels": {}}
@@ -166,17 +169,21 @@ func update_level_data(pack_name: String, pack_level_index: int, accuracy: int, 
 	if not pack_data.has("levels"):
 		pack_data.levels = {}
 	
+	# Get the track ID for this level
+	var pack_config = GameConfig.level_packs[pack_name]
+	var level_track = pack_config.levels[pack_level_index]
+	var track_id = str(level_track) if typeof(level_track) == TYPE_STRING else "TRACK" + str(level_track)
+	
 	# Ensure level exists
-	var level_key = str(pack_level_index)
-	if not pack_data.levels.has(level_key):
-		pack_data.levels[level_key] = {
+	if not pack_data.levels.has(track_id):
+		pack_data.levels[track_id] = {
 			"highest_stars": 0,
 			"best_accuracy": 0,
 			"best_time": 999999.0,
 			"best_cqpm": 0.0
 		}
 	
-	var level_data = pack_data.levels[level_key]
+	var level_data = pack_data.levels[track_id]
 	var updated = false
 	
 	# Update highest stars
@@ -246,13 +253,14 @@ func unlock_all_levels():
 		if not save_data.packs.has(pack_name):
 			save_data.packs[pack_name] = {"levels": {}}
 		
-		# Unlock each level in the pack
-		for level_index in range(pack_config.levels.size()):
-			var level_key = str(level_index)
+		# Unlock each level in the pack using track ID as key
+		for level_track in pack_config.levels:
+			# Convert to string track ID (e.g., "4.NF.A.1" or "TRACK12")
+			var track_id = str(level_track) if typeof(level_track) == TYPE_STRING else "TRACK" + str(level_track)
 			var level_config = GameConfig.level_configs.get(global_level_num, GameConfig.level_configs[1])
 			
 			# Set each level to have 3 stars and max values
-			save_data.packs[pack_name].levels[level_key] = {
+			save_data.packs[pack_name].levels[track_id] = {
 				"highest_stars": 3,
 				"best_accuracy": level_config.problems,  # Perfect accuracy
 				"best_time": level_config.star3.time,  # Best time for 3 stars

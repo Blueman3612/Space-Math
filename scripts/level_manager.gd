@@ -288,14 +288,18 @@ func update_menu_stars():
 		var pack_name = button_data.pack_name
 		var pack_level_index = button_data.pack_level_index
 		
+		# Get the track ID for this level
+		var pack_config = GameConfig.level_packs[pack_name]
+		var level_track = pack_config.levels[pack_level_index]
+		var track_id = str(level_track) if typeof(level_track) == TYPE_STRING else "TRACK" + str(level_track)
+		
 		# Get save data for this level
 		var stars_earned = 0
 		if SaveManager.save_data.packs.has(pack_name):
 			var pack_data = SaveManager.save_data.packs[pack_name]
 			if pack_data.has("levels"):
-				var level_key = str(pack_level_index)
-				if pack_data.levels.has(level_key):
-					stars_earned = pack_data.levels[level_key].highest_stars
+				if pack_data.levels.has(track_id):
+					stars_earned = pack_data.levels[track_id].highest_stars
 		
 		# Update star sprites
 		var contents = button.get_node("Contents")
@@ -316,11 +320,15 @@ func update_level_availability():
 		
 		# First level of each pack is always available
 		if pack_level_index > 0:
+			# Get the track ID for the previous level
+			var pack_config = GameConfig.level_packs[pack_name]
+			var prev_level_track = pack_config.levels[pack_level_index - 1]
+			var prev_track_id = str(prev_level_track) if typeof(prev_level_track) == TYPE_STRING else "TRACK" + str(prev_level_track)
+			
 			# Check if previous level in this pack has at least 1 star
-			var prev_level_key = str(pack_level_index - 1)
 			if SaveManager.save_data.packs.has(pack_name) and SaveManager.save_data.packs[pack_name].has("levels"):
-				if SaveManager.save_data.packs[pack_name].levels.has(prev_level_key):
-					var prev_stars = SaveManager.save_data.packs[pack_name].levels[prev_level_key].highest_stars
+				if SaveManager.save_data.packs[pack_name].levels.has(prev_track_id):
+					var prev_stars = SaveManager.save_data.packs[pack_name].levels[prev_track_id].highest_stars
 					should_be_available = prev_stars > 0
 				else:
 					should_be_available = false

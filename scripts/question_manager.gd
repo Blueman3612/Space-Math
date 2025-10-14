@@ -160,7 +160,11 @@ func get_math_question(track = null, grade = null, operator = null, no_zeroes = 
 		# For fraction questions, use the expression as the question text
 		if random_question.has("expression") and random_question.expression != "" and not random_question.expression.contains("["):
 			# Expression exists and doesn't contain malformed array notation
-			question_text = random_question.expression.split(" = ")[0]
+			# For equivalence problems, use full expression; for others, split by " = "
+			if random_question.has("operator") and random_question.operator == "equivalent_missing":
+				question_text = random_question.expression  # Keep full expression for equivalence
+			else:
+				question_text = random_question.expression.split(" = ")[0]
 		else:
 			# Fallback: construct from operands if expression doesn't exist
 			if random_question.has("operands") and random_question.operands.size() >= 2:
@@ -233,6 +237,10 @@ func find_closest_grade_with_operator(target_grade, operator):
 
 func get_question_key(question_data):
 	"""Generate a unique key for a question based on its operands and operator"""
+	# Handle equivalence problems specially - they use expression as key
+	if question_data.has("operator") and question_data.operator == "equivalent_missing":
+		return question_data.get("expression", "unknown_equivalence")
+	
 	# Handle fraction questions (operands are arrays) vs regular questions (operands are numbers)
 	var op1_str = ""
 	var op2_str = ""
@@ -568,9 +576,13 @@ func get_weighted_random_question():
 				
 				# Check if operands exist and determine question type
 				if not selected_question.has("operands") or selected_question.operands == null or selected_question.operands.size() < 2:
-					# Mixed fraction or expression-based question
+					# Mixed fraction, expression-based question, or equivalence problem
 					question_text = selected_question.expression if selected_question.has("expression") else ""
-					display_text = question_text.split(" = ")[0] if question_text else ""
+					# For equivalence problems, use full expression; for others, split
+					if selected_question.has("operator") and selected_question.operator == "equivalent_missing":
+						display_text = question_text  # Keep full expression for equivalence
+					else:
+						display_text = question_text.split(" = ")[0] if question_text else ""
 				elif typeof(selected_question.operands[0]) == TYPE_ARRAY or typeof(selected_question.operands[1]) == TYPE_ARRAY:
 					# Regular fraction question - use expression, or construct from operands if needed
 					if selected_question.has("expression") and selected_question.expression != "" and not selected_question.expression.contains("["):
@@ -631,6 +643,16 @@ func get_weighted_random_question():
 
 func find_question_by_key(question_key):
 	"""Find a question in math_facts by its key"""
+	# Handle equivalence problems - they use expression as key
+	if question_key.contains(" = ") and not question_key.contains("_"):
+		# This is an equivalence problem key (expression format)
+		for level in math_facts.levels:
+			for question in level.facts:
+				if question.has("operator") and question.operator == "equivalent_missing":
+					if question.get("expression", "") == question_key:
+						return question
+		return null
+	
 	var parts = question_key.split("_")
 	if parts.size() != 3:
 		return null

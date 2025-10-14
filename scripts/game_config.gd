@@ -142,8 +142,9 @@ var level_configs = {
 	7: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
 	8: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
 	9: {"problems": 20, "star1": {"accuracy": 12, "time": 120.0}, "star2": {"accuracy": 14, "time": 100.0}, "star3": {"accuracy": 16, "time": 80.0}},
-	10: {"problems": 20, "star1": {"accuracy": 12, "time": 180.0}, "star2": {"accuracy": 14, "time": 150.0}, "star3": {"accuracy": 16, "time": 120.0}},
-	11: {"problems": 20, "star1": {"accuracy": 12, "time": 210.0}, "star2": {"accuracy": 14, "time": 180.0}, "star3": {"accuracy": 16, "time": 150.0}}
+	10: {"problems": 20, "star1": {"accuracy": 12, "time": 150.0}, "star2": {"accuracy": 14, "time": 120.0}, "star3": {"accuracy": 16, "time": 90.0}},
+	11: {"problems": 20, "star1": {"accuracy": 12, "time": 180.0}, "star2": {"accuracy": 14, "time": 150.0}, "star3": {"accuracy": 16, "time": 120.0}},
+	12: {"problems": 20, "star1": {"accuracy": 12, "time": 210.0}, "star2": {"accuracy": 14, "time": 180.0}, "star3": {"accuracy": 16, "time": 150.0}}
 }
 
 # ============================================
@@ -169,7 +170,7 @@ const level_packs = {
 		"theme_color": Color(1, 0.5, 1)
 	},
 	"Fractions": {
-		"levels": ["4.NF.B", "5.NF.A", "5.NF.B"],
+		"levels": ["4.NF.A.1", "4.NF.B", "5.NF.A", "5.NF.B"],
 		"theme_color": Color(0, 0.75, 0)
 	}
 }
@@ -178,6 +179,7 @@ const level_packs = {
 # Problem Type Display Formats
 # ============================================
 const PROBLEM_DISPLAY_FORMATS = {
+	"Equivalence (4.NF.A)": "fraction",
 	"Like-denominator addition/subtraction": "fraction",
 	"Mixed numbers (like denominators)": "fraction",
 	"Multiply fraction by whole number": "fraction",
@@ -217,9 +219,10 @@ var timeback_level_multipliers = {
 	6: [[55.0, 4.0], [40.0, 2.0], [25.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],   # Multiplication Level 1
 	7: [[50.0, 4.0], [40.0, 2.0], [25.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],   # Multiplication Level 2
 	8: [[50.0, 4.0], [40.0, 2.0], [25.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],    # Division Level 1
-	9: [[30.0, 4.0], [20.0, 2.0], [15.0, 1.0], [8.0, 0.5], [5.0, 0.25], [0.0, 0.1]],     # Fractions Level 1
-	10: [[15.0, 4.0], [10.0, 2.0], [8.0, 1.0], [5.0, 0.5], [3.0, 0.25], [0.0, 0.1]],     # Fractions Level 2
-	11: [[15.0, 4.0], [10.0, 2.0], [8.0, 1.0], [5.0, 0.5], [3.0, 0.25], [0.0, 0.1]]      # Fractions Level 3
+	9: [[20.0, 4.0], [15.0, 2.0], [10.0, 1.0], [8.0, 0.5], [5.0, 0.25], [0.0, 0.1]],     # Fractions Level 1 (Equivalence)
+	10: [[15.0, 4.0], [12.0, 2.0], [10.0, 1.0], [8.0, 0.5], [5.0, 0.25], [0.0, 0.1]],     # Fractions Level 2
+	11: [[12.0, 4.0], [10.0, 2.0], [8.0, 1.0], [5.0, 0.5], [3.0, 0.25], [0.0, 0.1]],     # Fractions Level 3
+	12: [[12.0, 4.0], [10.0, 2.0], [8.0, 1.0], [5.0, 0.5], [3.0, 0.25], [0.0, 0.1]]      # Fractions Level 4
 }
 
 # Drill mode CQPM multiplier scale

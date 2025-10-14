@@ -51,7 +51,13 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 				if Input.is_action_just_pressed(digit_actions[i]):
 					var digit = str(i)
 					
-					if is_mixed_fraction_input:
+					# Handle locked input mode for equivalence problems
+					if DisplayManager.answer_fraction_node and DisplayManager.answer_fraction_node.is_locked_input_mode:
+						var effective_length = user_answer.length()
+						if effective_length < GameConfig.max_answer_chars:
+							user_answer += digit
+							AudioManager.play_tick()
+					elif is_mixed_fraction_input:
 						# Mixed fraction input mode
 						var parts = user_answer.split(" ")
 						if parts.size() == 2:
@@ -95,9 +101,12 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 				user_answer = "-"
 				AudioManager.play_tick()  # Play tick sound on minus input
 			
-			# Handle Fraction key - create mixed fraction (only for fraction-type questions)
+			# Handle Fraction key - create mixed fraction (only for fraction-type questions, and NOT in locked mode)
 			if Input.is_action_just_pressed("Fraction") and QuestionManager.current_question and QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", "")):
-				if is_mixed_fraction_input:
+				# Disable in locked input mode
+				if DisplayManager.answer_fraction_node and DisplayManager.answer_fraction_node.is_locked_input_mode:
+					pass  # Do nothing in locked mode
+				elif is_mixed_fraction_input:
 					# Already in mixed fraction mode - transition from numerator to denominator
 					if editing_numerator:
 						# Only allow transition if numerator is not empty
@@ -118,9 +127,12 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 					if DisplayManager.answer_fraction_node == null:
 						DisplayManager.create_answer_mixed_fraction(user_answer)
 			
-			# Handle Divide key - convert to fraction input or transition to denominator (only for fraction-type questions)
+			# Handle Divide key - convert to fraction input or transition to denominator (only for fraction-type questions, and NOT in locked mode)
 			if Input.is_action_just_pressed("Divide") and QuestionManager.current_question and QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", "")):
-				if is_mixed_fraction_input:
+				# Disable in locked input mode
+				if DisplayManager.answer_fraction_node and DisplayManager.answer_fraction_node.is_locked_input_mode:
+					pass  # Do nothing in locked mode
+				elif is_mixed_fraction_input:
 					# In mixed fraction mode - transition from numerator to denominator
 					if editing_numerator:
 						# Only allow transition if numerator is not empty
@@ -180,7 +192,11 @@ func process_backspace(delta: float, user_answer: String, answer_submitted: bool
 func process_single_backspace(user_answer: String) -> String:
 	"""Process a single backspace press and return the modified user_answer"""
 	if user_answer.length() > 0:
-		if is_mixed_fraction_input:
+		# Handle locked input mode - just delete characters, don't remove the fraction
+		if DisplayManager.answer_fraction_node and DisplayManager.answer_fraction_node.is_locked_input_mode:
+			user_answer = user_answer.substr(0, user_answer.length() - 1)
+			AudioManager.play_tick()
+		elif is_mixed_fraction_input:
 			# Mixed fraction backspace logic
 			var parts = user_answer.split(" ")
 			if parts.size() == 2:
@@ -273,8 +289,13 @@ func update_control_guide_visibility(user_answer: String, answer_submitted: bool
 		if user_answer == "" or user_answer == "-" or answer_submitted:
 			show_enter = false
 		
+		# Check for locked input mode (equivalence problems)
+		if DisplayManager.answer_fraction_node and DisplayManager.answer_fraction_node.is_locked_input_mode:
+			# In locked mode, allow submit if user has entered something
+			if user_answer == "":
+				show_enter = false
 		# Check for incomplete fraction input
-		if is_mixed_fraction_input:
+		elif is_mixed_fraction_input:
 			var parts = user_answer.split(" ")
 			if parts.size() != 2:
 				show_enter = false
@@ -293,15 +314,17 @@ func update_control_guide_visibility(user_answer: String, answer_submitted: bool
 			if parts.size() != 2 or parts[1] == "":
 				show_enter = false
 		
-		# Tab (Fraction key) visibility: only for fraction problems with valid input, not already in any fraction mode
+		# Tab (Fraction key) visibility: only for fraction problems with valid input, not already in any fraction mode, and NOT in locked mode
 		if is_fraction_problem and has_valid_input and not answer_submitted:
-			# Only show if not in fraction mode yet (don't show when already in fraction mode, even if editing numerator)
-			show_tab = not is_fraction_input and not is_mixed_fraction_input
+			# Only show if not in fraction mode yet AND not in locked mode
+			var is_locked = DisplayManager.answer_fraction_node and DisplayManager.answer_fraction_node.is_locked_input_mode
+			show_tab = not is_fraction_input and not is_mixed_fraction_input and not is_locked
 		
-		# Divide visibility: only for fraction problems with valid input, not already in any fraction mode
+		# Divide visibility: only for fraction problems with valid input, not already in any fraction mode, and NOT in locked mode
 		if is_fraction_problem and has_valid_input and not answer_submitted:
-			# Only show if not in fraction mode yet (don't show when already in fraction mode, even if editing numerator)
-			show_divide = not is_fraction_input and not is_mixed_fraction_input
+			# Only show if not in fraction mode yet AND not in locked mode
+			var is_locked = DisplayManager.answer_fraction_node and DisplayManager.answer_fraction_node.is_locked_input_mode
+			show_divide = not is_fraction_input and not is_mixed_fraction_input and not is_locked
 	
 	# Update visibility
 	control_guide_enter.visible = show_enter

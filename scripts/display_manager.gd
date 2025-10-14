@@ -47,6 +47,30 @@ func update_problem_display(user_answer: String, answer_submitted: bool, is_frac
 
 func update_fraction_problem_display(user_answer: String, answer_submitted: bool, is_fraction_input: bool, is_mixed_fraction_input: bool, editing_numerator: bool):
 	"""Update the display for fraction-type problems"""
+	# Handle locked input mode for equivalence problems
+	if answer_fraction_node and answer_fraction_node.is_locked_input_mode:
+		# In locked mode, just update the editable field
+		if answer_fraction_node.locked_to_numerator:
+			# User is editing numerator, denominator is locked
+			answer_fraction_node.numerator_label.text = user_answer if user_answer != "" else ""
+		else:
+			# User is editing denominator, numerator is locked
+			answer_fraction_node.denominator_label.text = user_answer if user_answer != "" else ""
+		
+		# Update underscore and layout
+		answer_fraction_node.set_fraction_text(
+			answer_fraction_node.numerator_label.text, 
+			answer_fraction_node.denominator_label.text, 
+			true
+		)
+		answer_fraction_node.update_underscore(underscore_visible and not answer_submitted)
+		
+		# Dynamically adjust position based on width change
+		var width_diff = answer_fraction_node.current_divisor_width - answer_fraction_initial_width
+		var new_x = answer_fraction_base_x + (width_diff / 2.0)  # Shift right as it expands
+		answer_fraction_node.position.x = new_x
+		return
+	
 	if is_mixed_fraction_input and answer_fraction_node:
 		# In mixed fraction mode - use the fraction node to display answer
 		var parts = user_answer.split(" ")
@@ -100,7 +124,12 @@ func create_new_problem_label():
 	"""Create a new problem label for the current question"""
 	# Check if this is a fraction-type problem
 	if QuestionManager.current_question and QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", "")):
-		create_fraction_problem()
+		# Check if this is an equivalence problem
+		var problem_type = QuestionManager.current_question.get("type", "")
+		if problem_type == "Equivalence (4.NF.A)":
+			create_equivalence_problem()
+		else:
+			create_fraction_problem()
 		# Start timing this question immediately for fraction problems
 		ScoreManager.start_question_timing()
 		return
@@ -375,6 +404,132 @@ func create_fraction_problem():
 	
 	# Note: answer_fraction_node will be created when user presses Divide
 
+func create_equivalence_problem():
+	"""Create an equivalence problem display (e.g., 6/11 = 24/44) with one field locked for user input"""
+	if not QuestionManager.current_question or QuestionManager.current_question.get("type", "") != "Equivalence (4.NF.A)":
+		return
+	
+	# Clean up any existing problem nodes
+	cleanup_problem_labels()
+	
+	# Parse the expression to get both fractions (e.g., "6/11 = 24/44")
+	var expr = QuestionManager.current_question.get("expression", "")
+	if expr == "":
+		print("Error: No expression for equivalence problem")
+		return
+	
+	var parts = expr.split(" = ")
+	if parts.size() != 2:
+		print("Error: Invalid equivalence expression format")
+		return
+	
+	# Parse left fraction (complete)
+	var left_fraction_data = parse_mixed_fraction_from_string(parts[0])
+	# Parse right fraction (will have one field editable)
+	var right_fraction_data = parse_mixed_fraction_from_string(parts[1])
+	
+	# Randomly decide which field the user needs to fill in (50/50 chance)
+	var rng = RandomNumberGenerator.new()
+	rng.randomize()
+	var edit_numerator = (rng.randi() % 2 == 0)
+	
+	# Store the correct answer for validation
+	if edit_numerator:
+		QuestionManager.current_question.result = str(right_fraction_data[1])  # numerator
+	else:
+		QuestionManager.current_question.result = str(right_fraction_data[2])  # denominator
+	
+	# Calculate horizontal positions
+	var target_y = GameConfig.primary_position.y
+	var start_y = GameConfig.off_screen_bottom.y
+	
+	# Create left fraction (complete, non-editable)
+	var left_fraction = create_fraction(Vector2(0, 0), left_fraction_data[1], left_fraction_data[2], play_node)
+	
+	# Create right fraction (one field locked, one editable)
+	var right_fraction = create_fraction(Vector2(0, 0), right_fraction_data[1], right_fraction_data[2], play_node)
+	
+	# Get actual widths
+	var left_fraction_width = left_fraction.current_divisor_width
+	var right_fraction_width = right_fraction.current_divisor_width
+	var left_fraction_half_width = left_fraction_width / 2.0
+	var right_fraction_half_width = right_fraction_width / 2.0
+	
+	# Measure equals sign width to center it properly
+	var temp_equals = Label.new()
+	temp_equals.label_settings = label_settings_resource
+	temp_equals.text = "="
+	temp_equals.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	play_node.add_child(temp_equals)
+	temp_equals.reset_size()
+	var equals_width = temp_equals.get_minimum_size().x
+	temp_equals.queue_free()
+	
+	# Position equals sign so its CENTER is at the horizontal center of the screen (960 = 1920 / 2)
+	# Offset by half the equals sign width to the left
+	var equals_x = 960.0 - (equals_width / 2.0)
+	
+	# Work backwards from equals sign to position right fraction
+	var right_fraction_x = equals_x + GameConfig.fraction_element_spacing + right_fraction_half_width
+	
+	# Position left fraction to the left of equals sign
+	var left_fraction_x = equals_x - GameConfig.fraction_element_spacing - left_fraction_half_width
+	
+	# Check if problem extends too far left and adjust if necessary
+	var leftmost_x = left_fraction_x - left_fraction_half_width
+	if leftmost_x < GameConfig.fraction_problem_min_x:
+		var x_offset = GameConfig.fraction_problem_min_x - leftmost_x
+		left_fraction_x += x_offset
+		equals_x += x_offset
+		right_fraction_x += x_offset
+	
+	# Position fractions (off-screen initially)
+	left_fraction.position = Vector2(left_fraction_x, start_y) + GameConfig.fraction_offset
+	right_fraction.position = Vector2(right_fraction_x, start_y) + GameConfig.fraction_offset
+	left_fraction.z_index = -1
+	right_fraction.z_index = -1
+	current_problem_nodes.append(left_fraction)
+	current_problem_nodes.append(right_fraction)
+	
+	# Set up right fraction in locked input mode
+	right_fraction.set_locked_input_mode(edit_numerator, str(right_fraction_data[1]), str(right_fraction_data[2]))
+	answer_fraction_node = right_fraction  # Store reference for input handling
+	
+	# Store initial position and width for dynamic positioning (though locked mode doesn't need it as much)
+	answer_fraction_base_x = right_fraction.position.x
+	answer_fraction_initial_width = right_fraction.current_divisor_width
+	
+	# Create equals label - child of left fraction so it moves with it
+	var equals_label = Label.new()
+	equals_label.label_settings = label_settings_resource
+	equals_label.text = "="
+	equals_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	equals_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	equals_label.self_modulate = Color(1, 1, 1)
+	equals_label.z_index = -1
+	# Position relative to left_fraction
+	equals_label.position = Vector2(equals_x - left_fraction_x, 0) + GameConfig.operator_offset - GameConfig.fraction_offset
+	left_fraction.add_child(equals_label)
+	current_problem_nodes.append(equals_label)
+	
+	# Calculate target positions
+	var left_fraction_target = Vector2(left_fraction_x, target_y) + GameConfig.fraction_offset
+	var right_fraction_target = Vector2(right_fraction_x, target_y) + GameConfig.fraction_offset
+	
+	# Animate both fractions to their target positions
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.set_parallel(true)
+	tween.tween_property(left_fraction, "position", left_fraction_target, GameConfig.animation_duration)
+	tween.tween_property(right_fraction, "position", right_fraction_target, GameConfig.animation_duration)
+	
+	# Exit parallel mode before adding callback
+	tween.set_parallel(false)
+	
+	# Start timing this question when animation completes
+	tween.tween_callback(ScoreManager.start_question_timing)
+
 func create_answer_fraction():
 	"""Create just the answer fraction visual when user presses Divide"""
 	if answer_fraction_node:
@@ -499,6 +654,11 @@ func create_incorrect_fraction_answer():
 		if node:
 			node.queue_free()
 	correct_answer_nodes.clear()
+	
+	# Handle equivalence problems specially
+	if QuestionManager.current_question.get("type", "") == "Equivalence (4.NF.A)":
+		create_incorrect_equivalence_answer()
+		return
 	
 	# Parse the correct answer from the result (e.g., "10/9", "2 1/2", or "1")
 	var result_data = parse_mixed_fraction_from_string(QuestionManager.current_question.result)
@@ -723,6 +883,116 @@ func create_incorrect_fraction_answer():
 	
 	# Correct answer nodes will be animated off screen and cleaned up by submit_answer()
 
+func create_incorrect_equivalence_answer():
+	"""Create and animate the correct answer for equivalence problems"""
+	if not QuestionManager.current_question:
+		return
+	
+	# Parse the expression to get both fractions (e.g., "4/8 = 32/30")
+	var expr = QuestionManager.current_question.get("expression", "")
+	if expr == "":
+		return
+	
+	var parts = expr.split(" = ")
+	if parts.size() != 2:
+		return
+	
+	# Parse left fraction
+	var left_fraction_data = parse_mixed_fraction_from_string(parts[0])
+	# Parse right fraction (the complete correct answer)
+	var right_fraction_data = parse_mixed_fraction_from_string(parts[1])
+	
+	# Calculate positions (same as create_equivalence_problem)
+	var target_y = GameConfig.primary_position.y
+	
+	# Create left fraction (complete, non-editable)
+	var left_fraction = create_fraction(Vector2(0, 0), left_fraction_data[1], left_fraction_data[2], play_node)
+	# Create right fraction (complete correct answer)
+	var right_fraction = create_fraction(Vector2(0, 0), right_fraction_data[1], right_fraction_data[2], play_node)
+	
+	# Get actual widths
+	var left_fraction_width = left_fraction.current_divisor_width
+	var right_fraction_width = right_fraction.current_divisor_width
+	var left_fraction_half_width = left_fraction_width / 2.0
+	var right_fraction_half_width = right_fraction_width / 2.0
+	
+	# Measure equals sign width to center it properly
+	var temp_equals = Label.new()
+	temp_equals.label_settings = label_settings_resource
+	temp_equals.text = "="
+	temp_equals.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	play_node.add_child(temp_equals)
+	temp_equals.reset_size()
+	var equals_width = temp_equals.get_minimum_size().x
+	temp_equals.queue_free()
+	
+	# Position equals sign so its CENTER is at the horizontal center of the screen (960 = 1920 / 2)
+	# Offset by half the equals sign width to the left
+	var equals_x = 960.0 - (equals_width / 2.0)
+	
+	# Work backwards from equals sign to position right fraction
+	var right_fraction_x = equals_x + GameConfig.fraction_element_spacing + right_fraction_half_width
+	
+	# Position left fraction to the left of equals sign
+	var left_fraction_x = equals_x - GameConfig.fraction_element_spacing - left_fraction_half_width
+	
+	# Check if problem extends too far left and adjust if necessary
+	var leftmost_x = left_fraction_x - left_fraction_half_width
+	if leftmost_x < GameConfig.fraction_problem_min_x:
+		var x_offset = GameConfig.fraction_problem_min_x - leftmost_x
+		left_fraction_x += x_offset
+		equals_x += x_offset
+		right_fraction_x += x_offset
+	
+	# Position fractions at target positions
+	left_fraction.position = Vector2(left_fraction_x, target_y) + GameConfig.fraction_offset
+	right_fraction.position = Vector2(right_fraction_x, target_y) + GameConfig.fraction_offset
+	
+	# Apply dark green color and z_index
+	left_fraction.modulate = Color(0, 0.5, 0)
+	right_fraction.modulate = Color(0, 0.5, 0)
+	left_fraction.z_index = -1
+	right_fraction.z_index = -1
+	
+	correct_answer_nodes.append(left_fraction)
+	correct_answer_nodes.append(right_fraction)
+	
+	# Create equals label - child of left fraction so it moves with it
+	var equals_label = Label.new()
+	equals_label.label_settings = label_settings_resource
+	equals_label.text = "="
+	equals_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	equals_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	equals_label.z_index = -1
+	# Position relative to left_fraction
+	equals_label.position = Vector2(equals_x - left_fraction_x, 0) + GameConfig.operator_offset - GameConfig.fraction_offset
+	left_fraction.add_child(equals_label)
+	correct_answer_nodes.append(equals_label)
+	
+	# Create parallel tweens for animating everything
+	var correct_tween = create_tween()
+	var incorrect_tween = create_tween()
+	
+	correct_tween.set_ease(Tween.EASE_OUT)
+	correct_tween.set_trans(Tween.TRANS_EXPO)
+	correct_tween.set_parallel(true)
+	
+	incorrect_tween.set_ease(Tween.EASE_OUT)
+	incorrect_tween.set_trans(Tween.TRANS_EXPO)
+	incorrect_tween.set_parallel(true)
+	
+	# Animate correct answer elements DOWN
+	for node in correct_answer_nodes:
+		if node and node.get_parent() == play_node:  # Only animate top-level nodes
+			var target_pos = node.position + Vector2(0, GameConfig.incorrect_label_move_distance_fractions)
+			correct_tween.tween_property(node, "position", target_pos, GameConfig.incorrect_label_animation_time)
+	
+	# Animate incorrect problem nodes UP
+	for node in current_problem_nodes:
+		if node and node.get_parent() == play_node:  # Only animate top-level nodes
+			var target_pos = node.position - Vector2(0, GameConfig.incorrect_label_move_distance_fractions)
+			incorrect_tween.tween_property(node, "position", target_pos, GameConfig.incorrect_label_animation_time)
+
 func cleanup_problem_labels():
 	"""Remove any remaining problem labels from the Play node"""
 	# Clean up fraction problem nodes
@@ -758,4 +1028,3 @@ func color_problem_nodes(feedback_color: Color):
 	# Also color the regular problem label if it exists
 	if current_problem_label:
 		current_problem_label.self_modulate = feedback_color
-
