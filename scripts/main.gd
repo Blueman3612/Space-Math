@@ -189,6 +189,9 @@ func submit_answer():
 		
 		# Create animated label showing correct answer for incorrect responses
 		DisplayManager.create_incorrect_answer_label()
+		
+		# Pause TimeBack activity timer while showing correct answer (instructional moment)
+		PlaycademyManager.pause_timeback_activity()
 	
 	# Wait for the full transition delay (timer remains paused during this time)
 	if delay_to_use > 0.0:
@@ -219,6 +222,10 @@ func continue_after_incorrect():
 
 func continue_after_incorrect_internal(is_correct: bool, timer_was_active: bool, should_start_timer: bool):
 	"""Internal function to handle the continuation logic after incorrect answer delay"""
+	# Resume TimeBack activity timer if it was paused (only after incorrect answers)
+	if not is_correct:
+		PlaycademyManager.resume_timeback_activity()
+	
 	# Trigger scroll speed boost effect after transition delay
 	var space_bg = get_node("BackgroundLayer/SpaceBackground")
 	if space_bg and space_bg.has_method("boost_scroll_speed"):
