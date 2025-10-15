@@ -29,8 +29,6 @@ func connect_playcademy_signals():
 		
 		# Connect TimeBack signals
 		if PlaycademySdk and PlaycademySdk.timeback:
-			if not PlaycademySdk.timeback.end_activity_succeeded.is_connected(_on_timeback_end_activity_succeeded):
-				PlaycademySdk.timeback.end_activity_succeeded.connect(_on_timeback_end_activity_succeeded)
 			if not PlaycademySdk.timeback.end_activity_failed.is_connected(_on_timeback_end_activity_failed):
 				PlaycademySdk.timeback.end_activity_failed.connect(_on_timeback_end_activity_failed)
 			if not PlaycademySdk.timeback.pause_activity_failed.is_connected(_on_timeback_pause_activity_failed):
@@ -45,10 +43,6 @@ func _on_pc_submit_succeeded(_score_data):
 func _on_pc_submit_failed(error_message):
 	"""Handle failed Playcademy score submission"""
 	print("Playcademy score submit failed: ", error_message)
-
-func _on_timeback_end_activity_succeeded(response):
-	"""Handle successful TimeBack activity end"""
-	print("[TimeBack] Activity ended successfully! XP awarded: ", response.get("xpAwarded", 0))
 
 func _on_timeback_end_activity_failed(error_message):
 	"""Handle failed TimeBack activity end"""
@@ -84,16 +78,16 @@ func start_session_tracking(pack_name: String, level_index: int):
 	is_session_active = true
 	current_session_pack = pack_name
 	current_session_level = level_index
-	print("[TimeBack] Session started: ", pack_name, " Level ", level_index + 1, " at timestamp ", session_start_timestamp)
 	
 	# Start TimeBack activity tracking
 	if PlaycademySdk and PlaycademySdk.is_ready() and PlaycademySdk.timeback:
 		var activity_id = "level-" + pack_name + "-" + str(level_index) if pack_name != "Drill Mode" else "drill-mode"
+		var activity_name = pack_name + " - Level " + str(level_index + 1) if pack_name != "Drill Mode" else "Drill Mode"
 		var activity_metadata = {
-			"activityId": activity_id
+			"activityId": activity_id,
+			"activityName": activity_name
 		}
 		PlaycademySdk.timeback.start_activity(activity_metadata)
-		print("[TimeBack] Started activity tracking: ", activity_id)
 
 func record_player_input():
 	"""Called whenever player provides input (keypress, button, etc.)"""
@@ -115,13 +109,11 @@ func pause_timeback_activity():
 	"""Pause TimeBack activity timer during instructional moments (showing correct answer, feedback, etc.)"""
 	if PlaycademySdk and PlaycademySdk.is_ready() and PlaycademySdk.timeback:
 		PlaycademySdk.timeback.pause_activity()
-		print("[TimeBack] Activity paused (showing instructional content)")
 
 func resume_timeback_activity():
 	"""Resume TimeBack activity timer when player continues playing"""
 	if PlaycademySdk and PlaycademySdk.is_ready() and PlaycademySdk.timeback:
 		PlaycademySdk.timeback.resume_activity()
-		print("[TimeBack] Activity resumed (player continuing)")
 
 func end_session_and_award_xp(pack_name: String, pack_level_index: int, current_level_number: int, current_track, stars_earned: int) -> Dictionary:
 	"""End session tracking and calculate XP to award"""
@@ -355,7 +347,6 @@ func award_timeback_xp(xp: int, details: Dictionary, _pack_name: String, _pack_l
 		"xpAwarded": xp
 	}
 	
-	print("[TimeBack] ✓ Ending activity and awarding %d XP to Playcademy..." % xp)
 	PlaycademySdk.timeback.end_activity(score_data)
 
 func award_drill_mode_timeback_xp(xp: int, details: Dictionary):
@@ -371,5 +362,4 @@ func award_drill_mode_timeback_xp(xp: int, details: Dictionary):
 		"xpAwarded": xp
 	}
 	
-	print("[TimeBack] ✓ Ending drill mode activity and awarding %d XP to Playcademy..." % xp)
 	PlaycademySdk.timeback.end_activity(score_data)
