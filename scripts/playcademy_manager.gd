@@ -82,8 +82,10 @@ func start_session_tracking(pack_name: String, level_index: int):
 	# Start TimeBack activity tracking
 	if PlaycademySdk and PlaycademySdk.is_ready() and PlaycademySdk.timeback:
 		var activity_id = "level-" + pack_name + "-" + str(level_index) if pack_name != "Drill Mode" else "drill-mode"
+		var activity_name = pack_name + " - Level " + str(level_index + 1) if pack_name != "Drill Mode" else "Drill Mode"
 		var activity_metadata = {
-			"activityId": activity_id
+			"activityId": activity_id,
+			"activityName": activity_name
 		}
 		PlaycademySdk.timeback.start_activity(activity_metadata)
 
