@@ -149,13 +149,23 @@ func go_to_game_over():
 	# Stop the timer (should already be stopped, but ensure it)
 	ScoreManager.timer_active = false
 	
+	# Get stars the player ALREADY had before this session (for XP star gate)
+	var pack_config = GameConfig.level_packs[current_pack_name]
+	var level_track = pack_config.levels[current_pack_level_index]
+	var track_id = str(level_track) if typeof(level_track) == TYPE_STRING else "TRACK" + str(level_track)
+	var previous_stars = 0
+	if SaveManager.save_data.packs.has(current_pack_name):
+		var pack_data = SaveManager.save_data.packs[current_pack_name]
+		if pack_data.has("levels") and pack_data.levels.has(track_id):
+			previous_stars = pack_data.levels[track_id].highest_stars
+	
 	# Calculate and save level performance data
 	var stars_earned = ScoreManager.evaluate_stars(current_level_number).size()
 	SaveManager.update_level_data(current_pack_name, current_pack_level_index, ScoreManager.correct_answers, ScoreManager.current_level_time, stars_earned)
 	
-	# End session tracking and award XP through TimeBack
+	# End session tracking and award XP through TimeBack (using PREVIOUS stars for star gate)
 	if PlaycademyManager:
-		PlaycademyManager.end_session_and_award_xp(current_pack_name, current_pack_level_index, current_level_number, QuestionManager.current_track, stars_earned)
+		PlaycademyManager.end_session_and_award_xp(current_pack_name, current_pack_level_index, current_level_number, QuestionManager.current_track, previous_stars)
 	
 	# Update GameOver labels with player performance
 	UIManager.update_game_over_labels(current_level_number)
