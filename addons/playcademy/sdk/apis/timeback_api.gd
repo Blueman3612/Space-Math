@@ -136,7 +136,6 @@ func end_activity(score_data: Dictionary):
 	if xp_awarded != null:
 		js_score_data["xpAwarded"] = xp_awarded
 	
-	print("[TimebackAPI] Calling client.timeback.endActivity() with score data...")
 	var promise = _main_client.timeback.endActivity(js_score_data)
 
 	if promise == null:
@@ -150,8 +149,6 @@ func end_activity(score_data: Dictionary):
 		emit_signal("end_activity_failed", "NOT_A_PROMISE")
 		_activity_in_progress = false
 		return
-	
-	print("[TimebackAPI] endActivity() returned a Promise, setting up callbacks...")
 
 	var on_resolve = Callable(self, "_on_end_activity_resolved").bind()
 	var on_reject = Callable(self, "_on_end_activity_rejected").bind()
