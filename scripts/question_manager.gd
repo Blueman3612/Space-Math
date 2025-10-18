@@ -40,6 +40,21 @@ func is_fraction_display_type(question_type: String) -> bool:
 	"""Check if a question type should be displayed in fraction format"""
 	return GameConfig.PROBLEM_DISPLAY_FORMATS.get(question_type, "") == "fraction"
 
+func is_multiple_choice_display_type(question_type: String) -> bool:
+	"""Check if a question type should be displayed in multiple choice format"""
+	return GameConfig.PROBLEM_DISPLAY_FORMATS.get(question_type, "") == "multiple_choice"
+
+func get_multiple_choice_answers(question_data) -> Array:
+	"""Generate answer choices for multiple choice questions"""
+	var question_type = question_data.get("type", "")
+	
+	# For comparison questions, the choices are always <, =, >
+	if question_type == "Compare unlike denominators (4.NF.A)":
+		return ["<", "=", ">"]
+	
+	# Default fallback (shouldn't be reached for now)
+	return []
+
 func get_display_operator(operator: String) -> String:
 	"""Convert unicode operators to simple characters for display"""
 	match operator:

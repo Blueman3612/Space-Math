@@ -14,6 +14,11 @@ var answer_fraction_base_x = 0.0  # Base X position of answer fraction (before w
 var answer_fraction_initial_width = 0.0  # Initial divisor width of answer fraction
 var correct_answer_nodes = []  # Array of nodes showing the correct answer for incorrect fraction problems
 
+# Multiple choice question nodes
+var multiple_choice_buttons = []  # Array of button nodes for multiple choice answers
+var multiple_choice_answered = false  # Track if a multiple choice question has been answered
+var multiple_choice_correct_index = -1  # Index of the correct answer button
+
 # Blink state
 var blink_timer = 0.0
 var underscore_visible = true
@@ -122,6 +127,13 @@ func update_fraction_problem_display(user_answer: String, answer_submitted: bool
 
 func create_new_problem_label():
 	"""Create a new problem label for the current question"""
+	# Check if this is a multiple choice problem
+	if QuestionManager.current_question and QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", "")):
+		create_multiple_choice_problem()
+		# Start timing this question immediately for multiple choice problems
+		ScoreManager.start_question_timing()
+		return
+	
 	# Check if this is a fraction-type problem
 	if QuestionManager.current_question and QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", "")):
 		# Check if this is an equivalence problem
@@ -529,6 +541,406 @@ func create_equivalence_problem():
 	
 	# Start timing this question when animation completes
 	tween.tween_callback(ScoreManager.start_question_timing)
+
+func create_multiple_choice_problem():
+	"""Create a multiple choice problem display with fraction prompt and answer buttons"""
+	if not QuestionManager.current_question or not QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", "")):
+		return
+	
+	# Clean up any existing problem nodes
+	cleanup_problem_labels()
+	
+	# Reset multiple choice state
+	multiple_choice_buttons.clear()
+	multiple_choice_answered = false
+	multiple_choice_correct_index = -1
+	
+	# Get the expression (e.g., "3/12 ? 2/6 = <")
+	var expr = QuestionManager.current_question.get("expression", "")
+	if expr == "":
+		print("Error: No expression for multiple choice problem")
+		return
+	
+	# Remove the " = result" part to get just the prompt (e.g., "3/12 ? 2/6")
+	var prompt_expr = expr.split(" = ")[0]
+	
+	# Parse the prompt to extract fractions and the "?" operator
+	# Format: "fraction1 ? fraction2"
+	var parts = prompt_expr.split(" ? ")
+	if parts.size() != 2:
+		print("Error: Invalid multiple choice expression format")
+		return
+	
+	var left_fraction_data = parse_mixed_fraction_from_string(parts[0])
+	var right_fraction_data = parse_mixed_fraction_from_string(parts[1])
+	
+	# Get answer choices
+	var answer_choices = QuestionManager.get_multiple_choice_answers(QuestionManager.current_question)
+	var correct_answer = QuestionManager.current_question.result
+	
+	# Find correct answer index
+	for i in range(answer_choices.size()):
+		if answer_choices[i] == correct_answer:
+			multiple_choice_correct_index = i
+			break
+	
+	# Calculate screen center
+	var center_x = 960.0  # 1920 / 2
+	var center_y = 540.0  # 1080 / 2
+	
+	# Calculate target Y positions
+	var target_y_prompt = center_y + GameConfig.multiple_choice_prompt_y_offset
+	var target_y_answers = center_y + GameConfig.multiple_choice_answers_y_offset
+	
+	# Calculate a common starting Y position (off-screen at top)
+	# Use the higher target position as reference and apply same delta to all elements
+	var common_start_y = GameConfig.off_screen_bottom.y
+	var prompt_delta_y = target_y_prompt - common_start_y
+	var answers_delta_y = target_y_answers - common_start_y
+	
+	# Start positions with offsets so all elements move the same distance
+	var start_y_prompt = common_start_y
+	var start_y_answers = common_start_y + (answers_delta_y - prompt_delta_y)
+	
+	# Create left fraction
+	var left_fraction = create_fraction(Vector2(0, 0), left_fraction_data[1], left_fraction_data[2], play_node)
+	# Create right fraction
+	var right_fraction = create_fraction(Vector2(0, 0), right_fraction_data[1], right_fraction_data[2], play_node)
+	
+	# Get actual widths
+	var left_fraction_width = left_fraction.current_divisor_width
+	var right_fraction_width = right_fraction.current_divisor_width
+	var left_fraction_half_width = left_fraction_width / 2.0
+	var right_fraction_half_width = right_fraction_width / 2.0
+	
+	# Measure "?" width to center it properly
+	var temp_question_mark = Label.new()
+	temp_question_mark.label_settings = label_settings_resource
+	temp_question_mark.text = "?"
+	temp_question_mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	play_node.add_child(temp_question_mark)
+	temp_question_mark.reset_size()
+	var question_mark_width = temp_question_mark.get_minimum_size().x
+	temp_question_mark.queue_free()
+	
+	# Calculate total expression width: left_fraction + spacing + question_mark + spacing + right_fraction
+	var total_expr_width = left_fraction_width + GameConfig.multiple_choice_element_spacing + question_mark_width + GameConfig.multiple_choice_element_spacing + right_fraction_width
+	
+	# Calculate starting x position to center the entire expression
+	var expr_start_x = center_x - (total_expr_width / 2.0)
+	
+	# Position left fraction (at its center point)
+	var left_fraction_x = expr_start_x + left_fraction_half_width + GameConfig.multiple_choice_prompt_x_offset
+	
+	# Position question mark (at its left edge)
+	var question_mark_x = expr_start_x + left_fraction_width + GameConfig.multiple_choice_element_spacing
+	
+	# Position right fraction (at its center point)
+	var right_fraction_x = expr_start_x + left_fraction_width + GameConfig.multiple_choice_element_spacing + question_mark_width + GameConfig.multiple_choice_element_spacing + right_fraction_half_width + GameConfig.multiple_choice_prompt_x_offset
+	
+	# Position fractions (off-screen initially, using start_y_prompt)
+	left_fraction.position = Vector2(left_fraction_x, start_y_prompt) + GameConfig.fraction_offset
+	right_fraction.position = Vector2(right_fraction_x, start_y_prompt) + GameConfig.fraction_offset
+	left_fraction.z_index = -1
+	right_fraction.z_index = -1
+	current_problem_nodes.append(left_fraction)
+	current_problem_nodes.append(right_fraction)
+	
+	# Create "?" label as child of left fraction so it moves with it
+	var question_mark_label = Label.new()
+	question_mark_label.label_settings = label_settings_resource
+	question_mark_label.text = "?"
+	question_mark_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	question_mark_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	question_mark_label.self_modulate = Color(1, 1, 1)
+	question_mark_label.z_index = -1
+	# Position relative to left_fraction
+	question_mark_label.position = Vector2(question_mark_x - left_fraction_x, 0) + GameConfig.operator_offset - GameConfig.fraction_offset
+	left_fraction.add_child(question_mark_label)
+	current_problem_nodes.append(question_mark_label)
+	
+	# Load answer button scene
+	var button_scene = load("res://scenes/answer_button.tscn")
+	
+	# Create answer buttons
+	# Calculate total width needed for all buttons
+	var total_buttons_width = 0.0
+	var button_instances = []
+	
+	for i in range(answer_choices.size()):
+		var button_instance = button_scene.instantiate()
+		button_instance.visible = false  # Hide initially for measurement
+		play_node.add_child(button_instance)
+		
+		# Set answer text
+		var answer_label = button_instance.get_node("Answer")
+		answer_label.text = answer_choices[i]
+		
+		# Set keybind label
+		var key_label = button_instance.get_node("Key")
+		if i < GameConfig.multiple_choice_keybind_labels.size():
+			key_label.text = GameConfig.multiple_choice_keybind_labels[i]
+		
+		# Wait for size update
+		button_instance.reset_size()
+		
+		# Get button size (use minimum size or explicit size)
+		var button_width = max(button_instance.size.x, GameConfig.multiple_choice_button_min_size.x)
+		var button_height = max(button_instance.size.y, GameConfig.multiple_choice_button_min_size.y)
+		button_instance.custom_minimum_size = Vector2(button_width, button_height)
+		
+		total_buttons_width += button_width
+		button_instances.append(button_instance)
+	
+	# Add spacing to total width
+	total_buttons_width += GameConfig.multiple_choice_button_spacing * (answer_choices.size() - 1)
+	
+	# Position buttons horizontally centered (with x offset)
+	var buttons_start_x = center_x - (total_buttons_width / 2.0) + GameConfig.multiple_choice_button_x_offset
+	var current_x = buttons_start_x
+	
+	for i in range(button_instances.size()):
+		var button_instance = button_instances[i]
+		var button_width = button_instance.custom_minimum_size.x
+		
+		# Position button (off-screen initially, using start_y_answers)
+		button_instance.position = Vector2(current_x, start_y_answers)
+		button_instance.visible = true
+		button_instance.z_index = -1
+		
+		# Connect button press signal
+		var answer_index = i
+		button_instance.pressed.connect(_on_multiple_choice_answer_selected.bind(answer_index))
+		
+		multiple_choice_buttons.append(button_instance)
+		current_problem_nodes.append(button_instance)
+		
+		# Move to next button position
+		current_x += button_width + GameConfig.multiple_choice_button_spacing
+	
+	# Calculate target positions
+	var left_fraction_target = Vector2(left_fraction_x, target_y_prompt) + GameConfig.fraction_offset
+	var right_fraction_target = Vector2(right_fraction_x, target_y_prompt) + GameConfig.fraction_offset
+	
+	# Animate all elements to their target positions
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.set_parallel(true)
+	
+	# Animate fractions
+	tween.tween_property(left_fraction, "position", left_fraction_target, GameConfig.animation_duration)
+	tween.tween_property(right_fraction, "position", right_fraction_target, GameConfig.animation_duration)
+	
+	# Animate buttons
+	current_x = buttons_start_x
+	for button_instance in button_instances:
+		var button_target = Vector2(current_x, target_y_answers)
+		tween.tween_property(button_instance, "position", button_target, GameConfig.animation_duration)
+		current_x += button_instance.custom_minimum_size.x + GameConfig.multiple_choice_button_spacing
+	
+	# Exit parallel mode before callback
+	tween.set_parallel(false)
+	
+	# Start timing when animation completes
+	tween.tween_callback(ScoreManager.start_question_timing)
+
+func _on_multiple_choice_answer_selected(answer_index: int):
+	"""Handle multiple choice answer button press"""
+	# Ignore if already answered
+	if multiple_choice_answered:
+		return
+	
+	multiple_choice_answered = true
+	
+	# Mark as submitted to prevent further input (mirrors normal question flow)
+	StateManager.answer_submitted = true
+	
+	# Check if answer is correct
+	var is_correct = (answer_index == multiple_choice_correct_index)
+	
+	# Get the clicked button
+	var clicked_button = multiple_choice_buttons[answer_index]
+	
+	# Calculate time taken for this question
+	var question_time = 0.0
+	if ScoreManager.current_question_start_time > 0:
+		question_time = (Time.get_ticks_msec() / 1000.0) - ScoreManager.current_question_start_time
+	
+	# Get player answer value
+	var player_answer = QuestionManager.get_multiple_choice_answers(QuestionManager.current_question)[answer_index]
+	
+	# Save question data
+	if QuestionManager.current_question:
+		SaveManager.save_question_data(QuestionManager.current_question, player_answer, question_time)
+	
+	# Track correct answers and drill mode scoring
+	if StateManager.is_drill_mode:
+		ScoreManager.drill_total_answered += 1
+	
+	var points_earned = 0
+	if is_correct:
+		points_earned = ScoreManager.process_correct_answer(StateManager.is_drill_mode, QuestionManager.current_question)
+		if StateManager.is_drill_mode and points_earned > 0:
+			# Trigger score animations
+			UIManager.create_flying_score_label(points_earned)
+			UIManager.animate_drill_score_scale()
+	else:
+		ScoreManager.process_incorrect_answer(StateManager.is_drill_mode)
+	
+	# Pause timer during transition and store its previous state (mirrors normal question flow)
+	var timer_was_active = ScoreManager.timer_active
+	var should_start_timer = false
+	
+	# Check if we're in grace period and should start timer after transition
+	if not ScoreManager.timer_started and ScoreManager.grace_period_timer >= GameConfig.timer_grace_period:
+		should_start_timer = true
+	
+	# Set transition delay flag and pause timer
+	StateManager.in_transition_delay = true
+	ScoreManager.timer_active = false
+	
+	# Determine which delay to use based on correctness
+	var delay_to_use = GameConfig.transition_delay  # Default delay for correct answers
+	if not is_correct:
+		delay_to_use = GameConfig.transition_delay_incorrect  # Longer delay for incorrect answers
+	
+	# Color the buttons
+	if is_correct:
+		# Color clicked button green
+		clicked_button.modulate = GameConfig.color_correct
+	else:
+		# Color clicked button red
+		clicked_button.modulate = GameConfig.color_incorrect
+		# Color correct button dark green
+		var correct_button = multiple_choice_buttons[multiple_choice_correct_index]
+		correct_button.modulate = GameConfig.color_correct_feedback
+	
+	# Play sounds and show feedback (mirrors normal question flow)
+	if is_correct:
+		AudioManager.play_correct()
+		UIManager.show_feedback_flash(GameConfig.color_correct)
+	else:
+		AudioManager.play_incorrect()
+		UIManager.show_feedback_flash(GameConfig.color_incorrect)
+		
+		# Pause TimeBack activity timer while showing correct answer (instructional moment)
+		PlaycademyManager.pause_timeback_activity()
+	
+	# Wait for the full transition delay (timer remains paused during this time)
+	if delay_to_use > 0.0:
+		await get_tree().create_timer(delay_to_use).timeout
+	
+	# Clear transition delay flag
+	StateManager.in_transition_delay = false
+	
+	# If incorrect and require_submit_after_incorrect is true, wait for player to press Submit to continue
+	if not is_correct and GameConfig.require_submit_after_incorrect:
+		StateManager.waiting_for_continue_after_incorrect = true
+		# Store timer state for later restoration (mirrors normal question flow)
+		StateManager.set_meta("timer_was_active", timer_was_active)
+		StateManager.set_meta("should_start_timer", should_start_timer)
+		return  # Wait for player to press Submit to continue
+	
+	# Continue immediately if correct or if require_submit_after_incorrect is false
+	continue_after_multiple_choice_incorrect(is_correct, timer_was_active, should_start_timer)
+
+func continue_after_multiple_choice_incorrect(is_correct: bool, timer_was_active: bool, should_start_timer: bool):
+	"""Continue after multiple choice answer (called after delay and potentially after user presses Submit)"""
+	# Resume TimeBack activity timer if it was paused (only after incorrect answers)
+	if not is_correct:
+		PlaycademyManager.resume_timeback_activity()
+	
+	# Trigger scroll speed boost effect after transition delay
+	var space_bg = play_node.get_parent().get_node("BackgroundLayer/SpaceBackground")
+	if space_bg and space_bg.has_method("boost_scroll_speed"):
+		space_bg.boost_scroll_speed(GameConfig.scroll_boost_multiplier, GameConfig.animation_duration * 2.0)
+	
+	# Increment problems completed
+	StateManager.problems_completed += 1
+	
+	# Animate progress line (only for non-drill mode)
+	if not StateManager.is_drill_mode:
+		var level_config = GameConfig.level_configs.get(StateManager.current_level_number, GameConfig.level_configs[1])
+		if UIManager.progress_line and play_node:
+			var play_width = play_node.size.x
+			var progress_increment = play_width / level_config.problems
+			var new_x_position = progress_increment * StateManager.problems_completed
+			
+			# Animate progress line
+			var progress_tween = create_tween()
+			progress_tween.set_ease(Tween.EASE_OUT)
+			progress_tween.set_trans(Tween.TRANS_EXPO)
+			progress_tween.tween_method(UIManager.update_progress_line_point, UIManager.progress_line.get_point_position(1).x, new_x_position, GameConfig.animation_duration)
+	
+	# Check if level is complete
+	var level_complete = false
+	if StateManager.is_drill_mode:
+		# In drill mode, never end - just continue to next question
+		level_complete = false
+	else:
+		# Check if level is complete
+		var level_config = GameConfig.level_configs[StateManager.current_level_number]
+		if StateManager.problems_completed >= level_config.problems:
+			level_complete = true
+	
+	# Schedule next question or game over
+	if level_complete:
+		# Animate current problem off screen DOWN
+		var tween = create_tween()
+		tween.set_ease(Tween.EASE_OUT)
+		tween.set_trans(Tween.TRANS_EXPO)
+		tween.set_parallel(true)
+		for node in current_problem_nodes:
+			if node and node.get_parent() == play_node:
+				var target_pos = node.position + Vector2(0, 1400)
+				tween.tween_property(node, "position", target_pos, GameConfig.animation_duration)
+		tween.set_parallel(false)
+		tween.tween_callback(StateManager.go_to_game_over)
+	else:
+		# Resume timer after transition delay or start it if grace period completed during transition
+		if timer_was_active or should_start_timer:
+			ScoreManager.timer_active = true
+			# If timer should start now, mark it as started and record start time
+			if should_start_timer and not ScoreManager.timer_started:
+				ScoreManager.timer_started = true
+				ScoreManager.level_start_time = Time.get_time_dict_from_system()["hour"] * 3600 + Time.get_time_dict_from_system()["minute"] * 60 + Time.get_time_dict_from_system()["second"]
+		
+		# Store references to the nodes we're animating out
+		var nodes_to_animate = current_problem_nodes.duplicate()
+		
+		# Clear current_problem_nodes immediately so new problem can populate it
+		current_problem_nodes.clear()
+		multiple_choice_buttons.clear()
+		multiple_choice_answered = false
+		multiple_choice_correct_index = -1
+		
+		# Reset state for new question
+		StateManager.user_answer = ""
+		StateManager.answer_submitted = false
+		InputManager.reset_for_new_question()
+		
+		# Generate new question immediately (starts flying in while old one flies out)
+		QuestionManager.generate_new_question()
+		create_new_problem_label()
+		
+		# Animate old problem off screen DOWN
+		var tween = create_tween()
+		tween.set_ease(Tween.EASE_OUT)
+		tween.set_trans(Tween.TRANS_EXPO)
+		tween.set_parallel(true)
+		for node in nodes_to_animate:
+			if node and node.get_parent() == play_node:
+				var target_pos = node.position + Vector2(0, 1400)
+				tween.tween_property(node, "position", target_pos, GameConfig.animation_duration)
+		
+		# Clean up old nodes when animation completes
+		tween.set_parallel(false)
+		tween.tween_callback(func():
+			for node in nodes_to_animate:
+				if node:
+					node.queue_free()
+		)
 
 func create_answer_fraction():
 	"""Create just the answer fraction visual when user presses Divide"""
@@ -1014,6 +1426,11 @@ func cleanup_problem_labels():
 	
 	current_problem_label = null
 	answer_fraction_node = null
+	
+	# Reset multiple choice state
+	multiple_choice_buttons.clear()
+	multiple_choice_answered = false
+	multiple_choice_correct_index = -1
 
 func color_problem_nodes(feedback_color: Color):
 	"""Color all problem nodes with the given feedback color"""

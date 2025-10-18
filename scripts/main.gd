@@ -82,7 +82,16 @@ func submit_answer():
 	if StateManager.waiting_for_continue_after_incorrect:
 		StateManager.waiting_for_continue_after_incorrect = false
 		AudioManager.play_select()  # Play select sound when continuing
-		continue_after_incorrect()
+		
+		# Check if this was a multiple choice question
+		if DisplayManager.multiple_choice_answered:
+			# Retrieve stored timer state
+			var timer_was_active = StateManager.get_meta("timer_was_active", false)
+			var should_start_timer = StateManager.get_meta("should_start_timer", false)
+			# For multiple choice, we need to pass is_correct=false since we only wait after incorrect
+			DisplayManager.continue_after_multiple_choice_incorrect(false, timer_was_active, should_start_timer)
+		else:
+			continue_after_incorrect()
 		return
 	
 	if StateManager.user_answer == "" or StateManager.user_answer == "-" or StateManager.answer_submitted:

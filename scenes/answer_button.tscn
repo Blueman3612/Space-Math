@@ -1,0 +1,32 @@
+[gd_scene load_steps=4 format=3 uid="uid://d2biyutn6jrlp"]
+
+[ext_resource type="Theme" uid="uid://qx67shaxna0a" path="res://assets/themes/classic/classic.tres" id="1_afn2s"]
+[ext_resource type="LabelSettings" uid="uid://kv8ik3lwuyet" path="res://assets/label settings/GravityBold128.tres" id="2_m3b1v"]
+[ext_resource type="LabelSettings" uid="uid://cfexrs5iigrqq" path="res://assets/label settings/GravityBold32.tres" id="3_tfjwn"]
+
+[node name="AnswerButton" type="Button"]
+offset_right = 320.0
+offset_bottom = 320.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme = ExtResource("1_afn2s")
+
+[node name="Answer" type="Label" parent="."]
+layout_mode = 0
+offset_left = 8.0
+offset_right = 328.0
+offset_bottom = 320.0
+text = "8"
+label_settings = ExtResource("2_m3b1v")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Key" type="Label" parent="."]
+self_modulate = Color(0.7529412, 0.7529412, 0.7529412, 1)
+layout_mode = 0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 64.0
+offset_bottom = 64.0
+text = "Q"
+label_settings = ExtResource("3_tfjwn")

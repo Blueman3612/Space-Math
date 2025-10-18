@@ -41,6 +41,20 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY):
 		PlaycademyManager.record_player_input()
 	
+	# Handle multiple choice input (AnswerOne through AnswerFive)
+	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY):
+		if QuestionManager.current_question and QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", "")):
+			if event is InputEventKey and event.pressed and not event.echo:
+				var answer_actions = ["AnswerOne", "AnswerTwo", "AnswerThree", "AnswerFour", "AnswerFive"]
+				for i in range(answer_actions.size()):
+					if Input.is_action_just_pressed(answer_actions[i]):
+						# Trigger the multiple choice answer selection
+						if i < DisplayManager.multiple_choice_buttons.size():
+							DisplayManager._on_multiple_choice_answer_selected(i)
+						break
+				# Return early for multiple choice - don't process other inputs
+				return user_answer
+	
 	# Handle number input and negative sign (only during PLAY or DRILL_PLAY state and if not submitted)
 	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY) and not answer_submitted:
 		# Only process key events
@@ -266,6 +280,36 @@ func process_single_backspace(user_answer: String) -> String:
 func update_control_guide_visibility(user_answer: String, answer_submitted: bool):
 	"""Update visibility and positions of control guide nodes based on game state"""
 	if not control_guide_enter or not control_guide_tab or not control_guide_divide or not control_guide_enter2:
+		return
+	
+	# Check if waiting for continue after incorrect (takes priority over everything)
+	if StateManager.waiting_for_continue_after_incorrect:
+		control_guide_enter.visible = false
+		control_guide_tab.visible = false
+		control_guide_divide.visible = false
+		control_guide_enter2.visible = true
+		
+		# Position Enter2 (already positioned by the regular control guide logic below, but ensure it's visible)
+		var visible_controls = [control_guide_enter2]
+		var current_x = GameConfig.control_guide_max_x
+		var control_width = control_guide_enter2.size.x
+		var target_x = current_x - control_width
+		var target_position = Vector2(target_x, control_guide_enter2.position.y)
+		
+		if control_guide_enter2.position.distance_to(target_position) > 0.1:
+			var tween = control_guide_enter2.create_tween()
+			tween.set_ease(Tween.EASE_OUT)
+			tween.set_trans(Tween.TRANS_EXPO)
+			tween.tween_property(control_guide_enter2, "position", target_position, GameConfig.control_guide_animation_duration)
+		return
+	
+	# Hide all controls for multiple choice questions (when not waiting for continue)
+	var is_multiple_choice = QuestionManager.current_question and QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", ""))
+	if is_multiple_choice:
+		control_guide_enter.visible = false
+		control_guide_tab.visible = false
+		control_guide_divide.visible = false
+		control_guide_enter2.visible = false
 		return
 	
 	var is_fraction_problem = QuestionManager.current_question and QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", ""))
