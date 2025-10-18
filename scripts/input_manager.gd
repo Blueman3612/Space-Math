@@ -282,6 +282,9 @@ func update_control_guide_visibility(user_answer: String, answer_submitted: bool
 	if not control_guide_enter or not control_guide_tab or not control_guide_divide or not control_guide_enter2:
 		return
 	
+	# Declare current_x at function level to avoid scope warnings
+	var current_x: float
+	
 	# Check if waiting for continue after incorrect (takes priority over everything)
 	if StateManager.waiting_for_continue_after_incorrect:
 		control_guide_enter.visible = false
@@ -290,8 +293,7 @@ func update_control_guide_visibility(user_answer: String, answer_submitted: bool
 		control_guide_enter2.visible = true
 		
 		# Position Enter2 (already positioned by the regular control guide logic below, but ensure it's visible)
-		var visible_controls = [control_guide_enter2]
-		var current_x = GameConfig.control_guide_max_x
+		current_x = GameConfig.control_guide_max_x
 		var control_width = control_guide_enter2.size.x
 		var target_x = current_x - control_width
 		var target_position = Vector2(target_x, control_guide_enter2.position.y)
@@ -394,7 +396,7 @@ func update_control_guide_visibility(user_answer: String, answer_submitted: bool
 					visible_controls.append(control_guide_enter2)
 	
 	# Position controls from right to left, clamping the RIGHT side of the rightmost control to control_guide_max_x
-	var current_x = GameConfig.control_guide_max_x
+	current_x = GameConfig.control_guide_max_x
 	for i in range(visible_controls.size()):
 		var control = visible_controls[i]
 		var control_width = control.size.x
@@ -412,4 +414,3 @@ func update_control_guide_visibility(user_answer: String, answer_submitted: bool
 		
 		# Move current_x left for next control (subtract width + padding)
 		current_x = target_x - GameConfig.control_guide_padding
-

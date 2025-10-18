@@ -78,6 +78,10 @@ func _process(delta):
 		InputManager.update_control_guide_visibility(StateManager.user_answer, StateManager.answer_submitted)
 
 func submit_answer():
+	# Declare timer state variables at function level to avoid scope warnings
+	var timer_was_active: bool
+	var should_start_timer: bool
+	
 	# Handle continuing after incorrect answer
 	if StateManager.waiting_for_continue_after_incorrect:
 		StateManager.waiting_for_continue_after_incorrect = false
@@ -86,8 +90,8 @@ func submit_answer():
 		# Check if this was a multiple choice question
 		if DisplayManager.multiple_choice_answered:
 			# Retrieve stored timer state
-			var timer_was_active = StateManager.get_meta("timer_was_active", false)
-			var should_start_timer = StateManager.get_meta("should_start_timer", false)
+			timer_was_active = StateManager.get_meta("timer_was_active", false)
+			should_start_timer = StateManager.get_meta("should_start_timer", false)
 			# For multiple choice, we need to pass is_correct=false since we only wait after incorrect
 			DisplayManager.continue_after_multiple_choice_incorrect(false, timer_was_active, should_start_timer)
 		else:
@@ -164,8 +168,8 @@ func submit_answer():
 		ScoreManager.process_incorrect_answer(StateManager.is_drill_mode)
 	
 	# Pause timer during transition and store its previous state
-	var timer_was_active = ScoreManager.timer_active
-	var should_start_timer = false
+	timer_was_active = ScoreManager.timer_active
+	should_start_timer = false
 	
 	# Check if we're in grace period and should start timer after transition
 	if not ScoreManager.timer_started and ScoreManager.grace_period_timer >= GameConfig.timer_grace_period:

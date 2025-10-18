@@ -689,6 +689,10 @@ func create_multiple_choice_problem():
 		var button_height = max(button_instance.size.y, GameConfig.multiple_choice_button_min_size.y)
 		button_instance.custom_minimum_size = Vector2(button_width, button_height)
 		
+		# Update Answer label size to match button dimensions
+		answer_label.offset_right = answer_label.offset_left + button_width
+		answer_label.offset_bottom = button_height
+		
 		total_buttons_width += button_width
 		button_instances.append(button_instance)
 	
@@ -697,6 +701,8 @@ func create_multiple_choice_problem():
 	
 	# Position buttons horizontally centered (with x offset)
 	var buttons_start_x = center_x - (total_buttons_width / 2.0) + GameConfig.multiple_choice_button_x_offset
+	
+	# Declare current_x at the function level to avoid scope warnings
 	var current_x = buttons_start_x
 	
 	for i in range(button_instances.size()):
@@ -778,6 +784,10 @@ func _on_multiple_choice_answer_selected(answer_index: int):
 	if StateManager.is_drill_mode:
 		ScoreManager.drill_total_answered += 1
 	
+	# Declare timer state variables at function level to avoid scope warnings
+	var timer_was_active = ScoreManager.timer_active
+	var should_start_timer = false
+	
 	var points_earned = 0
 	if is_correct:
 		points_earned = ScoreManager.process_correct_answer(StateManager.is_drill_mode, QuestionManager.current_question)
@@ -787,10 +797,6 @@ func _on_multiple_choice_answer_selected(answer_index: int):
 			UIManager.animate_drill_score_scale()
 	else:
 		ScoreManager.process_incorrect_answer(StateManager.is_drill_mode)
-	
-	# Pause timer during transition and store its previous state (mirrors normal question flow)
-	var timer_was_active = ScoreManager.timer_active
-	var should_start_timer = false
 	
 	# Check if we're in grace period and should start timer after transition
 	if not ScoreManager.timer_started and ScoreManager.grace_period_timer >= GameConfig.timer_grace_period:

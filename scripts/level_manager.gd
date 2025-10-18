@@ -320,20 +320,34 @@ func update_level_availability():
 		
 		# First level of each pack is always available
 		if pack_level_index > 0:
-			# Get the track ID for the previous level
+			# Get the track ID for the current level
 			var pack_config = GameConfig.level_packs[pack_name]
-			var prev_level_track = pack_config.levels[pack_level_index - 1]
-			var prev_track_id = str(prev_level_track) if typeof(prev_level_track) == TYPE_STRING else "TRACK" + str(prev_level_track)
+			var current_level_track = pack_config.levels[pack_level_index]
+			var current_track_id = str(current_level_track) if typeof(current_level_track) == TYPE_STRING else "TRACK" + str(current_level_track)
 			
-			# Check if previous level in this pack has at least 1 star
+			# Check if current level has at least 1 star
+			var current_has_stars = false
 			if SaveManager.save_data.packs.has(pack_name) and SaveManager.save_data.packs[pack_name].has("levels"):
-				if SaveManager.save_data.packs[pack_name].levels.has(prev_track_id):
-					var prev_stars = SaveManager.save_data.packs[pack_name].levels[prev_track_id].highest_stars
-					should_be_available = prev_stars > 0
+				if SaveManager.save_data.packs[pack_name].levels.has(current_track_id):
+					var current_stars = SaveManager.save_data.packs[pack_name].levels[current_track_id].highest_stars
+					current_has_stars = current_stars > 0
+			
+			# If current level has stars, it's unlocked
+			if current_has_stars:
+				should_be_available = true
+			else:
+				# Otherwise, check if previous level in this pack has at least 1 star
+				var prev_level_track = pack_config.levels[pack_level_index - 1]
+				var prev_track_id = str(prev_level_track) if typeof(prev_level_track) == TYPE_STRING else "TRACK" + str(prev_level_track)
+				
+				if SaveManager.save_data.packs.has(pack_name) and SaveManager.save_data.packs[pack_name].has("levels"):
+					if SaveManager.save_data.packs[pack_name].levels.has(prev_track_id):
+						var prev_stars = SaveManager.save_data.packs[pack_name].levels[prev_track_id].highest_stars
+						should_be_available = prev_stars > 0
+					else:
+						should_be_available = false
 				else:
 					should_be_available = false
-			else:
-				should_be_available = false
 		
 		# Set button state
 		button.disabled = not should_be_available

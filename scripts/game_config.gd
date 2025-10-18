@@ -56,11 +56,11 @@ var fraction_problem_min_x = 32.0  # Minimum x position for fraction problems to
 # ============================================
 # Multiple Choice Question Layout
 # ============================================
-var multiple_choice_prompt_y_offset = -320.0  # Vertical offset from center for prompt display
+var multiple_choice_prompt_y_offset = -256.0  # Vertical offset from center for prompt display
 var multiple_choice_prompt_x_offset = -48.0  # Horizontal offset for prompt (fractions and question mark)
-var multiple_choice_answers_y_offset = 0.0  # Vertical offset from center for answer buttons
+var multiple_choice_answers_y_offset = 64.0  # Vertical offset from center for answer buttons
 var multiple_choice_button_spacing = 64.0  # Horizontal spacing between answer buttons
-var multiple_choice_button_min_size = Vector2(320, 320)  # Minimum size for answer buttons
+var multiple_choice_button_min_size = Vector2(256, 256)  # Minimum size for answer buttons
 var multiple_choice_button_x_offset = -16.0  # Horizontal offset for answer buttons
 var multiple_choice_element_spacing = 80.0  # Spacing between fractions and question mark in multiple choice
 var multiple_choice_keybind_labels = ["Q", "W", "E", "R", "T"]  # Keybind labels for answer buttons
@@ -161,10 +161,10 @@ var level_configs = {
 	7: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
 	8: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
 	9: {"problems": 20, "star1": {"accuracy": 12, "time": 120.0}, "star2": {"accuracy": 14, "time": 100.0}, "star3": {"accuracy": 16, "time": 80.0}},
-	10: {"problems": 20, "star1": {"accuracy": 12, "time": 150.0}, "star2": {"accuracy": 14, "time": 120.0}, "star3": {"accuracy": 16, "time": 90.0}},
-	11: {"problems": 20, "star1": {"accuracy": 12, "time": 180.0}, "star2": {"accuracy": 14, "time": 150.0}, "star3": {"accuracy": 16, "time": 120.0}},
-	12: {"problems": 20, "star1": {"accuracy": 12, "time": 210.0}, "star2": {"accuracy": 14, "time": 180.0}, "star3": {"accuracy": 16, "time": 150.0}},
-	13: {"problems": 20, "star1": {"accuracy": 12, "time": 120.0}, "star2": {"accuracy": 14, "time": 100.0}, "star3": {"accuracy": 16, "time": 80.0}}
+	10: {"problems": 20, "star1": {"accuracy": 13, "time": 100.0}, "star2": {"accuracy": 15, "time": 80.0}, "star3": {"accuracy": 17, "time": 60.0}},
+	11: {"problems": 20, "star1": {"accuracy": 12, "time": 150.0}, "star2": {"accuracy": 14, "time": 120.0}, "star3": {"accuracy": 16, "time": 90.0}},
+	12: {"problems": 20, "star1": {"accuracy": 12, "time": 180.0}, "star2": {"accuracy": 14, "time": 150.0}, "star3": {"accuracy": 16, "time": 120.0}},
+	13: {"problems": 20, "star1": {"accuracy": 12, "time": 210.0}, "star2": {"accuracy": 14, "time": 180.0}, "star3": {"accuracy": 16, "time": 150.0}}
 }
 
 # ============================================
@@ -241,10 +241,10 @@ var timeback_level_multipliers = {
 	7: [[50.0, 4.0], [40.0, 2.0], [25.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],   # Multiplication Level 2
 	8: [[50.0, 4.0], [40.0, 2.0], [25.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],    # Division Level 1
 	9: [[20.0, 4.0], [15.0, 2.0], [10.0, 1.0], [8.0, 0.5], [5.0, 0.25], [0.0, 0.1]],     # Fractions Level 1 (Equivalence)
-	10: [[20.0, 4.0], [15.0, 2.0], [10.0, 1.0], [8.0, 0.5], [5.0, 0.25], [0.0, 0.1]],     # Fractions Level 2 (Compare)
-	11: [[15.0, 4.0], [12.0, 2.0], [10.0, 1.0], [8.0, 0.5], [5.0, 0.25], [0.0, 0.1]],     # Fractions Level 3
-	12: [[12.0, 4.0], [10.0, 2.0], [8.0, 1.0], [5.0, 0.5], [3.0, 0.25], [0.0, 0.1]],     # Fractions Level 4
-	13: [[12.0, 4.0], [10.0, 2.0], [8.0, 1.0], [5.0, 0.5], [3.0, 0.25], [0.0, 0.1]]      # Fractions Level 5
+	10: [[40.0, 4.0], [30.0, 2.0], [20.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],     # Fractions Level 1 (Equivalence)
+	11: [[15.0, 4.0], [12.0, 2.0], [10.0, 1.0], [8.0, 0.5], [5.0, 0.25], [0.0, 0.1]],     # Fractions Level 2
+	12: [[12.0, 4.0], [10.0, 2.0], [8.0, 1.0], [5.0, 0.5], [3.0, 0.25], [0.0, 0.1]],     # Fractions Level 3
+	13: [[12.0, 4.0], [10.0, 2.0], [8.0, 1.0], [5.0, 0.5], [3.0, 0.25], [0.0, 0.1]]      # Fractions Level 4
 }
 
 # Drill mode CQPM multiplier scale

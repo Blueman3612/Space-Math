@@ -1,6 +1,6 @@
 [gd_resource type="StyleBoxTexture" load_steps=2 format=3 uid="uid://bcv6ysl2hu3i3"]
 
-[ext_resource type="Texture2D" uid="uid://dg4y7y5lqvo7g" path="res://assets/sprites/Astro Math Button 9slice.png" id="1_jxq54"]
+[ext_resource type="Texture2D" uid="uid://cryuin3uei2ld" path="res://assets/sprites/Astro Math Button 9slice.png" id="1_jxq54"]
 
 [resource]
 texture = ExtResource("1_jxq54")
