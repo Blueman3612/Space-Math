@@ -1,24 +1,25 @@
 {
-	"name": "Astro Math",
-	"description": "Solve math problems in space!",
-	"emoji": "🌌",
-		"backend": {
-			"directory": "api"
-		},
-	"integrations": {
-		"timeback": {
-			"course": {
-				"subjects": [
+    "name": "Astro Math",
+    "description": "Solve math problems in space!",
+    "emoji": "🌌",
+    "integrations": {
+        "customRoutes": {
+            "directory": "server/api"
+        },
+        "kv": true,
+        "timeback": {
+            "course": {
+                "subjects": [
                     "FastMath"
-				],
-				"grades": [
-					1,
-					2,
-					3,
-					4,
-					5
-				]
-			}
-		}
-	}
+                ],
+                "grades": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            }
+        }
+    }
 }

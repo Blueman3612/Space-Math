@@ -179,69 +179,37 @@ func _exit_tree():
 # Local development sandbox support
 func _try_local_sandbox_connection():
 	print("[PlaycademySDK.gd] Attempting to connect to local development sandbox...")
-	
-	# Try to discover the actual sandbox port (it may not be 4321 if that port was busy)
-	_discover_sandbox_port()
-
-var _port_scan_index = 0
-var _port_scan_range = [4321, 4322, 4323, 4324, 4325, 4326, 4327, 4328, 4329, 4330]
-
-func _discover_sandbox_port():
-	if _port_scan_index >= _port_scan_range.size():
-		_handle_sandbox_connection_failed("No sandbox found on ports 4321-4330")
-		return
-	
-	var port = _port_scan_range[_port_scan_index]
-	var health_url = "http://localhost:%d/health" % port
-	
-	print("[PlaycademySDK.gd] Scanning for sandbox on port %d..." % port)
-	
-	var http_request = HTTPRequest.new()
-	add_child(http_request)
-	http_request.request_completed.connect(_on_port_scan_result)
-	
-	http_request.timeout = 2.0
-	
-	var error = http_request.request(health_url)
-	if error != OK:
-		print("[PlaycademySDK.gd] Failed to make request to port %d: %s" % [port, error])
-		http_request.queue_free()
-		_try_next_port()
-
-func _on_port_scan_result(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray):
-	# Find and clean up the HTTPRequest node
-	for child in get_children():
-		if child is HTTPRequest:
-			child.queue_free()
-			break
-	
-	var current_port = _port_scan_range[_port_scan_index]
-	
-	if response_code == 200:
-		print("[PlaycademySDK.gd] Found sandbox running on port %d!" % current_port)
-		_found_sandbox_port = current_port
-		_initialize_mock_client()
-	else:
-		# Handle timeout, connection refused, or other HTTP errors
-		if result == HTTPRequest.RESULT_TIMEOUT:
-			print("[PlaycademySDK.gd] Port %d timed out, trying next port..." % current_port)
-		elif response_code == 0:
-			print("[PlaycademySDK.gd] Port %d connection failed, trying next port..." % current_port)
-		else:
-			print("[PlaycademySDK.gd] Port %d returned HTTP %d, trying next port..." % [current_port, response_code])
-		_try_next_port()
-
-func _try_next_port():
-	_port_scan_index += 1
-	_discover_sandbox_port()
-
-var _found_sandbox_port: int = 0
+	_initialize_mock_client()
 
 func _initialize_mock_client():
-	# Communicate with the local sandbox via HTTP using the discovered port
-	var sandbox_api_url = "http://localhost:%d/api" % _found_sandbox_port
-	# Game backend runs on different port (matches TypeScript SDK gameUrl)
+	# Read server info from per-user registry
+	var home = OS.get_environment("HOME")
+	var registry_path = home + "/.playcademy/.proc"
+	
+	# Defaults (fallback if registry doesn't exist)
+	var sandbox_api_url = "http://localhost:4321/api"
 	var game_backend_url = "http://localhost:8788/api"
+	
+	# Try to discover actual URLs from registry
+	var file = FileAccess.open(registry_path, FileAccess.READ)
+	if file:
+		var json_result = JSON.parse_string(file.get_as_text())
+		file.close()
+		
+		if json_result != null:
+			var registry = json_result
+			var my_project = ProjectSettings.globalize_path("res://").rstrip("/")  # Remove trailing slash
+			
+			# Find servers for this project
+			for key in registry:
+				var server = registry[key]
+				if server.projectRoot == my_project:
+					if key.begins_with("sandbox-"):
+						sandbox_api_url = server.url
+						print("[PlaycademySDK.gd] Found sandbox from registry: ", sandbox_api_url)
+					elif key.begins_with("backend-"):
+						game_backend_url = server.url
+						print("[PlaycademySDK.gd] Found backend from registry: ", game_backend_url)
 
 	is_sdk_initialized = true
 
