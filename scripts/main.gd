@@ -3,6 +3,14 @@ extends Control
 # Main coordinator - orchestrates all managers for the game
 
 func _ready():
+	# Show loading screen while data loads from KV storage
+	var loading = get_node("Loading")
+	var main_menu = get_node("MainMenu")
+	if loading:
+		loading.visible = true
+	if main_menu:
+		main_menu.visible = false
+	
 	# Initialize all managers in dependency order
 	QuestionManager.initialize()
 	ScoreManager.initialize()
@@ -48,6 +56,16 @@ func _on_save_data_loaded(success: bool):
 	# Connect menu buttons
 	connect_menu_buttons()
 	connect_game_over_buttons()
+	
+	# Hide loading screen and show main menu now that everything is ready
+	var loading = get_node("Loading")
+	var main_menu = get_node("MainMenu")
+	if loading:
+		loading.visible = false
+	if main_menu:
+		main_menu.visible = true
+	
+	print("[Main] Game initialization complete!")
 
 func _input(event):
 	# Delegate input handling to InputManager

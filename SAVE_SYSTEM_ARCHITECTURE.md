@@ -68,9 +68,12 @@ Question data is accumulated in memory and saved with level completion.
 
 ```
 Game Start:
-  1. Load local_settings.json (volumes)
-  2. Load save_data from KV storage (progress)
-  3. Apply both to game state
+  1. Show "Loading" screen
+  2. Load local_settings.json (volumes) - instant
+  3. Load save_data from KV storage (progress) - async
+  4. Wait for KV data to load...
+  5. Apply volumes and create UI
+  6. Hide "Loading", show "MainMenu"
 
 During Play:
   - Questions answered → Mark dirty, accumulate in memory
@@ -81,6 +84,15 @@ Level Complete:
   - Save all accumulated data to KV storage
   - Clear dirty flag
 ```
+
+### Loading Screen
+
+A loading screen is displayed while save data loads from KV storage:
+- **Local Dev:** Very brief (milliseconds), may not be noticeable
+- **Production:** May be visible for 100-500ms depending on network latency
+- **Purpose:** Prevents showing empty menu while level buttons are being created
+
+The loading screen ensures users see a polished experience rather than a blank menu during the async data load.
 
 ## Migration Notes
 
