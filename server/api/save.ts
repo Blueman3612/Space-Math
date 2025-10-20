@@ -6,6 +6,8 @@
  * Handles all player save data storage using KV storage
  */
 
+import { verifyGameToken } from '@playcademy/sdk/server'
+
 import type { Context } from 'hono'
 
 /**
@@ -23,24 +25,26 @@ interface SaveData {
     }
 }
 
-/**
- * Helper function to get user ID from context
- * Handles both production (authenticated users) and local development (sandbox token)
- */
-function getUserId(c: Context): string | null {
-    // Try to get user ID from Playcademy context (production)
-    let userId = c.get('userId')
-    
-    // Handle local development with sandbox token
-    if (!userId) {
-        const authHeader = c.req.header('Authorization')
-        if (authHeader === 'Bearer sandbox-demo-token') {
-            userId = 'sandbox-demo-user'
-            console.log('[Local Dev] Using sandbox demo user')
-        }
+const getUserId = async (c: Context) => {
+    const authToken = c.req.header('Authorization')?.split(' ')[1]
+
+    if (!authToken) {
+        return c.json({
+            success: false,
+            error: 'User not authenticated',
+        }, 401)
     }
-    
-    return userId || null
+
+    const { user } = await verifyGameToken(authToken, { baseUrl: 'http://localhost:4321' })
+
+    if (!user) {    
+        return c.json({
+            success: false,
+            error: 'User not authenticated',
+        }, 401)
+    }
+
+    return user.sub
 }
 
 /**
@@ -50,25 +54,8 @@ function getUserId(c: Context): string | null {
  */
 export async function GET(c: Context): Promise<Response> {
     try {
-        const userId = getUserId(c)
-        
-        if (!userId) {
-            return c.json({
-                success: false,
-                error: 'User not authenticated',
-            }, 401)
-        }
-        
-        // Check if KV is available
-        if (!c.env.KV) {
-            console.error('[Save API] KV storage not available - check wrangler.toml configuration')
-            return c.json({
-                success: false,
-                error: 'KV storage not configured',
-                details: 'Make sure wrangler.toml has kv_namespaces configured',
-            }, 500)
-        }
-        
+        const userId = await getUserId(c)
+
         // Read from KV using user-specific key
         const key = `user:${userId}:savedata`
         console.log(`[Save API GET] Reading key: ${key}`)
@@ -109,14 +96,7 @@ export async function GET(c: Context): Promise<Response> {
  */
 export async function POST(c: Context): Promise<Response> {
     try {
-        const userId = getUserId(c)
-        
-        if (!userId) {
-            return c.json({
-                success: false,
-                error: 'User not authenticated',
-            }, 401)
-        }
+        const userId = await getUserId(c)
 
         const saveData = (await c.req.json()) as SaveData
 
@@ -129,16 +109,6 @@ export async function POST(c: Context): Promise<Response> {
                 },
                 400,
             )
-        }
-
-        // Check if KV is available
-        if (!c.env.KV) {
-            console.error('[Save API] KV storage not available - check wrangler.toml configuration')
-            return c.json({
-                success: false,
-                error: 'KV storage not configured',
-                details: 'Make sure wrangler.toml has kv_namespaces configured',
-            }, 500)
         }
 
         // Write to KV using user-specific key
@@ -172,14 +142,7 @@ export async function POST(c: Context): Promise<Response> {
  */
 export async function DELETE(c: Context): Promise<Response> {
     try {
-        const userId = getUserId(c)
-        
-        if (!userId) {
-            return c.json({
-                success: false,
-                error: 'User not authenticated',
-            }, 401)
-        }
+        const userId = await getUserId(c)
 
         // Delete from KV
         await c.env.KV.delete(`user:${userId}:savedata`)
