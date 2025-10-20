@@ -421,4 +421,3 @@ func get_global_level_number(pack_name: String, pack_level_index: int) -> int:
 		else:
 			global_num += pack_config.levels.size()
 	return 1  # Fallback
-

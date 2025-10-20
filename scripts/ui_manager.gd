@@ -620,15 +620,15 @@ func _on_button_click():
 	AudioManager.play_select()
 
 func connect_volume_sliders():
-	"""Connect volume sliders and initialize their values from save data"""
+	"""Connect volume sliders and initialize their values from local settings"""
 	if sfx_slider:
 		# Set slider range (0.0 to 1.0)
 		sfx_slider.min_value = 0.0
 		sfx_slider.max_value = 1.0
 		sfx_slider.step = 0.01
 		
-		# Load saved volume or use default
-		var sfx_volume = SaveManager.save_data.get("sfx_volume", GameConfig.default_sfx_volume)
+		# Load saved volume from local settings
+		var sfx_volume = SaveManager.local_settings.get("sfx_volume", GameConfig.default_sfx_volume)
 		sfx_slider.value = sfx_volume
 		
 		# Apply the volume immediately
@@ -643,8 +643,8 @@ func connect_volume_sliders():
 		music_slider.max_value = 1.0
 		music_slider.step = 0.01
 		
-		# Load saved volume or use default
-		var music_volume = SaveManager.save_data.get("music_volume", GameConfig.default_music_volume)
+		# Load saved volume from local settings
+		var music_volume = SaveManager.local_settings.get("music_volume", GameConfig.default_music_volume)
 		music_slider.value = music_volume
 		
 		# Apply the volume immediately
@@ -653,15 +653,27 @@ func connect_volume_sliders():
 		# Connect signal
 		music_slider.value_changed.connect(_on_music_volume_changed)
 
+func update_volume_sliders_from_local_settings():
+	"""Update volume sliders to match values from loaded local settings"""
+	if sfx_slider:
+		var sfx_volume = SaveManager.local_settings.get("sfx_volume", GameConfig.default_sfx_volume)
+		sfx_slider.value = sfx_volume
+		print("[UIManager] Updated SFX slider to: ", sfx_volume)
+	
+	if music_slider:
+		var music_volume = SaveManager.local_settings.get("music_volume", GameConfig.default_music_volume)
+		music_slider.value = music_volume
+		print("[UIManager] Updated Music slider to: ", music_volume)
+
 func _on_sfx_volume_changed(value: float):
-	"""Handle SFX volume slider change"""
+	"""Handle SFX volume slider change (saved locally, not to KV)"""
 	SaveManager.set_sfx_volume(value)
-	SaveManager.save_data.sfx_volume = value
-	SaveManager.save_save_data()
+	SaveManager.local_settings.sfx_volume = value
+	SaveManager.save_local_settings()
 
 func _on_music_volume_changed(value: float):
-	"""Handle Music volume slider change"""
+	"""Handle Music volume slider change (saved locally, not to KV)"""
 	SaveManager.set_music_volume(value)
-	SaveManager.save_data.music_volume = value
-	SaveManager.save_save_data()
+	SaveManager.local_settings.music_volume = value
+	SaveManager.save_local_settings()
 

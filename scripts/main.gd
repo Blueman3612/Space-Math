@@ -4,7 +4,6 @@ extends Control
 
 func _ready():
 	# Initialize all managers in dependency order
-	SaveManager.initialize()
 	QuestionManager.initialize()
 	ScoreManager.initialize()
 	
@@ -16,13 +15,32 @@ func _ready():
 	LevelManager.initialize(self)
 	PlaycademyManager.initialize()
 	
-	# Start music now that volumes are set
+	# Connect to SaveManager signal before initializing (since it loads async from KV storage)
+	SaveManager.save_data_loaded.connect(_on_save_data_loaded)
+	SaveManager.initialize()
+
+func _on_save_data_loaded(success: bool):
+	"""Called when save data has been loaded from KV storage"""
+	if not success:
+		print("[Main] Warning: Save data failed to load from KV storage, using defaults")
+	
+	# Apply loaded volumes from local settings (not KV)
+	var sfx_volume = SaveManager.local_settings.get("sfx_volume", GameConfig.default_sfx_volume)
+	var music_volume = SaveManager.local_settings.get("music_volume", GameConfig.default_music_volume)
+	SaveManager.set_sfx_volume(sfx_volume)
+	SaveManager.set_music_volume(music_volume)
+	print("[Main] Applied volumes from local settings - SFX: ", sfx_volume, " Music: ", music_volume)
+	
+	# Update volume sliders to match loaded values
+	UIManager.update_volume_sliders_from_local_settings()
+	
+	# Now that save data is loaded, start music with correct volumes
 	AudioManager.start_music()
 	
 	# Create dynamic level buttons
 	LevelManager.create_level_buttons()
 	
-	# Update menu display after buttons are created
+	# Update menu display after buttons are created (requires save data)
 	LevelManager.update_menu_stars()
 	LevelManager.update_level_availability()
 	UIManager.update_drill_mode_high_score_display()

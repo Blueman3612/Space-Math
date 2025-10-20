@@ -1,24 +1,51 @@
 extends Node
 
 # Save system manager - handles all save/load operations and data persistence
+# Game progress stored in KV storage (cloud), volumes stored locally (per-machine)
+
+# Signals for async operations
+signal save_data_loaded(success: bool)
+signal save_data_saved(success: bool)
+signal save_data_cleared(success: bool)
 
 # Save system variables
-var save_data = {}
-var save_file_path = "user://save_data.json"
+var save_data = {}  # Game progress data (stored in KV)
+var local_settings = {}  # Local settings like volumes (stored in local file)
+var is_initialized = false
+var is_loading = false
+var pending_save = false
+var has_unsaved_changes = false  # Track if KV data needs saving
+
+# Local file paths
+var local_settings_path = "user://local_settings.json"
 
 func initialize():
-	"""Initialize the save system and load existing save data"""
+	"""Initialize the save system and load data from KV storage and local file"""
+	# Load local settings first (volumes, etc.)
+	load_local_settings()
+	
+	if not PlaycademySdk:
+		printerr("[SaveManager] PlaycademySdk not available!")
+		save_data = get_default_save_data()
+		is_initialized = true
+		emit_signal("save_data_loaded", false)
+		return
+	
+	# Connect to backend signals
+	if PlaycademySdk.backend:
+		PlaycademySdk.backend.request_succeeded.connect(_on_backend_request_succeeded)
+		PlaycademySdk.backend.request_failed.connect(_on_backend_request_failed)
+	
+	# Load game progress from KV storage
 	load_save_data()
 
 func get_default_save_data():
-	"""Return the default save data structure"""
+	"""Return the default game progress data (stored in KV)"""
 	var default_data = {
 		"version": ProjectSettings.get_setting("application/config/version"),
-		"save_structure": "pack_based",  # Identifier for new save structure
+		"save_structure": "pack_based",
 		"packs": {},
-		"questions": {},
-		"sfx_volume": GameConfig.default_sfx_volume,
-		"music_volume": GameConfig.default_music_volume
+		"questions": {}
 	}
 	
 	# Initialize level data for all packs
@@ -41,10 +68,17 @@ func get_default_save_data():
 	
 	return default_data
 
-func load_save_data():
-	"""Load save data from file or create default if none exists"""
-	if FileAccess.file_exists(save_file_path):
-		var file = FileAccess.open(save_file_path, FileAccess.READ)
+func get_default_local_settings():
+	"""Return default local settings (volumes, stored locally per-machine)"""
+	return {
+		"sfx_volume": GameConfig.default_sfx_volume,
+		"music_volume": GameConfig.default_music_volume
+	}
+
+func load_local_settings():
+	"""Load local settings from file (volumes, etc.)"""
+	if FileAccess.file_exists(local_settings_path):
+		var file = FileAccess.open(local_settings_path, FileAccess.READ)
 		if file:
 			var json_string = file.get_as_text()
 			file.close()
@@ -52,29 +86,126 @@ func load_save_data():
 			var json = JSON.new()
 			var parse_result = json.parse(json_string)
 			if parse_result == OK:
-				save_data = json.data
-				# Run migration if needed
-				migrate_save_data()
+				local_settings = json.data
+				print("[SaveManager] Local settings loaded from file")
 			else:
-				print("Error parsing save data JSON: ", json.get_error_message())
-				save_data = get_default_save_data()
+				print("[SaveManager] Error parsing local settings, using defaults")
+				local_settings = get_default_local_settings()
 		else:
-			print("Could not open save file")
-			save_data = get_default_save_data()
+			local_settings = get_default_local_settings()
 	else:
-		print("No save file found, creating default save data")
-		save_data = get_default_save_data()
-		save_save_data()
+		print("[SaveManager] No local settings file found, using defaults")
+		local_settings = get_default_local_settings()
+		save_local_settings()
 
-func save_save_data():
-	"""Save current save data to file"""
-	var file = FileAccess.open(save_file_path, FileAccess.WRITE)
+func save_local_settings():
+	"""Save local settings to file (immediate save, not queued)"""
+	var file = FileAccess.open(local_settings_path, FileAccess.WRITE)
 	if file:
-		var json_string = JSON.stringify(save_data, "\t")
+		var json_string = JSON.stringify(local_settings, "\t")
 		file.store_string(json_string)
 		file.close()
+		print("[SaveManager] Local settings saved to file")
 	else:
-		print("Could not save data to file")
+		printerr("[SaveManager] Could not save local settings to file")
+
+func load_save_data():
+	"""Load save data from KV storage via backend API"""
+	if is_loading:
+		print("[SaveManager] Already loading save data...")
+		return
+	
+	is_loading = true
+	print("[SaveManager] Loading save data from KV storage...")
+	
+	if PlaycademySdk and PlaycademySdk.backend:
+		PlaycademySdk.backend.request("/save", "GET")
+	else:
+		printerr("[SaveManager] Backend not available, using default save data")
+		save_data = get_default_save_data()
+		is_initialized = true
+		is_loading = false
+		emit_signal("save_data_loaded", false)
+
+func save_save_data():
+	"""Save game progress to KV storage (only if there are changes)"""
+	if not is_initialized:
+		print("[SaveManager] Cannot save - not initialized yet")
+		pending_save = true
+		return
+	
+	if is_loading:
+		print("[SaveManager] Cannot save while loading")
+		pending_save = true
+		return
+	
+	if not has_unsaved_changes:
+		print("[SaveManager] No unsaved changes, skipping KV save")
+		return
+	
+	print("[SaveManager] Saving game progress to KV storage...")
+	
+	if PlaycademySdk and PlaycademySdk.backend:
+		PlaycademySdk.backend.request("/save", "POST", save_data)
+	else:
+		printerr("[SaveManager] Backend not available, cannot save data")
+		emit_signal("save_data_saved", false)
+
+func _on_backend_request_succeeded(response):
+	"""Handle successful backend API responses"""
+	if not response or typeof(response) != TYPE_DICTIONARY:
+		printerr("[SaveManager] Invalid response from backend")
+		return
+	
+	var success = response.get("success", false)
+	
+	# Check if this was a load request (has data field)
+	if response.has("data"):
+		is_loading = false
+		if success and response.data != null:
+			print("[SaveManager] Save data loaded successfully from KV storage")
+			save_data = response.data
+			migrate_save_data()
+			is_initialized = true
+			emit_signal("save_data_loaded", true)
+			
+			# If there was a pending save, do it now
+			if pending_save:
+				pending_save = false
+				save_save_data()
+		else:
+			print("[SaveManager] No save data found in KV storage, using defaults")
+			save_data = get_default_save_data()
+			is_initialized = true
+			emit_signal("save_data_loaded", true)
+			# Save the default data to KV storage
+			save_save_data()
+	
+	# Check if this was a save request
+	elif response.has("message") and "stored" in response.message.to_lower():
+		print("[SaveManager] Game progress saved successfully to KV storage")
+		has_unsaved_changes = false  # Clear dirty flag
+		emit_signal("save_data_saved", true)
+	
+	# Check if this was a delete request
+	elif response.has("message") and "cleared" in response.message.to_lower():
+		print("[SaveManager] Save data cleared successfully from KV storage")
+		emit_signal("save_data_cleared", true)
+
+func _on_backend_request_failed(error_message: String):
+	"""Handle failed backend API responses"""
+	printerr("[SaveManager] Backend request failed: ", error_message)
+	
+	if is_loading:
+		is_loading = false
+		# If we couldn't load, use default data
+		print("[SaveManager] Failed to load from KV storage, using default save data")
+		save_data = get_default_save_data()
+		is_initialized = true
+		emit_signal("save_data_loaded", false)
+	else:
+		# Save failed
+		emit_signal("save_data_saved", false)
 
 func migrate_save_data():
 	"""Handle save data migration for version changes"""
@@ -86,7 +217,7 @@ func migrate_save_data():
 	if save_structure != "pack_based":
 		print("Old save structure detected - wiping all save data for pack-based system")
 		save_data = get_default_save_data()
-		save_save_data()
+		has_unsaved_changes = true
 		return
 	
 	# Version migration for pack-based saves
@@ -98,10 +229,12 @@ func migrate_save_data():
 			save_data.packs = {}
 		if not save_data.has("questions"):
 			save_data.questions = {}
-		if not save_data.has("sfx_volume"):
-			save_data.sfx_volume = GameConfig.default_sfx_volume
-		if not save_data.has("music_volume"):
-			save_data.music_volume = GameConfig.default_music_volume
+		
+		# Remove old volume fields if they exist (now in local_settings)
+		if save_data.has("sfx_volume"):
+			save_data.erase("sfx_volume")
+		if save_data.has("music_volume"):
+			save_data.erase("music_volume")
 		
 		# Ensure all packs and levels have data
 		for pack_name in GameConfig.level_pack_order:
@@ -132,10 +265,10 @@ func migrate_save_data():
 		
 		# Update version
 		save_data.version = current_version
-		save_save_data()
+		has_unsaved_changes = true
 
 func save_question_data(question_data, player_answer, time_taken):
-	"""Save data for a completed question"""
+	"""Save data for a completed question (marks dirty, saved on level complete)"""
 	var question_key = QuestionManager.get_question_key(question_data)
 	
 	if not save_data.questions.has(question_key):
@@ -157,7 +290,8 @@ func save_question_data(question_data, player_answer, time_taken):
 	if save_data.questions[question_key].size() > 5:
 		save_data.questions[question_key] = save_data.questions[question_key].slice(0, 5)
 	
-	save_save_data()
+	# Mark dirty but don't save yet (will save on level complete)
+	has_unsaved_changes = true
 
 func update_level_data(pack_name: String, pack_level_index: int, accuracy: int, time_taken: float, stars_earned: int):
 	"""Update the saved data for a level using pack-based structure with track ID as key"""
@@ -211,6 +345,8 @@ func update_level_data(pack_name: String, pack_level_index: int, accuracy: int, 
 		updated = true
 	
 	if updated:
+		has_unsaved_changes = true
+		# Save immediately on level complete (this is a good save point)
 		save_save_data()
 
 func update_drill_mode_high_score(drill_score: int) -> bool:
@@ -222,6 +358,8 @@ func update_drill_mode_high_score(drill_score: int) -> bool:
 	
 	if is_new_high_score:
 		save_data.drill_mode.high_score = drill_score
+		has_unsaved_changes = true
+		# Save immediately on drill mode complete (this is a good save point)
 		save_save_data()
 		print("New drill mode high score: ", drill_score)
 	
@@ -237,7 +375,16 @@ func reset_all_data():
 	"""Wipe all save data and reset to defaults"""
 	print("Resetting all save data...")
 	save_data = get_default_save_data()
-	save_save_data()
+	
+	# Delete from KV storage and save new defaults
+	if PlaycademySdk and PlaycademySdk.backend:
+		PlaycademySdk.backend.request("/save", "DELETE")
+		# After deletion, save the default data
+		await get_tree().create_timer(0.5).timeout  # Small delay to ensure delete completes
+		save_save_data()
+	else:
+		save_save_data()
+	
 	print("Save data reset complete!")
 
 func unlock_all_levels():
