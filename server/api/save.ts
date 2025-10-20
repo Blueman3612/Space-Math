@@ -2,13 +2,11 @@
  * Save Data KV Storage API Route
  *
  * This route will be available at: https://<your-game-slug>.playcademy.gg/api/save
- * 
+ *
  * Handles all player save data storage using KV storage
  */
 
 import { verifyGameToken } from '@playcademy/sdk/server'
-
-import type { Context } from 'hono'
 
 /**
  * Complete save data structure
@@ -25,23 +23,26 @@ interface SaveData {
     }
 }
 
+const userNotAuthenticatedResponse = (c: Context) =>
+    c.json(
+        {
+            success: false,
+            error: 'User not authenticated',
+        },
+        401,
+    )
+
 const getUserId = async (c: Context) => {
     const authToken = c.req.header('Authorization')?.split(' ')[1]
 
     if (!authToken) {
-        return c.json({
-            success: false,
-            error: 'User not authenticated',
-        }, 401)
+        return userNotAuthenticatedResponse(c)
     }
 
-    const { user } = await verifyGameToken(authToken, { baseUrl: 'http://localhost:4321' })
+    const { user } = await verifyGameToken(authToken)
 
-    if (!user) {    
-        return c.json({
-            success: false,
-            error: 'User not authenticated',
-        }, 401)
+    if (!user) {
+        return userNotAuthenticatedResponse(c)
     }
 
     return user.sub
@@ -60,8 +61,11 @@ export async function GET(c: Context): Promise<Response> {
         const key = `user:${userId}:savedata`
         console.log(`[Save API GET] Reading key: ${key}`)
         const saveDataJson = await c.env.KV.get(key)
-        console.log(`[Save API GET] Retrieved data length: ${saveDataJson?.length || 0}`)
-        
+
+        console.log(
+            `[Save API GET] Retrieved data length: ${saveDataJson?.length || 0}`,
+        )
+
         if (!saveDataJson) {
             return c.json({
                 success: true,
@@ -114,7 +118,9 @@ export async function POST(c: Context): Promise<Response> {
         // Write to KV using user-specific key
         const key = `user:${userId}:savedata`
         const dataString = JSON.stringify(saveData)
-        console.log(`[Save API POST] Saving key: ${key}, data length: ${dataString.length}`)
+        console.log(
+            `[Save API POST] Saving key: ${key}, data length: ${dataString.length}`,
+        )
         await c.env.KV.put(key, dataString)
         console.log(`[Save API POST] Save successful`)
 
@@ -163,4 +169,3 @@ export async function DELETE(c: Context): Promise<Response> {
         )
     }
 }
-

@@ -30,3 +30,4 @@ Thumbs.db
 
 # Playcademy
 node_modules/
+playcademy-env.d.ts
