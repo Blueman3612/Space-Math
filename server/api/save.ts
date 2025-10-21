@@ -2,11 +2,11 @@
  * Save Data KV Storage API Route
  *
  * This route will be available at: https://<your-game-slug>.playcademy.gg/api/save
- * 
+ *
  * Handles all player save data storage using KV storage
  */
 
-import type { Context } from 'hono'
+import { verifyGameToken } from '@playcademy/sdk/server'
 
 /**
  * Complete save data structure
@@ -23,24 +23,29 @@ interface SaveData {
     }
 }
 
-/**
- * Helper function to get user ID from context
- * Handles both production (authenticated users) and local development (sandbox token)
- */
-function getUserId(c: Context): string | null {
-    // Try to get user ID from Playcademy context (production)
-    let userId = c.get('userId')
-    
-    // Handle local development with sandbox token
-    if (!userId) {
-        const authHeader = c.req.header('Authorization')
-        if (authHeader === 'Bearer sandbox-demo-token') {
-            userId = 'sandbox-demo-user'
-            console.log('[Local Dev] Using sandbox demo user')
-        }
+const userNotAuthenticatedResponse = (c: Context) =>
+    c.json(
+        {
+            success: false,
+            error: 'User not authenticated',
+        },
+        401,
+    )
+
+const getUserId = async (c: Context) => {
+    const authToken = c.req.header('Authorization')?.split(' ')[1]
+
+    if (!authToken) {
+        return userNotAuthenticatedResponse(c)
     }
-    
-    return userId || null
+
+    const { user } = await verifyGameToken(authToken)
+
+    if (!user) {
+        return userNotAuthenticatedResponse(c)
+    }
+
+    return user.sub
 }
 
 /**
@@ -50,31 +55,17 @@ function getUserId(c: Context): string | null {
  */
 export async function GET(c: Context): Promise<Response> {
     try {
-        const userId = getUserId(c)
-        
-        if (!userId) {
-            return c.json({
-                success: false,
-                error: 'User not authenticated',
-            }, 401)
-        }
-        
-        // Check if KV is available
-        if (!c.env.KV) {
-            console.error('[Save API] KV storage not available - check wrangler.toml configuration')
-            return c.json({
-                success: false,
-                error: 'KV storage not configured',
-                details: 'Make sure wrangler.toml has kv_namespaces configured',
-            }, 500)
-        }
-        
+        const userId = await getUserId(c)
+
         // Read from KV using user-specific key
         const key = `user:${userId}:savedata`
         console.log(`[Save API GET] Reading key: ${key}`)
         const saveDataJson = await c.env.KV.get(key)
-        console.log(`[Save API GET] Retrieved data length: ${saveDataJson?.length || 0}`)
-        
+
+        console.log(
+            `[Save API GET] Retrieved data length: ${saveDataJson?.length || 0}`,
+        )
+
         if (!saveDataJson) {
             return c.json({
                 success: true,
@@ -109,14 +100,7 @@ export async function GET(c: Context): Promise<Response> {
  */
 export async function POST(c: Context): Promise<Response> {
     try {
-        const userId = getUserId(c)
-        
-        if (!userId) {
-            return c.json({
-                success: false,
-                error: 'User not authenticated',
-            }, 401)
-        }
+        const userId = await getUserId(c)
 
         const saveData = (await c.req.json()) as SaveData
 
@@ -131,20 +115,12 @@ export async function POST(c: Context): Promise<Response> {
             )
         }
 
-        // Check if KV is available
-        if (!c.env.KV) {
-            console.error('[Save API] KV storage not available - check wrangler.toml configuration')
-            return c.json({
-                success: false,
-                error: 'KV storage not configured',
-                details: 'Make sure wrangler.toml has kv_namespaces configured',
-            }, 500)
-        }
-
         // Write to KV using user-specific key
         const key = `user:${userId}:savedata`
         const dataString = JSON.stringify(saveData)
-        console.log(`[Save API POST] Saving key: ${key}, data length: ${dataString.length}`)
+        console.log(
+            `[Save API POST] Saving key: ${key}, data length: ${dataString.length}`,
+        )
         await c.env.KV.put(key, dataString)
         console.log(`[Save API POST] Save successful`)
 
@@ -172,14 +148,7 @@ export async function POST(c: Context): Promise<Response> {
  */
 export async function DELETE(c: Context): Promise<Response> {
     try {
-        const userId = getUserId(c)
-        
-        if (!userId) {
-            return c.json({
-                success: false,
-                error: 'User not authenticated',
-            }, 401)
-        }
+        const userId = await getUserId(c)
 
         // Delete from KV
         await c.env.KV.delete(`user:${userId}:savedata`)
@@ -200,4 +169,3 @@ export async function DELETE(c: Context): Promise<Response> {
         )
     }
 }
-
