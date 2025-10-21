@@ -55,6 +55,8 @@ const getUserId = async (c: Context) => {
  */
 export async function GET(c: Context): Promise<Response> {
     try {
+        console.log(c.env)
+        console.log('GET /api/save')
         const userId = await getUserId(c)
 
         // Read from KV using user-specific key
