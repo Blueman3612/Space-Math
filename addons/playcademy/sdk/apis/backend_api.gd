@@ -13,6 +13,30 @@ var _request_reject_cb_js: JavaScriptObject = null
 func _init(client_js_object: JavaScriptObject):
 	_main_client = client_js_object
 
+# --- Helpers ---------------------------------------------------------------
+# Convert a GDScript value (Dictionary/Array/scalars) into a plain JavaScript
+# object/array recursively so it can be safely consumed by browser JS APIs.
+func _to_js_value(value):
+	var t := typeof(value)
+	match t:
+		TYPE_DICTIONARY:
+			var js_obj: JavaScriptObject = JavaScriptBridge.create_object("Object")
+			for key in value.keys():
+				var js_key := str(key)
+				js_obj[js_key] = _to_js_value(value[key])
+			return js_obj
+		TYPE_ARRAY:
+			var js_arr: JavaScriptObject = JavaScriptBridge.create_object("Array")
+			for item in value:
+				# Push by calling JS Array.prototype.push
+				js_arr.push(_to_js_value(item))
+			return js_arr
+		TYPE_NIL, TYPE_BOOL, TYPE_INT, TYPE_FLOAT, TYPE_STRING:
+			return value
+		_:
+			# Fallback – stringify unknown Godot types
+			return str(value)
+
 # Call any custom game backend route
 # Example: backend.request("/custom-route", "POST", {"data": "value"})
 func request(path: String, method: String = "GET", body: Dictionary = {}):
@@ -32,9 +56,8 @@ func request(path: String, method: String = "GET", body: Dictionary = {}):
 	if body.is_empty():
 		promise = _main_client.backend.request(path, method)
 	else:
-		var js_body = JavaScriptBridge.create_object("Object")
-		for key in body:
-			js_body[key] = body[key]
+		# Recursively convert GDScript Dictionary/Array tree into a plain JS object
+		var js_body = _to_js_value(body)
 		promise = _main_client.backend.request(path, method, js_body)
 
 	if not promise is JavaScriptObject:
@@ -53,6 +76,28 @@ func request(path: String, method: String = "GET", body: Dictionary = {}):
 func _on_request_resolved(args: Array):
 	if args.size() > 0:
 		var result_data = args[0]
+		
+		# Convert JavaScriptObject response to GDScript Dictionary
+		# This ensures proper handling of nested objects and avoids JavaScriptObject issues
+		if typeof(result_data) == TYPE_OBJECT:
+			# Get window object and store the response temporarily
+			var window = JavaScriptBridge.get_interface("window")
+			window._gdscript_temp_response = result_data
+			
+			# Stringify the stored object
+			var json_str = JavaScriptBridge.eval("JSON.stringify(window._gdscript_temp_response)", true)
+			
+			# Clean up
+			JavaScriptBridge.eval("delete window._gdscript_temp_response", true)
+			
+			# Convert JS string to GDScript string and parse
+			var gdscript_json = str(json_str)
+			var parsed_result = JSON.parse_string(gdscript_json)
+			if parsed_result != null:
+				result_data = parsed_result
+			else:
+				printerr("[BackendAPI] Failed to parse response JSON")
+		
 		emit_signal("request_succeeded", result_data)
 	else:
 		emit_signal("request_failed", "REQUEST_RESOLVED_NO_DATA")
