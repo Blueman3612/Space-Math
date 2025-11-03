@@ -103,9 +103,6 @@ func _export_begin(_features: PackedStringArray,
 	
 	var manifest := {
 		"version": "1",
-		"bootMode": "iframe",
-		"entryPoint": entry_point_file, 
-		"styles": [],
 		"platform": "godot@%s" % godot_version_string,
 		"createdAt": Time.get_datetime_string_from_system(true, true)
 	}
@@ -228,7 +225,8 @@ func _export_end() -> void:
 
 	var files_added_counter_array = [0] # Use array as a hacky pass-by-reference for int
 	
-	var overall_success = _zip_directory_recursive(packer, _folder_target, export_dir_name, files_added_counter_array)
+	# Use empty prefix so files are at zip root (matches Vite plugin behavior)
+	var overall_success = _zip_directory_recursive(packer, _folder_target, "", files_added_counter_array)
 
 	var close_err = packer.close()
 	if close_err != OK:

@@ -11,6 +11,7 @@ var log_display: RichTextLabel
 var start_button: Button
 var stop_button: Button
 var restart_button: Button
+var reset_db_button: Button
 var auto_start_checkbox: CheckBox
 
 var selected_server: String = "sandbox"  # "sandbox" or "backend"
@@ -103,6 +104,12 @@ func _create_left_panel() -> Control:
 	restart_button.set_h_size_flags(Control.SIZE_EXPAND_FILL)
 	restart_button.pressed.connect(_on_restart_pressed)
 	vbox.add_child(restart_button)
+	
+	reset_db_button = Button.new()
+	reset_db_button.text = "Reset DB"
+	reset_db_button.set_h_size_flags(Control.SIZE_EXPAND_FILL)
+	reset_db_button.pressed.connect(_on_reset_db_pressed)
+	vbox.add_child(reset_db_button)
 	
 	vbox.add_child(HSeparator.new())
 	
@@ -339,6 +346,10 @@ func _on_stop_pressed():
 func _on_restart_pressed():
 	if backend_manager:
 		backend_manager.restart_servers()
+
+func _on_reset_db_pressed():
+	if backend_manager:
+		backend_manager.reset_database()
 
 func _on_auto_start_toggled(pressed: bool):
 	ProjectSettings.set_setting("playcademy/backend/auto_start", pressed)
