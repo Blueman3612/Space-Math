@@ -6,8 +6,6 @@
  * Handles all player save data storage using KV storage
  */
 
-import { verifyGameToken } from '@playcademy/sdk/server'
-
 /**
  * Complete save data structure
  */
@@ -23,29 +21,13 @@ interface SaveData {
     }
 }
 
-const userNotAuthenticatedResponse = (c: Context) =>
-    c.json(
-        {
-            success: false,
-            error: 'User not authenticated',
-        },
-        401,
-    )
-
-const getUserId = async (c: Context) => {
-    const authToken = c.req.header('Authorization')?.split(' ')[1]
-
-    if (!authToken) {
-        return userNotAuthenticatedResponse(c)
-    }
-
-    const { user } = await verifyGameToken(authToken)
-
-    if (!user) {
-        return userNotAuthenticatedResponse(c)
-    }
-
-    return user.sub
+/**
+ * Gets the user ID from the playcademyUser populated by middleware.
+ * Returns null if not authenticated (caller handles error response).
+ */
+const getUserId = (c: Context): string | null => {
+    const playcademyUser = c.get('playcademyUser')
+    return playcademyUser?.sub || null
 }
 
 /**
@@ -55,9 +37,11 @@ const getUserId = async (c: Context) => {
  */
 export async function GET(c: Context): Promise<Response> {
     try {
-        console.log(c.env)
-        console.log('GET /api/save')
-        const userId = await getUserId(c)
+        const userId = getUserId(c)
+
+        if (!userId) {
+            return c.json({ success: false, error: 'User not authenticated' }, 401)
+        }
 
         // Read from KV using user-specific key
         const key = `user:${userId}:savedata`
@@ -102,7 +86,11 @@ export async function GET(c: Context): Promise<Response> {
  */
 export async function POST(c: Context): Promise<Response> {
     try {
-        const userId = await getUserId(c)
+        const userId = getUserId(c)
+
+        if (!userId) {
+            return c.json({ success: false, error: 'User not authenticated' }, 401)
+        }
 
         const saveData = (await c.req.json()) as SaveData
 
@@ -150,7 +138,11 @@ export async function POST(c: Context): Promise<Response> {
  */
 export async function DELETE(c: Context): Promise<Response> {
     try {
-        const userId = await getUserId(c)
+        const userId = getUserId(c)
+
+        if (!userId) {
+            return c.json({ success: false, error: 'User not authenticated' }, 401)
+        }
 
         // Delete from KV
         await c.env.KV.delete(`user:${userId}:savedata`)

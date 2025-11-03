@@ -302,6 +302,69 @@ func restart_servers():
 	await get_tree().create_timer(1.0).timeout
 	start_servers()
 
+func reset_database():
+	"""Reset the sandbox database by stopping servers and restarting with recreateDb flag"""
+	print("[PlaycademyBackend] Resetting sandbox database...")
+	stop_servers()
+	await get_tree().create_timer(1.0).timeout
+	
+	# Restart sandbox with recreate flag
+	_start_sandbox_with_recreate()
+	
+	# Restart backend if it was running
+	if _has_backend_config():
+		start_backend(false)
+
+func _start_sandbox_with_recreate():
+	"""Start sandbox with --recreate-db flag to force fresh database"""
+	if sandbox_status == ServerStatus.RUNNING or sandbox_status == ServerStatus.STARTING:
+		return
+	
+	var port = get_sandbox_port()
+	
+	var runtime_info = _find_js_runtime()
+	if runtime_info.is_empty():
+		_handle_error("sandbox", "Neither npm nor bun found")
+		return
+	
+	var runtime_type = runtime_info["type"]
+	
+	sandbox_status = ServerStatus.STARTING
+	emit_signal("status_changed", get_status_string())
+	
+	sandbox_log_path = _create_log_file_path("sandbox")
+	
+	var shell_cmd = ""
+	if runtime_type == "npm":
+		shell_cmd = "NO_COLOR=1 npx --yes @playcademy/sandbox --port %d" % port
+	else:
+		shell_cmd = "NO_COLOR=1 bun x --silent @playcademy/sandbox --port %d" % port
+	
+	var project_name = ProjectSettings.get_setting("application/config/name", "godot-game")
+	var project_slug = project_name.to_lower().replace(" ", "-")
+	shell_cmd += " --project-name \"%s\" --project-slug %s" % [project_name, project_slug]
+	
+	# Add recreate-db flag
+	shell_cmd += " --recreate-db"
+	
+	shell_cmd += " > %s 2>&1" % sandbox_log_path
+	
+	var args = []
+	if OS.get_name() == "Windows":
+		args = ["cmd", "/c", shell_cmd]
+		sandbox_process = OS.create_process("cmd", args.slice(1))
+	else:
+		args = ["sh", "-c", shell_cmd]
+		sandbox_process = OS.create_process("sh", args.slice(1))
+	
+	if sandbox_process == -1:
+		sandbox_status = ServerStatus.STOPPED
+		_handle_error("sandbox", "Failed to start sandbox with database reset")
+		return
+	
+	print("[PlaycademyBackend] Starting sandbox with database reset (PID %d)" % sandbox_process)
+	_check_server_registry("sandbox", 0, false)
+
 func get_sandbox_status() -> ServerStatus:
 	return sandbox_status
 
@@ -380,9 +443,9 @@ func _get_server_pid_from_registry(server_type: String) -> int:
 	
 	return -1
 
-# Check server registry with retry logic (retry every 500ms for 5 seconds = 10 attempts)
+# Check server registry with retry logic (retry every 500ms for 10 seconds = 20 attempts)
 var _retry_counts = {"sandbox": 0, "backend": 0}
-const MAX_RETRIES = 10
+const MAX_RETRIES = 20
 const RETRY_INTERVAL = 0.5
 
 func _check_server_registry(server_type: String, attempt: int, silent: bool = false):
@@ -393,7 +456,7 @@ func _check_server_registry(server_type: String, attempt: int, silent: bool = fa
 			backend_status = ServerStatus.STOPPED
 		
 		if not silent:
-			_handle_error(server_type, "Server not found in registry after 5 seconds")
+			_handle_error(server_type, "Server not found in registry after 10 seconds")
 		emit_signal("status_changed", get_status_string())
 		return
 	

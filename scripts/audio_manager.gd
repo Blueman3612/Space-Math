@@ -10,7 +10,7 @@ var blip_sound = preload("res://assets/sounds/Blip.wav")
 var select_sound = preload("res://assets/sounds/Select.wav")
 
 # Preloaded music resources
-var background_music = preload("res://assets/music/Split.wav")
+var background_music = preload("res://assets/music/Split.ogg")
 
 # AudioStreamPlayer pool for SFX and Music
 var sfx_player_pool: Array[AudioStreamPlayer] = []

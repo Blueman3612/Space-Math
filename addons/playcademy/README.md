@@ -8,7 +8,7 @@ The asset bundle includes the following key components:
 
 This is a Godot editor plugin that helps you prepare your game for the Playcademy platform. Its primary functions include:
 
-- **Automatic Manifest Generation**: Creates the required `playcademy.manifest.json` file with game metadata (name, version, entry scene, platform info, etc.)
+- **Automatic Manifest Generation**: Creates the required `playcademy.manifest.json` file with build metadata (Godot version, build timestamp)
 - **Auto-Zipping**: Automatically packages your entire export into a ZIP file ready for upload to the Playcademy platform
 - **Smart Export Handling**: Intelligently detects export paths and skips auto-zipping for non-empty directories to prevent file conflicts
 - **Asset Packaging**: Assists in organizing and declaring the assets your game uses, ensuring they are correctly recognized and handled by the Playcademy system
