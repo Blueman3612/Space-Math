@@ -225,7 +225,7 @@ func switch_to_next_grade():
 		update_level_availability()
 		AudioManager.play_select()
 
-func create_grade_level_button(global_number: int, category_name: String, level_index: int, level_data: Dictionary, button_position: Vector2, theme_color: Color) -> Button:
+func create_grade_level_button(global_number: int, _category_name: String, _level_index: int, level_data: Dictionary, button_position: Vector2, theme_color: Color) -> Button:
 	"""Create a single level button for the grade-based system"""
 	var button = Button.new()
 	button.name = "LevelButton_" + level_data.id

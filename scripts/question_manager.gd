@@ -530,10 +530,10 @@ func _generate_2digit_addition_with_regrouping() -> Array:
 		attempts += 1
 	
 	# Fallback: force regrouping in ones place
-	var ones1 = rng.randi_range(5, 9)
-	var ones2 = rng.randi_range(10 - ones1, 9)
-	operand1 = rng.randi_range(1, 8) * 10 + ones1
-	operand2 = rng.randi_range(1, 8) * 10 + ones2
+	var fallback_ones1 = rng.randi_range(5, 9)
+	var fallback_ones2 = rng.randi_range(10 - fallback_ones1, 9)
+	operand1 = rng.randi_range(1, 8) * 10 + fallback_ones1
+	operand2 = rng.randi_range(1, 8) * 10 + fallback_ones2
 	return [operand1, operand2]
 
 func _generate_2digit_subtraction_without_regrouping() -> Array:
