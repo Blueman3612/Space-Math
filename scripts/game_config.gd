@@ -208,10 +208,9 @@ const GRADES = [1, 2, 3]
 const CATEGORY_COLORS = {
 	"Addition": Color(0, 0.5, 1),
 	"Subtraction": Color(1, 0.25, 0.25),
-	"Fact Families": Color(0, 0.75, 0.5),
+	"Add & Sub": Color(0, 0.75, 0.5),
 	"2-Digit Numbers": Color(1, 0.5, 0),
 	"3-Digit Numbers": Color(0.75, 0.25, 0.75),
-	"Add & Subtract": Color(0, 0.6, 0.4),
 	"Multiplication": Color(1, 0.75, 0.25),
 	"Division": Color(1, 0.5, 1),
 	"Multiply & Divide": Color(0.8, 0.4, 0)
@@ -241,7 +240,7 @@ const GRADE_LEVELS = {
 				]
 			},
 			{
-				"name": "Fact Families",
+				"name": "Add & Sub",
 				"levels": [
 					{"id": "grade1_fact_families_0_5", "name": "Add/Subtract 0-5", "mastery_count": 40, "config": {"operators": ["+", "-"], "sum_max": 5, "range_max": 5}},
 					{"id": "grade1_fact_families_0_9", "name": "Add/Subtract 0-9", "mastery_count": 40, "config": {"operators": ["+", "-"], "sum_max": 9, "range_max": 9}},
@@ -268,7 +267,7 @@ const GRADE_LEVELS = {
 				]
 			},
 			{
-				"name": "Fact Families",
+				"name": "Add & Sub",
 				"levels": [
 					{"id": "grade2_fact_families_0_20", "name": "Add/Subtract 0-20", "mastery_count": 33, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}}
 				]
@@ -294,7 +293,7 @@ const GRADE_LEVELS = {
 	3: {
 		"categories": [
 			{
-				"name": "Add & Subtract",
+				"name": "Add & Sub",
 				"levels": [
 					{"id": "grade3_add_sub_sums_to_20", "name": "Sums to 20", "mastery_count": 33, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}},
 					{"id": "grade3_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 60, "config": {"operators": ["-"], "range_max": 9}},

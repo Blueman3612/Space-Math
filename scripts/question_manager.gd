@@ -262,6 +262,7 @@ func find_closest_grade_with_operator(target_grade, operator):
 
 # Level generation config for current level
 var current_level_config = null
+var used_questions_this_level = {}  # Track used questions to avoid duplicates
 
 func set_level_generation_config(config: Dictionary):
 	"""Set the configuration for dynamic problem generation"""
@@ -270,6 +271,8 @@ func set_level_generation_config(config: Dictionary):
 	question_weights.clear()
 	unavailable_questions.clear()
 	available_questions.clear()
+	# Clear used questions for the new level
+	used_questions_this_level.clear()
 
 func generate_dynamic_question() -> Dictionary:
 	"""Generate a problem dynamically based on current_level_config"""
@@ -279,21 +282,54 @@ func generate_dynamic_question() -> Dictionary:
 	
 	var config = current_level_config
 	var operators = config.get("operators", ["+"])
-	var selected_operator = operators[rng.randi() % operators.size()]
 	
-	var question_data = {}
+	var max_attempts = 100  # Max attempts before resetting used questions
+	var attempts = 0
+	var selected_operator: String
+	var question_data: Dictionary
+	var question_key: String
 	
-	match selected_operator:
-		"+":
-			question_data = _generate_addition_problem(config)
-		"-":
-			question_data = _generate_subtraction_problem(config)
-		"x":
-			question_data = _generate_multiplication_problem(config)
-		"/":
-			question_data = _generate_division_problem(config)
+	while attempts < max_attempts:
+		selected_operator = operators[rng.randi() % operators.size()]
+		question_data = _generate_question_for_operator(selected_operator, config)
+		question_key = _get_dynamic_question_key(question_data)
+		
+		# Check if this question has been used
+		if not used_questions_this_level.has(question_key):
+			# Mark as used and return
+			used_questions_this_level[question_key] = true
+			return question_data
+		
+		attempts += 1
 	
+	# If we've exhausted attempts, reset used questions and generate one more
+	print("[QuestionManager] Ran out of unique questions, resetting used questions list")
+	used_questions_this_level.clear()
+	
+	selected_operator = operators[rng.randi() % operators.size()]
+	question_data = _generate_question_for_operator(selected_operator, config)
+	question_key = _get_dynamic_question_key(question_data)
+	used_questions_this_level[question_key] = true
 	return question_data
+
+func _generate_question_for_operator(operator: String, config: Dictionary) -> Dictionary:
+	"""Generate a question for the given operator"""
+	match operator:
+		"+":
+			return _generate_addition_problem(config)
+		"-":
+			return _generate_subtraction_problem(config)
+		"x":
+			return _generate_multiplication_problem(config)
+		"/":
+			return _generate_division_problem(config)
+	return {}
+
+func _get_dynamic_question_key(question_data: Dictionary) -> String:
+	"""Generate a unique key for a dynamically generated question"""
+	var operands = question_data.get("operands", [0, 0])
+	var operator = question_data.get("operator", "+")
+	return str(operands[0]) + "_" + operator + "_" + str(operands[1])
 
 func _generate_addition_problem(config: Dictionary) -> Dictionary:
 	"""Generate an addition problem based on config"""
