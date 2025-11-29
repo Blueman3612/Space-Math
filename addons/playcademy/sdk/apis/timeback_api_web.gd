@@ -17,6 +17,17 @@ func _init(playcademy_client: JavaScriptObject):
 	_timeback_api.pause_activity_failed.connect(_on_original_pause_activity_failed)
 	_timeback_api.resume_activity_failed.connect(_on_original_resume_activity_failed)
 
+# Get the user's TimeBack role (student, parent, teacher, administrator)
+var role: String:
+	get:
+		return _timeback_api.role
+
+# Get the user's TimeBack enrollments for this game
+# Returns an array of dictionaries with { subject, grade, courseId }
+var enrollments: Array:
+	get:
+		return _timeback_api.enrollments
+
 func start_activity(metadata: Dictionary):
 	_timeback_api.start_activity(metadata)
 

@@ -6,10 +6,7 @@ signal sdk_initialization_failed(error_message)
 
 const UsersAPIWeb = preload("res://addons/playcademy/sdk/apis/users_api_web.gd")
 const RuntimeAPIWeb = preload("res://addons/playcademy/sdk/apis/runtime_api_web.gd")
-const InventoryAPIWeb = preload("res://addons/playcademy/sdk/apis/inventory_api_web.gd")
-const LevelsAPIWeb = preload("res://addons/playcademy/sdk/apis/levels_api_web.gd")
 const CreditsAPIWeb = preload("res://addons/playcademy/sdk/apis/credits_api_web.gd")
-const LeaderboardAPIWeb = preload("res://addons/playcademy/sdk/apis/leaderboard_api_web.gd")
 const ScoresAPIWeb = preload("res://addons/playcademy/sdk/apis/scores_api_web.gd")
 const TimebackAPIWeb = preload("res://addons/playcademy/sdk/apis/timeback_api_web.gd")
 const BackendAPIWeb = preload("res://addons/playcademy/sdk/apis/backend_api_web.gd")
@@ -17,16 +14,18 @@ const BackendAPIWeb = preload("res://addons/playcademy/sdk/apis/backend_api_web.
 var playcademy_client: JavaScriptObject = null
 var is_sdk_initialized := false
 
-# --- Public Sub-APIs ---
-var users
-var runtime
-var inventory
-var levels
-var credits
-var leaderboard
-var scores
-var timeback
-var backend
+# --- Public SDK Namespaces ---
+# Implemented (6/8):
+var users      # User profile + inventory management
+var runtime    # getGameToken, exit
+var backend    # Custom game API routes
+var credits    # Credits management
+var scores     # Submit scores
+var timeback   # TimeBack XP tracking
+
+# Not yet implemented (2/8):
+# identity - OAuth connections
+# realtime - WebSocket multiplayer tokens
 
 # --- Main PlaycademySDK Methods ---
 func _ready():
@@ -82,28 +81,10 @@ func _on_sdk_initialized_from_js(args_array: Array):
 			_on_sdk_initialization_failed_from_js(["RuntimeAPI_INSTANTIATION_FAILED"])
 			return
 
-		inventory = InventoryAPIWeb.new(playcademy_client)
-		if inventory == null:
-			printerr("[PlaycademySDK.gd] CRITICAL: InventoryAPIWeb failed to instantiate!")
-			_on_sdk_initialization_failed_from_js(["InventoryAPI_INSTANTIATION_FAILED"])
-			return
-
-		levels = LevelsAPIWeb.new(playcademy_client)
-		if levels == null:
-			printerr("[PlaycademySDK.gd] CRITICAL: LevelsAPIWeb failed to instantiate!")
-			_on_sdk_initialization_failed_from_js(["LevelsAPI_INSTANTIATION_FAILED"])
-			return
-
-		credits = CreditsAPIWeb.new(inventory)
+		credits = CreditsAPIWeb.new(users)
 		if credits == null:
 			printerr("[PlaycademySDK.gd] CRITICAL: CreditsAPIWeb failed to instantiate!")
 			_on_sdk_initialization_failed_from_js(["CreditsAPI_INSTANTIATION_FAILED"])
-			return
-
-		leaderboard = LeaderboardAPIWeb.new(playcademy_client)
-		if leaderboard == null:
-			printerr("[PlaycademySDK.gd] CRITICAL: LeaderboardAPIWeb failed to instantiate!")
-			_on_sdk_initialization_failed_from_js(["LeaderboardAPI_INSTANTIATION_FAILED"])
 			return
 
 		scores = ScoresAPIWeb.new(playcademy_client)
@@ -124,7 +105,7 @@ func _on_sdk_initialized_from_js(args_array: Array):
 			_on_sdk_initialization_failed_from_js(["BackendAPI_INSTANTIATION_FAILED"])
 			return
 
-		print("[PlaycademySDK.gd] Main Client assigned. Sub-APIs (Users, Runtime, Inventory, Levels, Credits, Leaderboard, Scores, Timeback, Backend) instantiated.")
+		print("[PlaycademySDK.gd] Main Client assigned. Game SDK namespaces instantiated: users (+ inventory), runtime, credits, scores, timeback, backend")
 		emit_signal("sdk_ready")
 	else:
 		var error_msg = "SDK init callback: Invalid or no client argument."
@@ -213,27 +194,25 @@ func _initialize_mock_client():
 
 	is_sdk_initialized = true
 
-	# Instantiate local HTTP-based wrappers
+	# Instantiate local HTTP-based wrappers (aligned with public game SDK)
 	# For local development, let the sandbox handle game context server-side
 	users = preload("res://addons/playcademy/sdk/local/local_users_api.gd").new(sandbox_api_url)
 	runtime = preload("res://addons/playcademy/sdk/local/local_runtime_api.gd").new(sandbox_api_url)
-	inventory = preload("res://addons/playcademy/sdk/local/local_inventory_api.gd").new(sandbox_api_url)
-	levels = preload("res://addons/playcademy/sdk/local/local_levels_api.gd").new(sandbox_api_url)
-	credits = preload("res://addons/playcademy/sdk/local/local_credits_api.gd").new(inventory)
-	leaderboard = preload("res://addons/playcademy/sdk/local/local_leaderboard_api.gd").new(sandbox_api_url)
+	credits = preload("res://addons/playcademy/sdk/local/local_credits_api.gd").new(users)
 	scores = preload("res://addons/playcademy/sdk/local/local_scores_api.gd").new(sandbox_api_url)
-	timeback = preload("res://addons/playcademy/sdk/local/local_timeback_api.gd").new(game_backend_url)
+	timeback = preload("res://addons/playcademy/sdk/local/local_timeback_api.gd").new(game_backend_url, sandbox_api_url)
 	backend = preload("res://addons/playcademy/sdk/local/local_backend_api.gd").new(game_backend_url)
 
 	add_child(users)
 	add_child(runtime)
-	add_child(inventory)
-	add_child(levels)
-	add_child(leaderboard)
 	add_child(scores)
 	add_child(timeback)
 	add_child(backend)
+	
+	# Fetch TimeBack user context (role and enrollments)
+	timeback.fetch_user_context()
 
+	print("[PlaycademySDK.gd] Local development mode: Game SDK namespaces ready (users + inventory, runtime, credits, scores, timeback, backend)")
 	emit_signal("sdk_ready")
 
 

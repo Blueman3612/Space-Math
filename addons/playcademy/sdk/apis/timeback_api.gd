@@ -20,6 +20,69 @@ var _activity_in_progress: bool = false
 func _init(client_js_object: JavaScriptObject):
 	_main_client = client_js_object
 
+# Get the user's TimeBack role (student, parent, teacher, administrator)
+# Returns the role from the JS SDK, or from window if SDK doesn't have it
+var role: String:
+	get:
+		# Try to get from JS SDK client first
+		if _main_client != null and 'timeback' in _main_client:
+			var tb = _main_client.timeback
+			if tb is JavaScriptObject and 'role' in tb:
+				var r = tb.role
+				if r != null:
+					return str(r)
+		
+		# Fall back to window.playcademyTimebackRole (set by shell.html)
+		var js_window = JavaScriptBridge.get_interface("window")
+		if js_window != null and 'playcademyTimebackRole' in js_window:
+			var r = js_window.playcademyTimebackRole
+			if r != null:
+				return str(r)
+		
+		return ""
+
+# Get the user's TimeBack enrollments for this game
+# Returns an array of dictionaries with { subject, grade, courseId }
+var enrollments: Array:
+	get:
+		var result: Array = []
+		
+		# Try to get from JS SDK client first
+		if _main_client != null and 'timeback' in _main_client:
+			var tb = _main_client.timeback
+			if tb is JavaScriptObject and 'enrollments' in tb:
+				var js_enrollments = tb.enrollments
+				if js_enrollments is JavaScriptObject:
+					# Convert JS array to GDScript array
+					var length = js_enrollments.length if 'length' in js_enrollments else 0
+					for i in range(length):
+						var item = js_enrollments[i]
+						if item is JavaScriptObject:
+							result.append({
+								"subject": str(item.subject) if 'subject' in item else "",
+								"grade": int(item.grade) if 'grade' in item else 0,
+								"courseId": str(item.courseId) if 'courseId' in item else ""
+							})
+					if result.size() > 0:
+						return result
+		
+		# Fall back to window.playcademyTimebackEnrollments (set by shell.html)
+		var js_window = JavaScriptBridge.get_interface("window")
+		if js_window != null and 'playcademyTimebackEnrollments' in js_window:
+			var js_enrollments = js_window.playcademyTimebackEnrollments
+			if js_enrollments is JavaScriptObject:
+				var length = js_enrollments.length if 'length' in js_enrollments else 0
+				for i in range(length):
+					var item = js_enrollments[i]
+					if item is JavaScriptObject:
+						result.append({
+							"subject": str(item.subject) if 'subject' in item else "",
+							"grade": int(item.grade) if 'grade' in item else 0,
+							"courseId": str(item.courseId) if 'courseId' in item else ""
+						})
+		
+		return result
+
 # Start tracking an activity
 func start_activity(metadata: Dictionary):
 	if _main_client == null:

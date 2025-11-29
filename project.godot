@@ -15,7 +15,7 @@ config/description="Solve math problems in space!"
 config/version="1.2.4"
 run/main_scene="uid://dgsyvy33jqe6f"
 config/features=PackedStringArray("4.5", "GL Compatibility")
-boot_splash/show_image=false
+boot_splash/image="uid://b11flqxfam1db"
 config/icon="res://icon.svg"
 
 [autoload]
@@ -176,6 +176,8 @@ backend/auto_start=true
 backend/sandbox_port=4321
 backend/backend_port=8788
 backend/verbose=false
+sandbox/auto_start=true
+backend/project_path="/Users/nathan/Space Math"
 
 [rendering]
 

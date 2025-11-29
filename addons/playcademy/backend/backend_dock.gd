@@ -256,7 +256,7 @@ func _update_ui():
 	stop_button.disabled = not any_running and not any_starting
 	restart_button.disabled = any_starting or any_stopping
 	
-	auto_start_checkbox.button_pressed = backend_manager.is_auto_start_enabled()
+	auto_start_checkbox.button_pressed = backend_manager.is_sandbox_auto_start_enabled() or backend_manager.is_backend_auto_start_enabled()
 
 func _apply_initial_button_style(button: Button):
 	# Apply identical stopped styling to both buttons on creation
@@ -352,6 +352,7 @@ func _on_reset_db_pressed():
 		backend_manager.reset_database()
 
 func _on_auto_start_toggled(pressed: bool):
+	ProjectSettings.set_setting("playcademy/sandbox/auto_start", pressed)
 	ProjectSettings.set_setting("playcademy/backend/auto_start", pressed)
 	ProjectSettings.save()
 

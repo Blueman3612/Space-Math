@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://dgsyvy33jqe6f"]
+[gd_scene load_steps=19 format=3 uid="uid://dgsyvy33jqe6f"]
 
 [ext_resource type="Script" uid="uid://b7dgkimpo8qo0" path="res://scripts/main.gd" id="1_8k3xf"]
 [ext_resource type="Theme" uid="uid://qx67shaxna0a" path="res://assets/themes/classic/classic.tres" id="1_jyhfs"]
@@ -15,6 +15,7 @@
 [ext_resource type="Texture2D" uid="uid://etg2ex4n2k8r" path="res://assets/sprites/Audio Icons.png" id="9_a8y0u"]
 [ext_resource type="LabelSettings" uid="uid://nqkc5o1v0fhc" path="res://assets/label settings/GravityBold256.tres" id="13_trceg"]
 [ext_resource type="Texture2D" uid="uid://caeyuu1ydiffh" path="res://assets/sprites/Key Icons.png" id="15_jkv2x"]
+[ext_resource type="Texture2D" uid="uid://b11flqxfam1db" path="res://assets/sprites/Playcademy Splashscreen.png" id="16_jbj1t"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_85g3d"]
 font = ExtResource("6_tipki")
@@ -782,6 +783,10 @@ offset_right = 1920.0
 offset_bottom = 1080.0
 mouse_filter = 2
 
+[node name="Splash Screen" type="Sprite2D" parent="Loading"]
+texture = ExtResource("16_jbj1t")
+centered = false
+
 [node name="Label" type="Label" parent="Loading"]
 layout_mode = 1
 anchors_preset = 8
@@ -790,9 +795,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -232.0
-offset_top = -32.0
+offset_top = 388.0
 offset_right = 232.0
-offset_bottom = 32.0
+offset_bottom = 452.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "Loading..."

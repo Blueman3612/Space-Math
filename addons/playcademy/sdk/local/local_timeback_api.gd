@@ -8,7 +8,17 @@ signal end_activity_failed(error_message)
 signal pause_activity_failed(error_message)
 signal resume_activity_failed(error_message)
 
+# Signals for user context
+signal user_context_received(data: Dictionary)
+signal user_context_failed(error_message: String)
+
 var _base_url: String
+var _sandbox_url: String = ""
+
+# User context (role and enrollments)
+var _role: String = "student"
+var _enrollments: Array = []
+var _user_context_loaded: bool = false
 
 # Internal state for tracking current activity
 var _activity_start_time: int = 0
@@ -17,8 +27,75 @@ var _activity_in_progress: bool = false
 var _paused_time: int = 0  # Accumulated paused duration in milliseconds
 var _pause_start_time: int = 0  # When current pause started (0 if not paused)
 
-func _init(base_url: String):
+func _init(base_url: String, sandbox_url: String = ""):
 	_base_url = base_url.rstrip("/")
+	_sandbox_url = sandbox_url.rstrip("/") if sandbox_url else ""
+
+# Get the user's TimeBack role (student, parent, teacher, administrator)
+var role: String:
+	get:
+		return _role
+
+# Get the user's TimeBack enrollments for this game
+# Returns an array of dictionaries with { subject, grade, courseId }
+var enrollments: Array:
+	get:
+		return _enrollments
+
+# Set role and enrollments (called by PlaycademySDK after fetching user data)
+func set_user_context(user_role: String, user_enrollments: Array):
+	_role = user_role if user_role else "student"
+	_enrollments = user_enrollments if user_enrollments else []
+	_user_context_loaded = true
+	print("[LocalTimebackAPI] User context set: role=%s, enrollments=%d" % [_role, _enrollments.size()])
+
+# Fetch user context from sandbox (role and enrollments)
+func fetch_user_context():
+	if _sandbox_url.is_empty():
+		printerr("[LocalTimebackAPI] Cannot fetch user context: sandbox URL not set")
+		emit_signal("user_context_failed", "NO_SANDBOX_URL")
+		return
+	
+	var http := HTTPRequest.new()
+	add_child(http)
+	http.request_completed.connect(_on_user_context_completed.bind(http))
+	
+	var url = "%s/users/me" % _sandbox_url
+	var headers = ["Authorization: Bearer sandbox-demo-token"]
+	var err := http.request(url, headers)
+	
+	if err != OK:
+		printerr("[LocalTimebackAPI] Failed to fetch user context. Error code: %s" % err)
+		emit_signal("user_context_failed", "HTTP_REQUEST_FAILED")
+		http.queue_free()
+
+func _on_user_context_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, http: HTTPRequest):
+	http.queue_free()
+	
+	if response_code != 200:
+		emit_signal("user_context_failed", "HTTP_%d" % response_code)
+		return
+	
+	var json = JSON.new()
+	var parse_result = json.parse(body.get_string_from_utf8())
+	if parse_result != OK:
+		emit_signal("user_context_failed", "JSON_PARSE_ERROR")
+		return
+	
+	var data = json.data
+	
+	# Extract timeback data from user response
+	if data.has("timeback") and data["timeback"] != null:
+		var tb = data["timeback"]
+		_role = tb.get("role", "student")
+		_enrollments = tb.get("enrollments", [])
+	else:
+		_role = "student"
+		_enrollments = []
+	
+	_user_context_loaded = true
+	print("[LocalTimebackAPI] User context loaded: role=%s, enrollments=%d" % [_role, _enrollments.size()])
+	emit_signal("user_context_received", {"role": _role, "enrollments": _enrollments})
 
 # Start tracking an activity
 func start_activity(metadata: Dictionary):

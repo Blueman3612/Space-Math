@@ -27,44 +27,236 @@ var backend_process: int = -1
 var sandbox_log_path: String = ""
 var backend_log_path: String = ""
 
-# Project settings keys
-const SETTING_AUTO_START = "playcademy/backend/auto_start"
-const SETTING_SANDBOX_PORT = "playcademy/backend/sandbox_port"
-const SETTING_BACKEND_PORT = "playcademy/backend/backend_port"
-const SETTING_VERBOSE = "playcademy/backend/verbose"
+# Project settings keys - Sandbox
+const SETTING_SANDBOX_AUTO_START = "playcademy/sandbox/auto_start"
+const SETTING_SANDBOX_PORT = "playcademy/sandbox/port"
+const SETTING_SANDBOX_VERBOSE = "playcademy/sandbox/verbose"
+const SETTING_SANDBOX_URL = "playcademy/sandbox/url"
+
+# Project settings keys - Backend
+const SETTING_BACKEND_AUTO_START = "playcademy/backend/auto_start"
+const SETTING_BACKEND_PORT = "playcademy/backend/port"
+const SETTING_BACKEND_PROJECT_PATH = "playcademy/backend/project_path"
+
+# Project settings keys - Timeback
+const SETTING_TIMEBACK_STUDENT_ID = "playcademy/timeback/student_id"
+const SETTING_TIMEBACK_ROLE = "playcademy/timeback/role"
+const SETTING_TIMEBACK_ORG_ID = "playcademy/timeback/organization_id"
+const SETTING_TIMEBACK_ORG_NAME = "playcademy/timeback/organization_name"
+const SETTING_TIMEBACK_ORG_TYPE = "playcademy/timeback/organization_type"
+
+# Dynamic course enrollment settings prefix
+const SETTING_TIMEBACK_COURSES_PREFIX = "playcademy/timeback/courses/"
+
+# Cache for discovered courses from config
+var _config_courses: Array = []
 
 func _ready():
 	_ensure_project_settings()
 
 func _ensure_project_settings():
-	if not ProjectSettings.has_setting(SETTING_AUTO_START):
-		ProjectSettings.set_setting(SETTING_AUTO_START, true)
+	var needs_save = false
+	
+	# Sandbox settings - create if missing
+	if not ProjectSettings.has_setting(SETTING_SANDBOX_AUTO_START):
+		ProjectSettings.set_setting(SETTING_SANDBOX_AUTO_START, false)
+		needs_save = true
 	
 	if not ProjectSettings.has_setting(SETTING_SANDBOX_PORT):
 		ProjectSettings.set_setting(SETTING_SANDBOX_PORT, 4321)
+		needs_save = true
+	
+	if not ProjectSettings.has_setting(SETTING_SANDBOX_VERBOSE):
+		ProjectSettings.set_setting(SETTING_SANDBOX_VERBOSE, false)
+		needs_save = true
+	
+	if not ProjectSettings.has_setting(SETTING_SANDBOX_URL):
+		ProjectSettings.set_setting(SETTING_SANDBOX_URL, "http://localhost:4321")
+		needs_save = true
+	
+	# Backend settings - create if missing
+	if not ProjectSettings.has_setting(SETTING_BACKEND_AUTO_START):
+		ProjectSettings.set_setting(SETTING_BACKEND_AUTO_START, false)
+		needs_save = true
 	
 	if not ProjectSettings.has_setting(SETTING_BACKEND_PORT):
 		ProjectSettings.set_setting(SETTING_BACKEND_PORT, 8788)
+		needs_save = true
 	
-	if not ProjectSettings.has_setting(SETTING_VERBOSE):
-		ProjectSettings.set_setting(SETTING_VERBOSE, false)
+	if not ProjectSettings.has_setting(SETTING_BACKEND_PROJECT_PATH):
+		# Auto-detect project path from Godot project root
+		var detected_path = ProjectSettings.globalize_path("res://").rstrip("/")
+		ProjectSettings.set_setting(SETTING_BACKEND_PROJECT_PATH, detected_path)
+		needs_save = true
 	
-	ProjectSettings.save()
+	# Timeback settings - create if missing
+	if not ProjectSettings.has_setting(SETTING_TIMEBACK_STUDENT_ID):
+		ProjectSettings.set_setting(SETTING_TIMEBACK_STUDENT_ID, "")
+		needs_save = true
+	
+	if not ProjectSettings.has_setting(SETTING_TIMEBACK_ROLE):
+		ProjectSettings.set_setting(SETTING_TIMEBACK_ROLE, "student")
+		needs_save = true
+	
+	if not ProjectSettings.has_setting(SETTING_TIMEBACK_ORG_ID):
+		ProjectSettings.set_setting(SETTING_TIMEBACK_ORG_ID, "")
+		needs_save = true
+	
+	if not ProjectSettings.has_setting(SETTING_TIMEBACK_ORG_NAME):
+		ProjectSettings.set_setting(SETTING_TIMEBACK_ORG_NAME, "")
+		needs_save = true
+	
+	if not ProjectSettings.has_setting(SETTING_TIMEBACK_ORG_TYPE):
+		ProjectSettings.set_setting(SETTING_TIMEBACK_ORG_TYPE, "department")
+		needs_save = true
+	
+	# Register property info for all settings (must be done every load for UI visibility)
+	_register_all_property_info()
+	
+	# Create dynamic settings for course enrollments from config
+	_ensure_course_enrollment_settings()
+	
+	if needs_save:
+		ProjectSettings.save()
 
-func is_auto_start_enabled() -> bool:
-	return ProjectSettings.get_setting(SETTING_AUTO_START, true)
+func _register_all_property_info():
+	"""Register property info for all settings - must be called every load for UI visibility"""
+	# Sandbox settings
+	ProjectSettings.set_initial_value(SETTING_SANDBOX_AUTO_START, false)
+	ProjectSettings.add_property_info({
+		"name": SETTING_SANDBOX_AUTO_START,
+		"type": TYPE_BOOL,
+	})
+	
+	ProjectSettings.set_initial_value(SETTING_SANDBOX_PORT, 4321)
+	ProjectSettings.add_property_info({
+		"name": SETTING_SANDBOX_PORT,
+		"type": TYPE_INT,
+		"hint": PROPERTY_HINT_RANGE,
+		"hint_string": "1024,65535"
+	})
+	
+	ProjectSettings.set_initial_value(SETTING_SANDBOX_VERBOSE, false)
+	ProjectSettings.add_property_info({
+		"name": SETTING_SANDBOX_VERBOSE,
+		"type": TYPE_BOOL,
+	})
+	
+	ProjectSettings.set_initial_value(SETTING_SANDBOX_URL, "http://localhost:4321")
+	ProjectSettings.add_property_info({
+		"name": SETTING_SANDBOX_URL,
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_PLACEHOLDER_TEXT,
+		"hint_string": "http://localhost:4321"
+	})
+	
+	# Backend settings
+	ProjectSettings.set_initial_value(SETTING_BACKEND_AUTO_START, false)
+	ProjectSettings.add_property_info({
+		"name": SETTING_BACKEND_AUTO_START,
+		"type": TYPE_BOOL,
+	})
+	
+	ProjectSettings.set_initial_value(SETTING_BACKEND_PORT, 8788)
+	ProjectSettings.add_property_info({
+		"name": SETTING_BACKEND_PORT,
+		"type": TYPE_INT,
+		"hint": PROPERTY_HINT_RANGE,
+		"hint_string": "1024,65535"
+	})
+	
+	ProjectSettings.set_initial_value(SETTING_BACKEND_PROJECT_PATH, "")
+	ProjectSettings.add_property_info({
+		"name": SETTING_BACKEND_PROJECT_PATH,
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_PLACEHOLDER_TEXT,
+		"hint_string": "Auto-detected from project root"
+	})
+	
+	# Timeback settings
+	ProjectSettings.set_initial_value(SETTING_TIMEBACK_STUDENT_ID, "")
+	ProjectSettings.add_property_info({
+		"name": SETTING_TIMEBACK_STUDENT_ID,
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_PLACEHOLDER_TEXT,
+		"hint_string": "Leave empty for mock ID"
+	})
+	
+	ProjectSettings.set_initial_value(SETTING_TIMEBACK_ROLE, "student")
+	ProjectSettings.add_property_info({
+		"name": SETTING_TIMEBACK_ROLE,
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_ENUM,
+		"hint_string": "student,parent,teacher,administrator"
+	})
+	
+	ProjectSettings.set_initial_value(SETTING_TIMEBACK_ORG_ID, "")
+	ProjectSettings.add_property_info({
+		"name": SETTING_TIMEBACK_ORG_ID,
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_PLACEHOLDER_TEXT,
+		"hint_string": "Leave empty for mock org"
+	})
+	
+	ProjectSettings.set_initial_value(SETTING_TIMEBACK_ORG_NAME, "")
+	ProjectSettings.add_property_info({
+		"name": SETTING_TIMEBACK_ORG_NAME,
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_PLACEHOLDER_TEXT,
+		"hint_string": "Leave empty for 'Playcademy Studios'"
+	})
+	
+	ProjectSettings.set_initial_value(SETTING_TIMEBACK_ORG_TYPE, "department")
+	ProjectSettings.add_property_info({
+		"name": SETTING_TIMEBACK_ORG_TYPE,
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_ENUM,
+		"hint_string": "school,district,department,local,state,national"
+	})
+
+func is_sandbox_auto_start_enabled() -> bool:
+	return ProjectSettings.get_setting(SETTING_SANDBOX_AUTO_START, false)
 
 func get_sandbox_port() -> int:
 	return ProjectSettings.get_setting(SETTING_SANDBOX_PORT, 4321)
 
+func is_sandbox_verbose_enabled() -> bool:
+	return ProjectSettings.get_setting(SETTING_SANDBOX_VERBOSE, false)
+
+func get_sandbox_configured_url() -> String:
+	return ProjectSettings.get_setting(SETTING_SANDBOX_URL, "http://localhost:4321")
+
+func is_backend_auto_start_enabled() -> bool:
+	return ProjectSettings.get_setting(SETTING_BACKEND_AUTO_START, false)
+
 func get_backend_port() -> int:
 	return ProjectSettings.get_setting(SETTING_BACKEND_PORT, 8788)
 
-func is_verbose_enabled() -> bool:
-	return ProjectSettings.get_setting(SETTING_VERBOSE, false)
+func get_backend_project_path() -> String:
+	var path = ProjectSettings.get_setting(SETTING_BACKEND_PROJECT_PATH, "")
+	if path.is_empty():
+		# Fall back to auto-detected project root
+		return ProjectSettings.globalize_path("res://").rstrip("/")
+	return path
+
+func get_timeback_student_id() -> String:
+	return ProjectSettings.get_setting(SETTING_TIMEBACK_STUDENT_ID, "")
+
+func get_timeback_role() -> String:
+	return ProjectSettings.get_setting(SETTING_TIMEBACK_ROLE, "student")
+
+func get_timeback_org_id() -> String:
+	return ProjectSettings.get_setting(SETTING_TIMEBACK_ORG_ID, "")
+
+func get_timeback_org_name() -> String:
+	return ProjectSettings.get_setting(SETTING_TIMEBACK_ORG_NAME, "")
+
+func get_timeback_org_type() -> String:
+	return ProjectSettings.get_setting(SETTING_TIMEBACK_ORG_TYPE, "department")
 
 func auto_start_if_enabled():
-	if is_auto_start_enabled():
+	var should_start = is_sandbox_auto_start_enabled() or is_backend_auto_start_enabled()
+	if should_start:
 		start_servers(true)  # Silent mode - don't show errors on auto-start failure
 
 func ensure_servers_running():
@@ -84,6 +276,175 @@ func _has_backend_config() -> bool:
 	var config_json = project_root + "/playcademy.config.json"
 	return FileAccess.file_exists(config_js) or FileAccess.file_exists(config_json)
 
+func _build_timeback_cli_args() -> String:
+	"""Build CLI arguments for Timeback configuration from project settings"""
+	var args = ""
+	
+	var student_id = get_timeback_student_id()
+	var role = get_timeback_role()
+	var org_id = get_timeback_org_id()
+	var org_name = get_timeback_org_name()
+	var org_type = get_timeback_org_type()
+	var excluded_courses = _get_excluded_courses()
+	
+	# Check if any timeback settings are configured (non-default values)
+	var has_custom_settings = (
+		not student_id.is_empty() or
+		role != "student" or
+		not org_id.is_empty() or
+		not org_name.is_empty() or
+		org_type != "department" or
+		not excluded_courses.is_empty() or
+		_has_timeback_config()
+	)
+	
+	# Always pass student ID to enable mock mode when any timeback setting is configured
+	if not student_id.is_empty():
+		args += " --timeback-student-id \"%s\"" % student_id
+	elif has_custom_settings:
+		args += " --timeback-student-id mock"
+	
+	if role != "student":
+		args += " --timeback-role %s" % role
+	
+	if not org_id.is_empty():
+		args += " --timeback-org-id \"%s\"" % org_id
+	
+	if not org_name.is_empty():
+		args += " --timeback-org-name \"%s\"" % org_name
+	
+	if org_type != "department":
+		args += " --timeback-org-type %s" % org_type
+	
+	if not excluded_courses.is_empty():
+		args += " --timeback-excluded-courses \"%s\"" % excluded_courses
+	
+	return args
+
+func _has_timeback_config() -> bool:
+	"""Check if playcademy.config.js has TimeBack integration configured"""
+	var project_root = ProjectSettings.globalize_path("res://")
+	var config_js = project_root + "/playcademy.config.js"
+	var config_json = project_root + "/playcademy.config.json"
+	
+	# Try JSON config first (easier to parse)
+	if FileAccess.file_exists(config_json):
+		var file = FileAccess.open(config_json, FileAccess.READ)
+		if file:
+			var content = file.get_as_text()
+			file.close()
+			var json_result = JSON.parse_string(content)
+			if json_result != null:
+				if json_result.has("integrations") and json_result["integrations"].has("timeback"):
+					return true
+	
+	# For JS config, do a simple text search for timeback
+	if FileAccess.file_exists(config_js):
+		var file = FileAccess.open(config_js, FileAccess.READ)
+		if file:
+			var content = file.get_as_text()
+			file.close()
+			# Look for timeback in integrations section
+			if "timeback" in content and "integrations" in content:
+				return true
+	
+	return false
+
+func _load_config_courses() -> Array:
+	"""Load courses from playcademy.config.json and return as array of {subject, grade}"""
+	var project_root = ProjectSettings.globalize_path("res://")
+	var config_json = project_root + "/playcademy.config.json"
+	
+	if not FileAccess.file_exists(config_json):
+		return []
+	
+	var file = FileAccess.open(config_json, FileAccess.READ)
+	if not file:
+		return []
+	
+	var content = file.get_as_text()
+	file.close()
+	
+	var json_result = JSON.parse_string(content)
+	if json_result == null:
+		return []
+	
+	if not json_result.has("integrations"):
+		return []
+	
+	var integrations = json_result["integrations"]
+	if not integrations.has("timeback"):
+		return []
+	
+	var timeback = integrations["timeback"]
+	if not timeback.has("courses"):
+		return []
+	
+	var courses = timeback["courses"]
+	if not courses is Array:
+		return []
+	
+	var result = []
+	for course in courses:
+		if course.has("subject") and course.has("grade"):
+			result.append({
+				"subject": course["subject"],
+				"grade": course["grade"]
+			})
+	
+	return result
+
+func _get_course_setting_key(subject: String, grade: int) -> String:
+	"""Get the project setting key for a course enrollment"""
+	# Replace : with _ for valid setting name
+	var course_key = "%s_%d" % [subject, grade]
+	return SETTING_TIMEBACK_COURSES_PREFIX + course_key
+
+func _ensure_course_enrollment_settings():
+	"""Create/update project settings for each course found in config"""
+	_config_courses = _load_config_courses()
+	
+	if _config_courses.is_empty():
+		return
+	
+	var needs_save = false
+	
+	for course in _config_courses:
+		var setting_key = _get_course_setting_key(course["subject"], course["grade"])
+		
+		# Create setting if it doesn't exist (default to enrolled = 1)
+		if not ProjectSettings.has_setting(setting_key):
+			ProjectSettings.set_setting(setting_key, 1)  # 1 = Enrolled
+			needs_save = true
+		
+		# Register property info for UI visibility with enum dropdown
+		ProjectSettings.set_initial_value(setting_key, 1)
+		ProjectSettings.add_property_info({
+			"name": setting_key,
+			"type": TYPE_INT,
+			"hint": PROPERTY_HINT_ENUM,
+			"hint_string": "Not Enrolled,Enrolled"  # 0 = Not Enrolled, 1 = Enrolled
+		})
+	
+	if needs_save:
+		ProjectSettings.save()
+
+func _get_excluded_courses() -> String:
+	"""Get comma-separated list of excluded courses based on project settings"""
+	var excluded = []
+	
+	for course in _config_courses:
+		var setting_key = _get_course_setting_key(course["subject"], course["grade"])
+		var enrollment_value = ProjectSettings.get_setting(setting_key, 1)  # Default to enrolled
+		
+		# 0 = Not Enrolled, 1 = Enrolled
+		if enrollment_value == 0:
+			# Format as "Subject:Grade" for CLI
+			var course_key = "%s:%d" % [course["subject"], course["grade"]]
+			excluded.append(course_key)
+	
+	return ",".join(excluded)
+
 func get_log_path(server_type: String) -> String:
 	if server_type == "sandbox":
 		return sandbox_log_path
@@ -100,7 +461,7 @@ func start_sandbox(silent: bool = false):
 		return
 	
 	var port = get_sandbox_port()
-	var verbose = is_verbose_enabled()
+	var verbose = is_sandbox_verbose_enabled()
 	
 	var runtime_info = _find_js_runtime()
 	if runtime_info.is_empty():
@@ -120,9 +481,9 @@ func start_sandbox(silent: bool = false):
 	var args = []
 	var shell_cmd = ""
 	if runtime_type == "npm":
-		shell_cmd = "NO_COLOR=1 npx --yes @playcademy/sandbox --port %d" % port
+		shell_cmd = "NO_COLOR=1 npx --yes @playcademy/sandbox --port %d --quiet" % port
 	else:
-		shell_cmd = "NO_COLOR=1 bun x --silent @playcademy/sandbox --port %d" % port
+		shell_cmd = "NO_COLOR=1 bun x --silent @playcademy/sandbox --port %d --quiet" % port
 	
 	# Always enable verbose logging for useful output in the dock
 	shell_cmd += " --verbose"
@@ -130,6 +491,12 @@ func start_sandbox(silent: bool = false):
 	var project_name = ProjectSettings.get_setting("application/config/name", "godot-game")
 	var project_slug = project_name.to_lower().replace(" ", "-")
 	shell_cmd += " --project-name \"%s\" --project-slug %s" % [project_name, project_slug]
+	
+	# Add TimeBack configuration from project settings
+	var timeback_args = _build_timeback_cli_args()
+	if not timeback_args.is_empty():
+		shell_cmd += timeback_args
+		print("[PlaycademyBackend] TimeBack config: role=%s" % get_timeback_role())
 	
 	# Redirect output to log file
 	shell_cmd += " > %s 2>&1" % sandbox_log_path
@@ -145,8 +512,7 @@ func start_sandbox(silent: bool = false):
 	if sandbox_process == -1:
 		sandbox_status = ServerStatus.STOPPED
 		if not silent:
-			var install_cmd = "npm install -g @playcademy/sandbox" if runtime_type == "npm" else "bun add -g @playcademy/sandbox"
-			_handle_error("sandbox", "Failed to start sandbox. Try: " + install_cmd)
+			_handle_error("sandbox", "Failed to start sandbox process. Check that bun or npm is installed.")
 		return
 	
 	var command = "%s %s" % [runtime_type, "@playcademy/sandbox --port " + str(port)]
@@ -160,7 +526,6 @@ func start_backend(silent: bool = false):
 		return
 	
 	var port = get_backend_port()
-	var verbose = is_verbose_enabled()
 	
 	var runtime_info = _find_js_runtime()
 	if runtime_info.is_empty():
@@ -336,9 +701,9 @@ func _start_sandbox_with_recreate():
 	
 	var shell_cmd = ""
 	if runtime_type == "npm":
-		shell_cmd = "NO_COLOR=1 npx --yes @playcademy/sandbox --port %d" % port
+		shell_cmd = "NO_COLOR=1 npx --yes @playcademy/sandbox --port %d --quiet" % port
 	else:
-		shell_cmd = "NO_COLOR=1 bun x --silent @playcademy/sandbox --port %d" % port
+		shell_cmd = "NO_COLOR=1 bun x --silent @playcademy/sandbox --port %d --quiet" % port
 	
 	var project_name = ProjectSettings.get_setting("application/config/name", "godot-game")
 	var project_slug = project_name.to_lower().replace(" ", "-")
@@ -346,6 +711,9 @@ func _start_sandbox_with_recreate():
 	
 	# Add recreate-db flag
 	shell_cmd += " --recreate-db"
+	
+	# Add TimeBack configuration from project settings
+	shell_cmd += _build_timeback_cli_args()
 	
 	shell_cmd += " > %s 2>&1" % sandbox_log_path
 	
@@ -450,13 +818,14 @@ const RETRY_INTERVAL = 0.5
 
 func _check_server_registry(server_type: String, attempt: int, silent: bool = false):
 	if attempt >= MAX_RETRIES:
+		var port = get_sandbox_port() if server_type == "sandbox" else get_backend_port()
 		if server_type == "sandbox":
 			sandbox_status = ServerStatus.STOPPED
 		else:
 			backend_status = ServerStatus.STOPPED
 		
 		if not silent:
-			_handle_error(server_type, "Server not found in registry after 10 seconds")
+			_handle_error(server_type, "Server failed to start. Port %d may be in use by another process.\nStop the other server or change the port in Project Settings." % port)
 		emit_signal("status_changed", get_status_string())
 		return
 	

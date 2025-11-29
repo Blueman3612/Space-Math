@@ -177,6 +177,16 @@
 
                     window.PLAYCADEMY = event.data.payload
 
+                    const timeback = event.data.payload?.timeback || null
+                    if (timeback) {
+                        logIfDebug('[PlaycademyBridge] Timeback data:', timeback)
+                        window.playcademyTimebackRole = timeback.role || 'student'
+                        window.playcademyTimebackEnrollments = timeback.enrollments || []
+                    } else {
+                        window.playcademyTimebackRole = null
+                        window.playcademyTimebackEnrollments = []
+                    }
+
                     try {
                         const client = await PlaycademyClient.init()
                         logIfDebug(

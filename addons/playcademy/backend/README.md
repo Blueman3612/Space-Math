@@ -35,12 +35,22 @@ When enabled, this plugin:
 
 1. **Enable the Plugin**: Go to `Project > Project Settings > Plugins` and enable "Playcademy Backend"
 
-2. **Configure Settings**: The plugin creates project settings under `playcademy/backend/`:
+2. **Configure Settings**: The plugin creates project settings under `playcademy/`:
+
+    **Backend Settings** (`playcademy/backend/`):
 
     - `auto_start`: Auto-start servers when project opens (default: true)
-    - `sandbox_port`: Preferred port for sandbox (default: 4321)
-    - `backend_port`: Preferred port for backend (default: 8788)
+    - `sandbox_port`: Port for sandbox (default: 4321)
+    - `backend_port`: Port for backend (default: 8788)
     - `verbose`: Enable verbose logging (default: false)
+
+    **Timeback Settings** (`playcademy/timeback/`):
+
+    - `student_id`: Timeback student sourcedId (default: auto-generated mock)
+    - `role`: User role - student, parent, teacher, administrator (default: student)
+    - `organization_id`: Organization sourcedId (default: mock organization)
+    - `organization_name`: Organization display name (default: "Playcademy Studios")
+    - `organization_type`: Organization type - school, district, department, etc. (default: department)
 
 3. **Verify Setup**: Look for the "Playcademy" tab in the bottom panel (with Inspector/Node/History)
 
@@ -63,12 +73,12 @@ Use the bottom panel controls to:
 
 ## Server Discovery
 
-The plugin uses the per-user registry at `~/.playcademy/.proc` to discover actual server ports:
+The plugin uses the per-user registry at `~/.playcademy/.proc` to discover when servers are ready:
 
 - Servers write their info when they start
-- Plugin retries every 500ms for 5 seconds
+- Plugin retries every 500ms for 10 seconds
 - Filters by project path to find the right servers
-- Handles port conflicts gracefully (servers find next available port)
+- Uses canonical ports: 4321 (sandbox), 8788 (backend)
 
 ## Backend Server
 
@@ -78,6 +88,29 @@ The backend server (`playcademy dev`) is **optional** and only starts if:
 - The config file defines integrations (TimeBack, custom routes, etc.)
 
 If you don't have a config file, only the sandbox will start (which is sufficient for most games).
+
+## Timeback Integration
+
+The plugin supports Timeback integration testing directly from Godot's project settings.
+
+### Testing Different Roles
+
+Change `playcademy/timeback/role` to test how your game behaves for different users:
+
+- **student**: Default, testing the student experience
+- **parent**: Test parent views and reports
+- **teacher**: Test teacher views and class management
+- **administrator**: Test admin-level features
+
+### Custom Organization
+
+Override organization settings to test school/district-specific behavior:
+
+- Set `organization_id` to a real sourcedId for integration testing
+- Set `organization_name` to customize the displayed school name
+- Set `organization_type` to test different organizational contexts
+
+Changes to Timeback settings take effect after restarting the servers (use "Reset Database" for a clean slate).
 
 ## Troubleshooting
 
@@ -95,6 +128,7 @@ If you don't have a config file, only the sandbox will start (which is sufficien
 
 ### Port conflicts
 
-- Servers automatically find next available port if preferred port is busy
-- Check the panel to see actual URLs being used
-- You can change preferred ports in Project Settings
+- Servers use canonical ports (4321 for sandbox, 8788 for backend)
+- If a port is busy, the server will fail to start with a clear error
+- Stop the other process using the port, or change the port in Project Settings
+- Use `lsof -i :4321` (macOS/Linux) or `netstat -ano | findstr :4321` (Windows) to find what's using a port

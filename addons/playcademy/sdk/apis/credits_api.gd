@@ -8,22 +8,22 @@ signal add_failed(error_message: String)
 signal spend_succeeded(new_balance: int)
 signal spend_failed(error_message: String)
 
-var _inventory_api
+var _users_api
 var _cached_credits_item_id: String = ""
 
 # Constants - should match @playcademy/data/constants
 const PLAYCADEMY_CREDITS_SLUG = "PLAYCADEMY_CREDITS"
 
-func _init(inventory_api):
-	_inventory_api = inventory_api
+func _init(users_api):
+	_users_api = users_api
 	
-	# Connect to inventory signals to handle our operations
-	_inventory_api.get_all_succeeded.connect(_on_inventory_get_all_succeeded)
-	_inventory_api.get_all_failed.connect(_on_inventory_get_all_failed)
-	_inventory_api.add_succeeded.connect(_on_inventory_add_succeeded)
-	_inventory_api.add_failed.connect(_on_inventory_add_failed)
-	_inventory_api.remove_succeeded.connect(_on_inventory_remove_succeeded)
-	_inventory_api.remove_failed.connect(_on_inventory_remove_failed)
+	# Connect to users.inventory signals to handle our operations
+	_users_api.inventory_get_all_succeeded.connect(_on_inventory_get_all_succeeded)
+	_users_api.inventory_get_all_failed.connect(_on_inventory_get_all_failed)
+	_users_api.inventory_add_succeeded.connect(_on_inventory_add_succeeded)
+	_users_api.inventory_add_failed.connect(_on_inventory_add_failed)
+	_users_api.inventory_remove_succeeded.connect(_on_inventory_remove_succeeded)
+	_users_api.inventory_remove_failed.connect(_on_inventory_remove_failed)
 
 # Track what operation we're currently performing
 enum Operation {
@@ -40,7 +40,7 @@ var _pending_spend_amount: int = 0
 # Gets the current balance of Playcademy Credits
 func balance():
 	_current_operation = Operation.BALANCE
-	_inventory_api.get_all()
+	_users_api.inventory_get_all()
 
 # Adds Playcademy Credits to the user's inventory
 func add(amount: int):
@@ -53,10 +53,10 @@ func add(amount: int):
 	
 	if _cached_credits_item_id.is_empty():
 		# Need to get inventory first to find credits item ID
-		_inventory_api.get_all()
+		_users_api.inventory_get_all()
 	else:
 		# We have the ID cached, add directly
-		_inventory_api.add(_cached_credits_item_id, amount)
+		_users_api.inventory_add(_cached_credits_item_id, amount)
 
 # Spends (removes) Playcademy Credits from the user's inventory
 func spend(amount: int):
@@ -69,10 +69,10 @@ func spend(amount: int):
 	
 	if _cached_credits_item_id.is_empty():
 		# Need to get inventory first to find credits item ID
-		_inventory_api.get_all()
+		_users_api.inventory_get_all()
 	else:
 		# We have the ID cached, remove directly
-		_inventory_api.remove(_cached_credits_item_id, amount)
+		_users_api.inventory_remove(_cached_credits_item_id, amount)
 
 # Handle inventory get_all success
 func _on_inventory_get_all_succeeded(inventory_data: Array):
@@ -117,7 +117,7 @@ func _on_inventory_get_all_succeeded(inventory_data: Array):
 				emit_signal("add_failed", "Credits item ID not found")
 				_current_operation = Operation.NONE
 				return
-			_inventory_api.add(_cached_credits_item_id, _pending_add_amount)
+			_users_api.inventory_add(_cached_credits_item_id, _pending_add_amount)
 			# Don't reset operation yet - wait for add result
 		
 		Operation.SPEND:
@@ -129,7 +129,7 @@ func _on_inventory_get_all_succeeded(inventory_data: Array):
 				emit_signal("spend_failed", "Insufficient credits")
 				_current_operation = Operation.NONE
 				return
-			_inventory_api.remove(_cached_credits_item_id, _pending_spend_amount)
+			_users_api.inventory_remove(_cached_credits_item_id, _pending_spend_amount)
 			# Don't reset operation yet - wait for remove result
 
 func _on_inventory_get_all_failed(error_message: String):

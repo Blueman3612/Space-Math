@@ -13,9 +13,6 @@ func _get_plugin_name():
 	return PLUGIN_NAME
 
 func _enter_tree() -> void:
-	# Register project settings
-	_register_project_settings()
-	
 	# Initialize backend manager
 	backend_manager = BackendManager.new()
 	add_child(backend_manager)
@@ -47,63 +44,7 @@ func _has_main_screen() -> bool:
 
 # Called when the project is about to run
 func _build() -> bool:
-	if backend_manager and backend_manager.is_auto_start_enabled():
+	var should_start = backend_manager and (backend_manager.is_sandbox_auto_start_enabled() or backend_manager.is_backend_auto_start_enabled())
+	if should_start:
 		backend_manager.ensure_servers_running()
 	return true
-
-func _register_project_settings():
-	var settings = [
-		{
-			"name": "playcademy/backend/auto_start",
-			"type": TYPE_BOOL,
-			"default": true,
-			"hint": PROPERTY_HINT_NONE,
-			"hint_string": "",
-			"usage": PROPERTY_USAGE_DEFAULT,
-			"description": "Automatically start dev servers when the project opens"
-		},
-		{
-			"name": "playcademy/backend/sandbox_port",
-			"type": TYPE_INT,
-			"default": 4321,
-			"hint": PROPERTY_HINT_RANGE,
-			"hint_string": "1024,65535,1",
-			"usage": PROPERTY_USAGE_DEFAULT,
-			"description": "Preferred port for the sandbox server"
-		},
-		{
-			"name": "playcademy/backend/backend_port",
-			"type": TYPE_INT,
-			"default": 8788,
-			"hint": PROPERTY_HINT_RANGE,
-			"hint_string": "1024,65535,1",
-			"usage": PROPERTY_USAGE_DEFAULT,
-			"description": "Preferred port for the backend server"
-		},
-		{
-			"name": "playcademy/backend/verbose",
-			"type": TYPE_BOOL,
-			"default": false,
-			"hint": PROPERTY_HINT_NONE,
-			"hint_string": "",
-			"usage": PROPERTY_USAGE_DEFAULT,
-			"description": "Enable verbose logging for dev server operations"
-		}
-	]
-	
-	for setting in settings:
-		if not ProjectSettings.has_setting(setting.name):
-			ProjectSettings.set_setting(setting.name, setting.default)
-		
-		# Add the setting to the project settings UI
-		var property_info = {
-			"name": setting.name,
-			"type": setting.type,
-			"hint": setting.hint,
-			"hint_string": setting.hint_string,
-			"usage": setting.usage
-		}
-		ProjectSettings.add_property_info(property_info)
-	
-	# Save the settings
-	ProjectSettings.save() 

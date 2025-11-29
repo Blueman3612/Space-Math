@@ -11,8 +11,8 @@ signal spend_failed(error_message: String)
 
 var _credits_api
 
-func _init(inventory_api):
-	_credits_api = CreditsAPI.new(inventory_api)
+func _init(users_api):
+	_credits_api = CreditsAPI.new(users_api)
 	_credits_api.balance_succeeded.connect(_on_original_balance_succeeded)
 	_credits_api.balance_failed.connect(_on_original_balance_failed)
 	_credits_api.add_succeeded.connect(_on_original_add_succeeded)
