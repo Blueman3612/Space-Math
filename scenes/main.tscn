@@ -1,10 +1,11 @@
-[gd_scene load_steps=19 format=3 uid="uid://dgsyvy33jqe6f"]
+[gd_scene load_steps=20 format=3 uid="uid://dgsyvy33jqe6f"]
 
 [ext_resource type="Script" uid="uid://b7dgkimpo8qo0" path="res://scripts/main.gd" id="1_8k3xf"]
 [ext_resource type="Theme" uid="uid://qx67shaxna0a" path="res://assets/themes/classic/classic.tres" id="1_jyhfs"]
 [ext_resource type="PackedScene" uid="uid://cfyfodwnxrl3q" path="res://scenes/space_background.tscn" id="3_space_bg"]
 [ext_resource type="LabelSettings" uid="uid://kv8ik3lwuyet" path="res://assets/label settings/GravityBold128.tres" id="3_sugp2"]
 [ext_resource type="Texture2D" uid="uid://cdja31dcj5rdk" path="res://assets/sprites/Title.png" id="5_tbgi4"]
+[ext_resource type="Texture2D" uid="uid://ct3awn60qe2ii" path="res://assets/sprites/Arrow Hash.png" id="6_muem4"]
 [ext_resource type="LabelSettings" uid="uid://cbtne7xhouqs1" path="res://assets/label settings/GravityBold64.tres" id="6_tefeu"]
 [ext_resource type="FontFile" uid="uid://d4jen7ry6jk7n" path="res://assets/fonts/GravityBold8.ttf" id="6_tipki"]
 [ext_resource type="Texture2D" uid="uid://ds85akksl0mac" path="res://assets/sprites/Star Icon White.png" id="6_ya4ey"]
@@ -87,6 +88,62 @@ text = "X"
 label_settings = SubResource("LabelSettings_85g3d")
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="LeftButton" type="Button" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = 428.0
+offset_right = -224.0
+offset_bottom = 524.0
+grow_horizontal = 2
+grow_vertical = 2
+tooltip_text = "Last Grade"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Icon" type="Sprite2D" parent="MainMenu/LeftButton"]
+position = Vector2(48, 48)
+scale = Vector2(-6, 6)
+texture = ExtResource("6_muem4")
+
+[node name="Shadow" type="Sprite2D" parent="MainMenu/LeftButton/Icon"]
+modulate = Color(0, 0, 0, 0.5019608)
+show_behind_parent = true
+position = Vector2(-1, 1)
+texture = ExtResource("6_muem4")
+
+[node name="RightButton" type="Button" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 224.0
+offset_top = 428.0
+offset_right = 320.0
+offset_bottom = 524.0
+grow_horizontal = 2
+grow_vertical = 2
+tooltip_text = "Next Grade"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Icon" type="Sprite2D" parent="MainMenu/RightButton"]
+position = Vector2(48, 48)
+scale = Vector2(6, 6)
+texture = ExtResource("6_muem4")
+
+[node name="Shadow" type="Sprite2D" parent="MainMenu/RightButton/Icon"]
+modulate = Color(0, 0, 0, 0.5019608)
+show_behind_parent = true
+position = Vector2(1, 1)
+texture = ExtResource("6_muem4")
 
 [node name="DrillModeButton" type="Button" parent="MainMenu"]
 self_modulate = Color(0.5019608, 0, 1, 1)
@@ -193,6 +250,24 @@ offset_right = 198.0
 offset_bottom = 192.0
 text = "U"
 label_settings = SubResource("LabelSettings_85g3d")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GradeLabel" type="Label" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -188.0
+offset_top = -96.0
+offset_right = 188.0
+offset_bottom = -32.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Grade 1"
+label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -619,6 +694,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Play" type="Control" parent="."]
+visible = false
 anchors_preset = 0
 offset_top = -1144.0
 offset_right = 1920.0
