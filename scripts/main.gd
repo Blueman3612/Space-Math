@@ -290,8 +290,14 @@ func continue_after_incorrect_internal(is_correct: bool, timer_was_active: bool,
 	if not StateManager.is_drill_mode:
 		animate_progress_line()
 	
+	# Get level config - use grade-based config if playing a grade level, otherwise legacy config
+	var level_config
+	if StateManager.is_grade_level:
+		level_config = StateManager.current_level_config
+	else:
+		level_config = GameConfig.level_configs.get(StateManager.current_level_number, GameConfig.level_configs[1])
+	
 	# Check if we've completed the required number of problems (only for normal mode)
-	var level_config = GameConfig.level_configs.get(StateManager.current_level_number, GameConfig.level_configs[1])
 	if not StateManager.is_drill_mode and StateManager.problems_completed >= level_config.problems:
 		# Hide play UI labels when play state ends
 		if UIManager.timer_label:
@@ -301,7 +307,12 @@ func continue_after_incorrect_internal(is_correct: bool, timer_was_active: bool,
 		
 		# Wait for the problem to finish animating off screen before transitioning
 		await get_tree().create_timer(GameConfig.animation_duration).timeout
-		StateManager.go_to_game_over()
+		
+		# Go to appropriate game over based on level type
+		if StateManager.is_grade_level:
+			StateManager.go_to_grade_level_game_over()
+		else:
+			StateManager.go_to_game_over()
 	else:
 		# Resume timer after transition delay or start it if grace period completed during transition
 		if timer_was_active or should_start_timer:
@@ -393,7 +404,12 @@ func animate_problem_off_screen(is_correct: bool):
 
 func animate_progress_line():
 	"""Animate the progress line for normal mode levels"""
-	var level_config = GameConfig.level_configs.get(StateManager.current_level_number, GameConfig.level_configs[1])
+	# Get level config - use grade-based config if playing a grade level, otherwise legacy config
+	var level_config
+	if StateManager.is_grade_level:
+		level_config = StateManager.current_level_config
+	else:
+		level_config = GameConfig.level_configs.get(StateManager.current_level_number, GameConfig.level_configs[1])
 	
 	if UIManager.progress_line and DisplayManager.play_node:
 		var play_width = DisplayManager.play_node.size.x
@@ -442,6 +458,17 @@ func connect_menu_buttons():
 		var unlock_requirements = drill_mode_button.get_node("UnlockRequirements")
 		if unlock_requirements:
 			unlock_requirements.visible = false
+	
+	# Connect grade navigation buttons
+	var left_button = StateManager.main_menu_node.get_node("LeftButton")
+	if left_button:
+		left_button.pressed.connect(LevelManager.switch_to_previous_grade)
+		UIManager.connect_button_sounds(left_button)
+	
+	var right_button = StateManager.main_menu_node.get_node("RightButton")
+	if right_button:
+		right_button.pressed.connect(LevelManager.switch_to_next_grade)
+		UIManager.connect_button_sounds(right_button)
 
 func connect_game_over_buttons():
 	"""Connect all game over buttons to their respective functions"""

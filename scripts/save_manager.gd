@@ -43,28 +43,11 @@ func get_default_save_data():
 	"""Return the default game progress data (stored in KV)"""
 	var default_data = {
 		"version": ProjectSettings.get_setting("application/config/version"),
-		"save_structure": "pack_based",
-		"packs": {},
+		"save_structure": "grade_based",
+		"packs": {},  # Legacy - kept for backwards compatibility
+		"grade_levels": {},  # New grade-based level progress
 		"questions": {}
 	}
-	
-	# Initialize level data for all packs
-	for pack_name in GameConfig.level_pack_order:
-		var pack_config = GameConfig.level_packs[pack_name]
-		default_data.packs[pack_name] = {
-			"levels": {}
-		}
-		
-		# Initialize each level in the pack using track ID as key
-		for level_track in pack_config.levels:
-			# Convert to string track ID (e.g., "4.NF.A.1" or "TRACK12")
-			var track_id = str(level_track) if typeof(level_track) == TYPE_STRING else "TRACK" + str(level_track)
-			default_data.packs[pack_name].levels[track_id] = {
-				"highest_stars": 0,
-				"best_accuracy": 0,
-				"best_time": 999999.0,
-				"best_cqpm": 0.0
-			}
 	
 	return default_data
 
@@ -213,20 +196,24 @@ func migrate_save_data():
 	var save_version = save_data.get("version", "0.0")
 	var save_structure = save_data.get("save_structure", "legacy")
 	
-	# Check if this is an old save structure - wipe if not pack_based
-	if save_structure != "pack_based":
-		print("Old save structure detected - wiping all save data for pack-based system")
-		save_data = get_default_save_data()
+	# Check if this is an old save structure - migrate to grade_based
+	if save_structure != "grade_based":
+		print("Old save structure detected - migrating to grade-based system")
+		# Keep any existing data but update structure
+		if not save_data.has("grade_levels"):
+			save_data.grade_levels = {}
+		save_data.save_structure = "grade_based"
 		has_unsaved_changes = true
-		return
 	
-	# Version migration for pack-based saves
+	# Version migration
 	if save_version != current_version:
 		print("Migrating save data from version ", save_version, " to ", current_version)
 		
 		# Ensure all required fields exist
 		if not save_data.has("packs"):
 			save_data.packs = {}
+		if not save_data.has("grade_levels"):
+			save_data.grade_levels = {}
 		if not save_data.has("questions"):
 			save_data.questions = {}
 		
@@ -235,33 +222,6 @@ func migrate_save_data():
 			save_data.erase("sfx_volume")
 		if save_data.has("music_volume"):
 			save_data.erase("music_volume")
-		
-		# Ensure all packs and levels have data
-		for pack_name in GameConfig.level_pack_order:
-			var pack_config = GameConfig.level_packs[pack_name]
-			if not save_data.packs.has(pack_name):
-				save_data.packs[pack_name] = {"levels": {}}
-			
-			var pack_data = save_data.packs[pack_name]
-			if not pack_data.has("levels"):
-				pack_data.levels = {}
-			
-			# Ensure all levels in pack have data using track ID as key
-			for level_track in pack_config.levels:
-				# Convert to string track ID (e.g., "4.NF.A.1" or "TRACK12")
-				var track_id = str(level_track) if typeof(level_track) == TYPE_STRING else "TRACK" + str(level_track)
-				if not pack_data.levels.has(track_id):
-					pack_data.levels[track_id] = {
-						"highest_stars": 0,
-						"best_accuracy": 0,
-						"best_time": 999999.0,
-						"best_cqpm": 0.0
-					}
-				else:
-					# Ensure all fields exist for existing levels
-					var level_data = pack_data.levels[track_id]
-					if not level_data.has("best_cqpm"):
-						level_data.best_cqpm = 0.0
 		
 		# Update version
 		save_data.version = current_version
@@ -303,8 +263,8 @@ func update_level_data(pack_name: String, pack_level_index: int, accuracy: int, 
 	if not pack_data.has("levels"):
 		pack_data.levels = {}
 	
-	# Get the track ID for this level
-	var pack_config = GameConfig.level_packs[pack_name]
+	# Get the track ID for this level (legacy pack-based system)
+	var pack_config = GameConfig.legacy_level_packs[pack_name]
 	var level_track = pack_config.levels[pack_level_index]
 	var track_id = str(level_track) if typeof(level_track) == TYPE_STRING else "TRACK" + str(level_track)
 	
@@ -371,6 +331,73 @@ func get_drill_mode_high_score() -> int:
 		return save_data.drill_mode.high_score
 	return 0
 
+# ============================================
+# Grade-Based Level Data Functions
+# ============================================
+
+func get_grade_level_stars(level_id: String) -> int:
+	"""Get the number of stars earned for a grade-based level"""
+	if not save_data.has("grade_levels"):
+		return 0
+	if not save_data.grade_levels.has(level_id):
+		return 0
+	return save_data.grade_levels[level_id].get("highest_stars", 0)
+
+func get_grade_level_data(level_id: String) -> Dictionary:
+	"""Get all saved data for a grade-based level"""
+	if not save_data.has("grade_levels"):
+		return {}
+	if not save_data.grade_levels.has(level_id):
+		return {}
+	return save_data.grade_levels[level_id]
+
+func update_grade_level_data(level_id: String, accuracy: int, time_taken: float, stars_earned: int):
+	"""Update the saved data for a grade-based level"""
+	# Ensure grade_levels dict exists
+	if not save_data.has("grade_levels"):
+		save_data.grade_levels = {}
+	
+	# Ensure level exists
+	if not save_data.grade_levels.has(level_id):
+		save_data.grade_levels[level_id] = {
+			"highest_stars": 0,
+			"best_accuracy": 0,
+			"best_time": 999999.0,
+			"best_cqpm": 0.0
+		}
+	
+	var level_data = save_data.grade_levels[level_id]
+	var updated = false
+	
+	# Update highest stars
+	if stars_earned > level_data.highest_stars:
+		level_data.highest_stars = stars_earned
+		updated = true
+	
+	# Update best accuracy
+	if accuracy > level_data.best_accuracy:
+		level_data.best_accuracy = accuracy
+		updated = true
+	
+	# Update best time
+	if time_taken < level_data.best_time:
+		level_data.best_time = time_taken
+		updated = true
+	
+	# Calculate and update CQPM (Correct Questions Per Minute)
+	var cqpm = 0.0
+	if time_taken > 0:
+		cqpm = (float(accuracy) / time_taken) * 60.0
+	
+	if cqpm > level_data.best_cqpm:
+		level_data.best_cqpm = cqpm
+		updated = true
+	
+	if updated:
+		has_unsaved_changes = true
+		# Save immediately on level complete (this is a good save point)
+		save_save_data()
+
 func reset_all_data():
 	"""Wipe all save data and reset to defaults"""
 	print("Resetting all save data...")
@@ -391,30 +418,25 @@ func unlock_all_levels():
 	"""Unlock all levels with 3 stars (DEV ONLY)"""
 	print("Unlocking all levels...")
 	
-	# Set all levels across all packs to have 3 stars and reasonable completion values
-	var global_level_num = 1
-	for pack_name in GameConfig.level_pack_order:
-		var pack_config = GameConfig.level_packs[pack_name]
-		
-		# Ensure pack exists in save data
-		if not save_data.packs.has(pack_name):
-			save_data.packs[pack_name] = {"levels": {}}
-		
-		# Unlock each level in the pack using track ID as key
-		for level_track in pack_config.levels:
-			# Convert to string track ID (e.g., "4.NF.A.1" or "TRACK12")
-			var track_id = str(level_track) if typeof(level_track) == TYPE_STRING else "TRACK" + str(level_track)
-			var level_config = GameConfig.level_configs.get(global_level_num, GameConfig.level_configs[1])
-			
-			# Set each level to have 3 stars and max values
-			save_data.packs[pack_name].levels[track_id] = {
-				"highest_stars": 3,
-				"best_accuracy": level_config.problems,  # Perfect accuracy
-				"best_time": level_config.star3.time,  # Best time for 3 stars
-				"best_cqpm": ScoreManager.calculate_cqpm(level_config.problems, level_config.star3.time)
-			}
-			
-			global_level_num += 1
+	# Ensure grade_levels dict exists
+	if not save_data.has("grade_levels"):
+		save_data.grade_levels = {}
+	
+	# Unlock all grade-based levels
+	for grade in GameConfig.GRADES:
+		var grade_data = GameConfig.GRADE_LEVELS[grade]
+		for category in grade_data.categories:
+			for level_data in category.levels:
+				var level_id = level_data.id
+				var level_config = LevelManager.calculate_level_thresholds(level_data.mastery_count)
+				
+				# Set each level to have 3 stars and max values
+				save_data.grade_levels[level_id] = {
+					"highest_stars": 3,
+					"best_accuracy": level_config.problems,
+					"best_time": level_config.star3.time,
+					"best_cqpm": ScoreManager.calculate_cqpm(level_config.problems, level_config.star3.time)
+				}
 	
 	save_save_data()
 	print("All levels unlocked!")
@@ -454,4 +476,3 @@ func set_music_volume(volume: float):
 			AudioServer.set_bus_mute(bus_idx, false)
 			var db = volume_to_db(volume)
 			AudioServer.set_bus_volume_db(bus_idx, db)
-

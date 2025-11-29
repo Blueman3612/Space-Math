@@ -168,11 +168,11 @@ var level_configs = {
 }
 
 # ============================================
-# Level Packs
+# Legacy Level Packs (kept for reference, no longer loaded)
 # ============================================
-const level_pack_order = ["Addition", "Subtraction", "Multiplication", "Division", "Fractions"]
+const legacy_level_pack_order = ["Addition", "Subtraction", "Multiplication", "Division", "Fractions"]
 
-const level_packs = {
+const legacy_level_packs = {
 	"Addition": {
 		"levels": [12, 9, 6],
 		"theme_color": Color(0, 0.5, 1)
@@ -192,6 +192,151 @@ const level_packs = {
 	"Fractions": {
 		"levels": ["4.NF.A.1", "4.NF.A.2", "4.NF.B", "5.NF.A", "5.NF.B"],
 		"theme_color": Color(0, 0.75, 0)
+	}
+}
+
+# ============================================
+# Grade-Based Level System
+# ============================================
+# Current grade being displayed (1-indexed)
+var current_grade = 1
+
+# Available grades
+const GRADES = [1, 2, 3]
+
+# Theme colors for categories
+const CATEGORY_COLORS = {
+	"Addition": Color(0, 0.5, 1),
+	"Subtraction": Color(1, 0.25, 0.25),
+	"Fact Families": Color(0, 0.75, 0.5),
+	"2-Digit Numbers": Color(1, 0.5, 0),
+	"3-Digit Numbers": Color(0.75, 0.25, 0.75),
+	"Add & Subtract": Color(0, 0.6, 0.4),
+	"Multiplication": Color(1, 0.75, 0.25),
+	"Division": Color(1, 0.5, 1),
+	"Multiply & Divide": Color(0.8, 0.4, 0)
+}
+
+# Grade definitions with categories and levels
+# Each level has: name, mastery_count (for star calculation), and generation config
+const GRADE_LEVELS = {
+	1: {
+		"categories": [
+			{
+				"name": "Addition",
+				"levels": [
+					{"id": "grade1_addition_sums_to_6", "name": "Sums to 6", "mastery_count": 40, "config": {"operators": ["+"], "sum_max": 6}},
+					{"id": "grade1_addition_sums_to_12", "name": "Sums to 12", "mastery_count": 26, "config": {"operators": ["+"], "sum_max": 12}},
+					{"id": "grade1_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 22, "config": {"operators": ["+"], "sum_max": 20}}
+				]
+			},
+			{
+				"name": "Subtraction",
+				"levels": [
+					{"id": "grade1_subtraction_0_5", "name": "Subtraction 0-5", "mastery_count": 40, "config": {"operators": ["-"], "range_max": 5}},
+					{"id": "grade1_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 40, "config": {"operators": ["-"], "range_max": 9}},
+					{"id": "grade1_subtraction_0_12", "name": "Subtraction 0-12", "mastery_count": 39, "config": {"operators": ["-"], "range_max": 12}},
+					{"id": "grade1_subtraction_0_15", "name": "Subtraction 0-15", "mastery_count": 37, "config": {"operators": ["-"], "range_max": 15}},
+					{"id": "grade1_subtraction_0_20", "name": "Subtraction 0-20", "mastery_count": 33, "config": {"operators": ["-"], "range_max": 20}}
+				]
+			},
+			{
+				"name": "Fact Families",
+				"levels": [
+					{"id": "grade1_fact_families_0_5", "name": "Add/Subtract 0-5", "mastery_count": 40, "config": {"operators": ["+", "-"], "sum_max": 5, "range_max": 5}},
+					{"id": "grade1_fact_families_0_9", "name": "Add/Subtract 0-9", "mastery_count": 40, "config": {"operators": ["+", "-"], "sum_max": 9, "range_max": 9}},
+					{"id": "grade1_fact_families_0_20", "name": "Add/Subtract 0-20", "mastery_count": 28, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}}
+				]
+			}
+		]
+	},
+	2: {
+		"categories": [
+			{
+				"name": "Addition",
+				"levels": [
+					{"id": "grade2_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 22, "config": {"operators": ["+"], "sum_max": 20}}
+				]
+			},
+			{
+				"name": "Subtraction",
+				"levels": [
+					{"id": "grade2_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 40, "config": {"operators": ["-"], "range_max": 9}},
+					{"id": "grade2_subtraction_0_12", "name": "Subtraction 0-12", "mastery_count": 39, "config": {"operators": ["-"], "range_max": 12}},
+					{"id": "grade2_subtraction_0_15", "name": "Subtraction 0-15", "mastery_count": 37, "config": {"operators": ["-"], "range_max": 15}},
+					{"id": "grade2_subtraction_0_20", "name": "Subtraction 0-20", "mastery_count": 33, "config": {"operators": ["-"], "range_max": 20}}
+				]
+			},
+			{
+				"name": "Fact Families",
+				"levels": [
+					{"id": "grade2_fact_families_0_20", "name": "Add/Subtract 0-20", "mastery_count": 33, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}}
+				]
+			},
+			{
+				"name": "2-Digit Numbers",
+				"levels": [
+					{"id": "grade2_2digit_add_no_regroup", "name": "Add 2-Digit without Regrouping", "mastery_count": 16, "config": {"operators": ["+"], "digit_count": 2, "requires_regrouping": false}},
+					{"id": "grade2_2digit_sub_no_regroup", "name": "Subtract 2-Digit without Regrouping", "mastery_count": 20, "config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": false}},
+					{"id": "grade2_2digit_add_regroup", "name": "Add 2-Digit with Regrouping", "mastery_count": 10, "config": {"operators": ["+"], "digit_count": 2, "requires_regrouping": true}},
+					{"id": "grade2_2digit_sub_regroup", "name": "Subtract 2-Digit with Regrouping", "mastery_count": 10, "config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": true}}
+				]
+			},
+			{
+				"name": "3-Digit Numbers",
+				"levels": [
+					{"id": "grade2_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 9, "config": {"operators": ["+"], "digit_count": 3}},
+					{"id": "grade2_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 10, "config": {"operators": ["-"], "digit_count": 3}}
+				]
+			}
+		]
+	},
+	3: {
+		"categories": [
+			{
+				"name": "Add & Subtract",
+				"levels": [
+					{"id": "grade3_add_sub_sums_to_20", "name": "Sums to 20", "mastery_count": 33, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}},
+					{"id": "grade3_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 60, "config": {"operators": ["-"], "range_max": 9}},
+					{"id": "grade3_add_sub_0_9", "name": "Add/Subtract 0-9", "mastery_count": 60, "config": {"operators": ["+", "-"], "sum_max": 9, "range_max": 9}},
+					{"id": "grade3_add_sub_0_20", "name": "Add/Subtract 0-20", "mastery_count": 42, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}}
+				]
+			},
+			{
+				"name": "3-Digit Numbers",
+				"levels": [
+					{"id": "grade3_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 14, "config": {"operators": ["+"], "digit_count": 3}},
+					{"id": "grade3_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 15, "config": {"operators": ["-"], "digit_count": 3}},
+					{"id": "grade3_3digit_add_sub", "name": "Add/Subtract 3-Digit Numbers", "mastery_count": 16, "config": {"operators": ["+", "-"], "digit_count": 3}}
+				]
+			},
+			{
+				"name": "Multiplication",
+				"levels": [
+					{"id": "grade3_multiply_0_9", "name": "Multiply 0-9", "mastery_count": 39, "config": {"operators": ["x"], "factor_min": 0, "factor_max": 9}},
+					{"id": "grade3_multiply_5_9", "name": "Multiply 5-9", "mastery_count": 30, "config": {"operators": ["x"], "factor_min": 5, "factor_max": 9}},
+					{"id": "grade3_multiply_0_12", "name": "Multiply 0-12", "mastery_count": 35, "config": {"operators": ["x"], "factor_min": 0, "factor_max": 12}},
+					{"id": "grade3_multiply_multi_no_regroup", "name": "Multiply 1-Digit by 2-3-Digit without Regrouping", "mastery_count": 19, "config": {"operators": ["x"], "multi_digit": true, "requires_regrouping": false}},
+					{"id": "grade3_multiply_multi_regroup", "name": "Multiply 1-Digit by 2-3-Digit with Regrouping", "mastery_count": 18, "config": {"operators": ["x"], "multi_digit": true, "requires_regrouping": true}}
+				]
+			},
+			{
+				"name": "Division",
+				"levels": [
+					{"id": "grade3_divide_0_5", "name": "Divide 0-5", "mastery_count": 60, "config": {"operators": ["/"], "divisor_min": 1, "divisor_max": 5}},
+					{"id": "grade3_divide_0_9", "name": "Divide 0-9", "mastery_count": 60, "config": {"operators": ["/"], "divisor_min": 1, "divisor_max": 9}},
+					{"id": "grade3_divide_5_9", "name": "Divide 5-9", "mastery_count": 60, "config": {"operators": ["/"], "divisor_min": 5, "divisor_max": 9}},
+					{"id": "grade3_divide_0_12", "name": "Divide 0-12", "mastery_count": 48, "config": {"operators": ["/"], "divisor_min": 1, "divisor_max": 12}},
+					{"id": "grade3_divide_multi", "name": "Divide 2-3-Digit by 1-Digit", "mastery_count": 9, "config": {"operators": ["/"], "multi_digit": true}}
+				]
+			},
+			{
+				"name": "Multiply & Divide",
+				"levels": [
+					{"id": "grade3_multiply_divide_0_9", "name": "Multiply/Divide 0-9", "mastery_count": 51, "config": {"operators": ["x", "/"], "factor_min": 1, "factor_max": 9, "divisor_min": 1, "divisor_max": 9}}
+				]
+			}
+		]
 	}
 }
 

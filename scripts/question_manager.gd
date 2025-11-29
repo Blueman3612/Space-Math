@@ -65,8 +65,12 @@ func get_display_operator(operator: String) -> String:
 func generate_new_question():
 	"""Generate a new question for the current track"""
 	# Store current question for answer checking later
-	# Use the weighted system if we have weights initialized, otherwise fall back to old system
-	if not question_weights.is_empty():
+	# Priority: dynamic generation > weighted system > fallback
+	if current_level_config != null:
+		# Use dynamic problem generation
+		current_question = generate_dynamic_question()
+	elif not question_weights.is_empty():
+		# Use the weighted system if we have weights initialized
 		current_question = get_weighted_random_question()
 	else:
 		# Fallback to old system for non-track modes
@@ -249,6 +253,383 @@ func find_closest_grade_with_operator(target_grade, operator):
 		"questions": questions,
 		"grade_name": "Grade " + str(target_grade)
 	}
+
+# ============================================
+# Dynamic Problem Generation System
+# ============================================
+# This system generates problems on-the-fly based on parameters
+# instead of loading from JSON files.
+
+# Level generation config for current level
+var current_level_config = null
+
+func set_level_generation_config(config: Dictionary):
+	"""Set the configuration for dynamic problem generation"""
+	current_level_config = config
+	# Clear weighted question system since we're using dynamic generation
+	question_weights.clear()
+	unavailable_questions.clear()
+	available_questions.clear()
+
+func generate_dynamic_question() -> Dictionary:
+	"""Generate a problem dynamically based on current_level_config"""
+	if current_level_config == null:
+		print("Error: No level generation config set")
+		return {}
+	
+	var config = current_level_config
+	var operators = config.get("operators", ["+"])
+	var selected_operator = operators[rng.randi() % operators.size()]
+	
+	var question_data = {}
+	
+	match selected_operator:
+		"+":
+			question_data = _generate_addition_problem(config)
+		"-":
+			question_data = _generate_subtraction_problem(config)
+		"x":
+			question_data = _generate_multiplication_problem(config)
+		"/":
+			question_data = _generate_division_problem(config)
+	
+	return question_data
+
+func _generate_addition_problem(config: Dictionary) -> Dictionary:
+	"""Generate an addition problem based on config"""
+	var operand1: int
+	var operand2: int
+	var result: int
+	
+	if config.has("sum_max"):
+		# "Sums to X" style - generate operands where sum doesn't exceed max
+		var sum_max = config.sum_max
+		var min_val = config.get("min_val", 0)
+		operand1 = rng.randi_range(min_val, sum_max)
+		operand2 = rng.randi_range(min_val, sum_max - operand1)
+		result = operand1 + operand2
+	elif config.has("digit_count"):
+		# Multi-digit addition
+		var digit_count = config.digit_count
+		var requires_regrouping = config.get("requires_regrouping", false)
+		
+		if digit_count == 2:
+			if requires_regrouping:
+				var generated = _generate_2digit_addition_with_regrouping()
+				operand1 = generated[0]
+				operand2 = generated[1]
+			else:
+				var generated = _generate_2digit_addition_without_regrouping()
+				operand1 = generated[0]
+				operand2 = generated[1]
+		elif digit_count == 3:
+			var generated = _generate_3digit_addition()
+			operand1 = generated[0]
+			operand2 = generated[1]
+		
+		result = operand1 + operand2
+	else:
+		# Fallback - simple addition 0-10
+		operand1 = rng.randi_range(0, 10)
+		operand2 = rng.randi_range(0, 10)
+		result = operand1 + operand2
+	
+	var question_text = str(operand1) + " + " + str(operand2)
+	
+	return {
+		"operands": [operand1, operand2],
+		"operator": "+",
+		"result": result,
+		"expression": question_text + " = " + str(result),
+		"question": question_text,
+		"title": config.get("name", "Addition"),
+		"grade": "",
+		"type": ""
+	}
+
+func _generate_subtraction_problem(config: Dictionary) -> Dictionary:
+	"""Generate a subtraction problem based on config"""
+	var operand1: int
+	var operand2: int
+	var result: int
+	
+	if config.has("range_max"):
+		# "Subtraction 0-X" style - first operand in range, second less than first
+		var range_max = config.range_max
+		var range_min = config.get("range_min", 0)
+		operand1 = rng.randi_range(range_min, range_max)
+		operand2 = rng.randi_range(range_min, operand1)  # Ensure no negative result
+		result = operand1 - operand2
+	elif config.has("digit_count"):
+		# Multi-digit subtraction
+		var digit_count = config.digit_count
+		var requires_regrouping = config.get("requires_regrouping", false)
+		
+		if digit_count == 2:
+			if requires_regrouping:
+				var generated = _generate_2digit_subtraction_with_regrouping()
+				operand1 = generated[0]
+				operand2 = generated[1]
+			else:
+				var generated = _generate_2digit_subtraction_without_regrouping()
+				operand1 = generated[0]
+				operand2 = generated[1]
+		elif digit_count == 3:
+			var generated = _generate_3digit_subtraction()
+			operand1 = generated[0]
+			operand2 = generated[1]
+		
+		result = operand1 - operand2
+	else:
+		# Fallback - simple subtraction 0-10
+		operand1 = rng.randi_range(0, 10)
+		operand2 = rng.randi_range(0, operand1)
+		result = operand1 - operand2
+	
+	var question_text = str(operand1) + " - " + str(operand2)
+	
+	return {
+		"operands": [operand1, operand2],
+		"operator": "-",
+		"result": result,
+		"expression": question_text + " = " + str(result),
+		"question": question_text,
+		"title": config.get("name", "Subtraction"),
+		"grade": "",
+		"type": ""
+	}
+
+func _generate_multiplication_problem(config: Dictionary) -> Dictionary:
+	"""Generate a multiplication problem based on config"""
+	var operand1: int
+	var operand2: int
+	var result: int
+	
+	if config.has("factor_min") and config.has("factor_max"):
+		# Standard multiplication within factor range
+		var factor_min = config.factor_min
+		var factor_max = config.factor_max
+		operand1 = rng.randi_range(factor_min, factor_max)
+		operand2 = rng.randi_range(factor_min, factor_max)
+		result = operand1 * operand2
+	elif config.has("multi_digit"):
+		# 1-digit by 2-3-digit multiplication
+		var requires_regrouping = config.get("requires_regrouping", false)
+		var generated = _generate_multidigit_multiplication(requires_regrouping)
+		operand1 = generated[0]
+		operand2 = generated[1]
+		result = operand1 * operand2
+	else:
+		# Fallback - simple multiplication 0-10
+		operand1 = rng.randi_range(0, 10)
+		operand2 = rng.randi_range(0, 10)
+		result = operand1 * operand2
+	
+	var question_text = str(operand1) + " x " + str(operand2)
+	
+	return {
+		"operands": [operand1, operand2],
+		"operator": "x",
+		"result": result,
+		"expression": question_text + " = " + str(result),
+		"question": question_text,
+		"title": config.get("name", "Multiplication"),
+		"grade": "",
+		"type": ""
+	}
+
+func _generate_division_problem(config: Dictionary) -> Dictionary:
+	"""Generate a division problem based on config (always whole number result, no div by 0)"""
+	var operand1: int  # Dividend
+	var operand2: int  # Divisor
+	var result: int
+	
+	if config.has("divisor_min") and config.has("divisor_max"):
+		# Standard division within divisor range
+		var divisor_min = max(1, config.divisor_min)  # Never divide by 0
+		var divisor_max = config.divisor_max
+		operand2 = rng.randi_range(divisor_min, divisor_max)
+		# Generate a result and multiply to get dividend (ensures whole number result)
+		result = rng.randi_range(divisor_min, divisor_max)
+		operand1 = operand2 * result
+	elif config.has("multi_digit"):
+		# 2-3-digit by 1-digit division
+		var generated = _generate_multidigit_division()
+		operand1 = generated[0]
+		operand2 = generated[1]
+		result = operand1 / operand2
+	else:
+		# Fallback - simple division 1-10
+		operand2 = rng.randi_range(1, 10)
+		result = rng.randi_range(1, 10)
+		operand1 = operand2 * result
+	
+	var question_text = str(operand1) + " / " + str(operand2)
+	
+	return {
+		"operands": [operand1, operand2],
+		"operator": "/",
+		"result": result,
+		"expression": question_text + " = " + str(result),
+		"question": question_text,
+		"title": config.get("name", "Division"),
+		"grade": "",
+		"type": ""
+	}
+
+# ============================================
+# Multi-digit Problem Helpers
+# ============================================
+
+func _generate_2digit_addition_without_regrouping() -> Array:
+	"""Generate 2-digit addition where no column exceeds 9"""
+	# Generate digits that won't require carrying
+	var tens1 = rng.randi_range(1, 8)
+	var ones1 = rng.randi_range(0, 8)
+	var tens2 = rng.randi_range(0, 9 - tens1)
+	var ones2 = rng.randi_range(0, 9 - ones1)
+	
+	var operand1 = tens1 * 10 + ones1
+	var operand2 = tens2 * 10 + ones2
+	
+	# Ensure operand2 is at least 10 (2-digit)
+	if operand2 < 10:
+		operand2 = rng.randi_range(10, 9 - tens1) * 10 + ones2 if tens1 < 9 else 10
+		# Recalculate to ensure no regrouping
+		tens2 = operand2 / 10
+		ones2 = operand2 % 10
+		if ones1 + ones2 > 9:
+			ones2 = 9 - ones1
+			operand2 = tens2 * 10 + ones2
+	
+	return [operand1, operand2]
+
+func _generate_2digit_addition_with_regrouping() -> Array:
+	"""Generate 2-digit addition that requires carrying in at least one column"""
+	var operand1: int
+	var operand2: int
+	var attempts = 0
+	
+	while attempts < 100:
+		var tens1 = rng.randi_range(1, 9)
+		var ones1 = rng.randi_range(0, 9)
+		var tens2 = rng.randi_range(1, 9)
+		var ones2 = rng.randi_range(0, 9)
+		
+		operand1 = tens1 * 10 + ones1
+		operand2 = tens2 * 10 + ones2
+		
+		# Check if regrouping is required (ones sum > 9 OR tens sum > 9)
+		var ones_sum = ones1 + ones2
+		var carry_from_ones = 1 if ones_sum > 9 else 0
+		var tens_sum = tens1 + tens2 + carry_from_ones
+		
+		if ones_sum > 9 or tens_sum > 9:
+			return [operand1, operand2]
+		
+		attempts += 1
+	
+	# Fallback: force regrouping in ones place
+	var ones1 = rng.randi_range(5, 9)
+	var ones2 = rng.randi_range(10 - ones1, 9)
+	operand1 = rng.randi_range(1, 8) * 10 + ones1
+	operand2 = rng.randi_range(1, 8) * 10 + ones2
+	return [operand1, operand2]
+
+func _generate_2digit_subtraction_without_regrouping() -> Array:
+	"""Generate 2-digit subtraction where no borrowing is needed"""
+	# Top digit must be >= bottom digit in each column
+	var tens1 = rng.randi_range(2, 9)
+	var ones1 = rng.randi_range(1, 9)
+	var tens2 = rng.randi_range(1, tens1 - 1) if tens1 > 1 else 1
+	var ones2 = rng.randi_range(0, ones1)
+	
+	var operand1 = tens1 * 10 + ones1
+	var operand2 = tens2 * 10 + ones2
+	
+	return [operand1, operand2]
+
+func _generate_2digit_subtraction_with_regrouping() -> Array:
+	"""Generate 2-digit subtraction that requires borrowing"""
+	var operand1: int
+	var operand2: int
+	var attempts = 0
+	
+	while attempts < 100:
+		var tens1 = rng.randi_range(2, 9)
+		var ones1 = rng.randi_range(0, 8)
+		var tens2 = rng.randi_range(1, tens1 - 1)
+		var ones2 = rng.randi_range(ones1 + 1, 9)  # Force ones2 > ones1 for borrowing
+		
+		operand1 = tens1 * 10 + ones1
+		operand2 = tens2 * 10 + ones2
+		
+		# Verify borrowing is needed and result is positive
+		if ones2 > ones1 and operand1 > operand2:
+			return [operand1, operand2]
+		
+		attempts += 1
+	
+	# Fallback
+	operand1 = 52
+	operand2 = 27
+	return [operand1, operand2]
+
+func _generate_3digit_addition() -> Array:
+	"""Generate 3-digit addition problem"""
+	var operand1 = rng.randi_range(100, 999)
+	var operand2 = rng.randi_range(100, 999)
+	
+	# Ensure sum doesn't exceed reasonable bounds for display
+	while operand1 + operand2 > 1998:
+		operand2 = rng.randi_range(100, 999)
+	
+	return [operand1, operand2]
+
+func _generate_3digit_subtraction() -> Array:
+	"""Generate 3-digit subtraction problem (no negative results)"""
+	var operand1 = rng.randi_range(200, 999)
+	var operand2 = rng.randi_range(100, operand1 - 1)
+	
+	return [operand1, operand2]
+
+func _generate_multidigit_multiplication(requires_regrouping: bool) -> Array:
+	"""Generate 1-digit by 2-3-digit multiplication"""
+	var single_digit: int
+	var multi_digit: int
+	
+	if requires_regrouping:
+		# With regrouping - allow any valid multiplication
+		single_digit = rng.randi_range(2, 9)
+		multi_digit = rng.randi_range(10, 999)
+	else:
+		# Without regrouping - each digit * single_digit must be < 10
+		single_digit = rng.randi_range(2, 4)  # Limit single digit
+		var num_digits = rng.randi_range(2, 3)
+		
+		var digits = []
+		for i in range(num_digits):
+			var max_digit = 9 / single_digit
+			digits.append(rng.randi_range(1 if i == 0 else 0, int(max_digit)))
+		
+		multi_digit = 0
+		for i in range(digits.size()):
+			multi_digit = multi_digit * 10 + digits[i]
+	
+	return [single_digit, multi_digit]
+
+func _generate_multidigit_division() -> Array:
+	"""Generate 2-3-digit by 1-digit division (whole number result)"""
+	var divisor = rng.randi_range(2, 9)
+	var result = rng.randi_range(10, 999)  # 2-3 digit result
+	var dividend = divisor * result
+	
+	# Ensure dividend is 2-3 digits
+	while dividend < 10 or dividend > 999:
+		result = rng.randi_range(10, 111)  # Smaller range to keep dividend manageable
+		dividend = divisor * result
+	
+	return [dividend, divisor]
 
 func get_question_key(question_data):
 	"""Generate a unique key for a question based on its operands and operator"""
@@ -487,7 +868,7 @@ func initialize_question_weights_for_all_tracks():
 	var drill_mode_packs = ["Addition", "Subtraction", "Multiplication", "Division"]
 	
 	for pack_name in drill_mode_packs:
-		var pack_config = GameConfig.level_packs[pack_name]
+		var pack_config = GameConfig.legacy_level_packs[pack_name]
 		for track in pack_config.levels:
 			var track_key = str(track) if typeof(track) == TYPE_STRING else "TRACK" + str(track)
 			var questions = []

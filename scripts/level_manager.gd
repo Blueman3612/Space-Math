@@ -4,9 +4,12 @@ extends Node
 
 # Node references
 var main_menu_node: Control  # Reference to the MainMenu node
+var grade_label: Label  # Reference to the GradeLabel node
+var left_button: Button  # Reference to the LeftButton for grade navigation
+var right_button: Button  # Reference to the RightButton for grade navigation
 
 # Dynamic level button references
-var level_buttons = []  # Array to store dynamically created level buttons (each entry: {button: Button, pack_name: String, pack_level_index: int, global_number: int})
+var level_buttons = []  # Array to store dynamically created level buttons (each entry: {button: Button, category_name: String, level_index: int, level_data: Dictionary, global_number: int})
 var level_pack_outlines = []  # Array to store dynamically created pack outline nodes
 var label_settings_64: LabelSettings  # Label settings for button numbers
 var star_icon_texture: Texture2D  # Texture for star icons
@@ -14,11 +17,91 @@ var star_icon_texture: Texture2D  # Texture for star icons
 func initialize(main_node: Control):
 	"""Initialize level manager with references to needed nodes"""
 	main_menu_node = main_node.get_node("MainMenu")
+	grade_label = main_menu_node.get_node("GradeLabel")
+	left_button = main_menu_node.get_node("LeftButton")
+	right_button = main_menu_node.get_node("RightButton")
 	label_settings_64 = load("res://assets/label settings/GravityBold64.tres")
 	star_icon_texture = load("res://assets/sprites/Star Icon.png")
 
+# ============================================
+# Grade Navigation & Star Threshold Functions
+# ============================================
+
+func calculate_level_thresholds(mastery_count: int) -> Dictionary:
+	"""Calculate star thresholds based on mastery count.
+	Formula:
+	- Total problems = ceil(mastery_count / 0.85)
+	- 3 star accuracy = mastery_count
+	- 2 star accuracy = 2 * mastery_count - total
+	- 1 star accuracy = 3 * mastery_count - 2 * total
+	Time requirements are fixed for all levels:
+	- 3 stars: 2:00 (120s), 2 stars: 2:30 (150s), 1 star: 3:00 (180s)
+	"""
+	var total_problems = int(ceil(mastery_count / 0.85))
+	var star3_accuracy = mastery_count
+	var star2_accuracy = 2 * mastery_count - total_problems
+	var star1_accuracy = 3 * mastery_count - 2 * total_problems
+	
+	return {
+		"problems": total_problems,
+		"star1": {"accuracy": star1_accuracy, "time": 180.0},
+		"star2": {"accuracy": star2_accuracy, "time": 150.0},
+		"star3": {"accuracy": star3_accuracy, "time": 120.0}
+	}
+
+func get_grade_data(grade: int) -> Dictionary:
+	"""Get the level data for a specific grade"""
+	if GameConfig.GRADE_LEVELS.has(grade):
+		return GameConfig.GRADE_LEVELS[grade]
+	return {}
+
+func get_current_grade_data() -> Dictionary:
+	"""Get the level data for the currently selected grade"""
+	return get_grade_data(GameConfig.current_grade)
+
+func has_previous_grade() -> bool:
+	"""Check if there's a previous grade available"""
+	var current_index = GameConfig.GRADES.find(GameConfig.current_grade)
+	return current_index > 0
+
+func has_next_grade() -> bool:
+	"""Check if there's a next grade available"""
+	var current_index = GameConfig.GRADES.find(GameConfig.current_grade)
+	return current_index < GameConfig.GRADES.size() - 1
+
+func go_to_previous_grade() -> bool:
+	"""Go to the previous grade. Returns true if successful."""
+	if has_previous_grade():
+		var current_index = GameConfig.GRADES.find(GameConfig.current_grade)
+		GameConfig.current_grade = GameConfig.GRADES[current_index - 1]
+		return true
+	return false
+
+func go_to_next_grade() -> bool:
+	"""Go to the next grade. Returns true if successful."""
+	if has_next_grade():
+		var current_index = GameConfig.GRADES.find(GameConfig.current_grade)
+		GameConfig.current_grade = GameConfig.GRADES[current_index + 1]
+		return true
+	return false
+
+# ============================================
+# Level Button Creation
+# ============================================
+
 func create_level_buttons():
-	"""Dynamically create level buttons with level pack outlines"""
+	"""Dynamically create level buttons for the current grade"""
+	# Clear any existing buttons first
+	clear_level_buttons()
+	
+	# Update grade label and navigation buttons
+	update_grade_display()
+	
+	var grade_data = get_current_grade_data()
+	if grade_data.is_empty():
+		print("Error: No data for current grade")
+		return
+	
 	var global_button_number = 1
 	var current_row_buttons = []  # Track buttons in current row for centering
 	var current_row_outlines = []  # Track outlines in current row for centering
@@ -26,23 +109,23 @@ func create_level_buttons():
 	var current_y = GameConfig.level_button_start_position.y
 	var current_row_start_x = current_x
 	
-	# Iterate through each pack in order
-	for pack_name in GameConfig.level_pack_order:
-		var pack_config = GameConfig.level_packs[pack_name]
-		var pack_levels = pack_config.levels
-		var theme_color = pack_config.theme_color
+	# Iterate through each category in the current grade
+	for category in grade_data.categories:
+		var category_name = category.name
+		var category_levels = category.levels
+		var theme_color = GameConfig.CATEGORY_COLORS.get(category_name, Color(0.5, 0.5, 0.5))
 		
-		var pack_first_button_in_row = true  # Track if this is the first button of the pack in this row
-		var pack_buttons_in_row = []  # Track buttons of this pack in current row
+		var category_first_button_in_row = true  # Track if this is the first button of the category in this row
+		var category_buttons_in_row = []  # Track buttons of this category in current row
 		var outline_start_x = 0.0  # Track where outline should start
 		
-		# Iterate through each level in the pack
-		for level_index in range(pack_levels.size()):
-			var track_id = pack_levels[level_index]
+		# Iterate through each level in the category
+		for level_index in range(category_levels.size()):
+			var level_data = category_levels[level_index]
 			
-			# Check if this button is the first in a new pack segment on this row
-			if pack_first_button_in_row:
-				# Add extra spacing if not the first pack on the row
+			# Check if this button is the first in a new category segment on this row
+			if category_first_button_in_row:
+				# Add extra spacing if not the first category on the row
 				if current_row_buttons.size() > 0:
 					current_x += abs(GameConfig.pack_outline_offset.x)
 				outline_start_x = current_x
@@ -62,43 +145,148 @@ func create_level_buttons():
 				current_row_buttons.clear()
 				current_row_outlines.clear()
 				
-				# Create new outline for continuation of pack on new row
-				if pack_buttons_in_row.size() > 0:
-					# Finalize previous row's pack outline
-					create_pack_outline(pack_name, pack_buttons_in_row, outline_start_x, current_row_outlines, theme_color)
-					pack_buttons_in_row.clear()
+				# Create new outline for continuation of category on new row
+				if category_buttons_in_row.size() > 0:
+					# Finalize previous row's category outline
+					create_pack_outline(category_name, category_buttons_in_row, outline_start_x, current_row_outlines, theme_color)
+					category_buttons_in_row.clear()
 				
 				# Reset for new row
-				pack_first_button_in_row = true
+				category_first_button_in_row = true
 				outline_start_x = current_x
 			
 			# Create button at current position
 			var button_position = Vector2(current_x, current_y)
-			var button = create_single_button(global_button_number, pack_name, level_index, track_id, button_position, theme_color)
+			var button = create_grade_level_button(global_button_number, category_name, level_index, level_data, button_position, theme_color)
 			
 			# Track button
 			current_row_buttons.append(button)
-			pack_buttons_in_row.append(button)
+			category_buttons_in_row.append(button)
 			level_buttons.append({
 				"button": button,
-				"pack_name": pack_name,
-				"pack_level_index": level_index,
+				"category_name": category_name,
+				"level_index": level_index,
+				"level_data": level_data,
 				"global_number": global_button_number
 			})
 			
 			# Move to next button position
 			current_x += GameConfig.level_button_spacing.x
 			global_button_number += 1
-			pack_first_button_in_row = false
+			category_first_button_in_row = false
 		
-		# Create outline for this pack segment (or final segment if wrapped)
-		if pack_buttons_in_row.size() > 0:
-			create_pack_outline(pack_name, pack_buttons_in_row, outline_start_x, current_row_outlines, theme_color)
-			pack_buttons_in_row.clear()
+		# Create outline for this category segment (or final segment if wrapped)
+		if category_buttons_in_row.size() > 0:
+			create_pack_outline(category_name, category_buttons_in_row, outline_start_x, current_row_outlines, theme_color)
+			category_buttons_in_row.clear()
 	
 	# Finalize and center the last row
 	if current_row_buttons.size() > 0:
 		finalize_and_center_row(current_row_buttons, current_row_outlines, current_row_start_x)
+
+func clear_level_buttons():
+	"""Remove all existing level buttons and outlines"""
+	# Remove all level buttons
+	for button_data in level_buttons:
+		if button_data.button and is_instance_valid(button_data.button):
+			button_data.button.queue_free()
+	level_buttons.clear()
+	
+	# Remove all pack outlines
+	for outline in level_pack_outlines:
+		if outline and is_instance_valid(outline):
+			outline.queue_free()
+	level_pack_outlines.clear()
+
+func update_grade_display():
+	"""Update the grade label and navigation button states"""
+	if grade_label:
+		grade_label.text = "Grade " + str(GameConfig.current_grade)
+	
+	if left_button:
+		left_button.disabled = not has_previous_grade()
+	
+	if right_button:
+		right_button.disabled = not has_next_grade()
+
+func switch_to_previous_grade():
+	"""Switch to the previous grade and recreate buttons"""
+	if go_to_previous_grade():
+		create_level_buttons()
+		update_menu_stars()
+		update_level_availability()
+		AudioManager.play_select()
+
+func switch_to_next_grade():
+	"""Switch to the next grade and recreate buttons"""
+	if go_to_next_grade():
+		create_level_buttons()
+		update_menu_stars()
+		update_level_availability()
+		AudioManager.play_select()
+
+func create_grade_level_button(global_number: int, category_name: String, level_index: int, level_data: Dictionary, button_position: Vector2, theme_color: Color) -> Button:
+	"""Create a single level button for the grade-based system"""
+	var button = Button.new()
+	button.name = "LevelButton_" + level_data.id
+	button.custom_minimum_size = GameConfig.level_button_size
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.self_modulate = theme_color
+	
+	# Set anchors and position (center anchored)
+	button.anchor_left = 0.5
+	button.anchor_top = 0.5
+	button.anchor_right = 0.5
+	button.anchor_bottom = 0.5
+	button.offset_left = button_position.x
+	button.offset_top = button_position.y
+	button.offset_right = button_position.x + GameConfig.level_button_size.x
+	button.offset_bottom = button_position.y + GameConfig.level_button_size.y
+	button.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	button.grow_vertical = Control.GROW_DIRECTION_BOTH
+	
+	# Set tooltip to level name
+	button.tooltip_text = level_data.name
+	
+	# Create Contents control
+	var contents = Control.new()
+	contents.name = "Contents"
+	contents.set_anchors_preset(Control.PRESET_FULL_RECT)
+	contents.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(contents)
+	
+	# Create Number label
+	var number_label = Label.new()
+	number_label.name = "Number"
+	number_label.text = str(global_number)
+	number_label.label_settings = label_settings_64
+	number_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	number_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	number_label.position = Vector2(4, -32)
+	number_label.size = Vector2(192, 192)
+	contents.add_child(number_label)
+	
+	# Create star sprites
+	var star_positions = [Vector2(44, 136), Vector2(96, 144), Vector2(148, 136)]
+	for i in range(3):
+		var star = Sprite2D.new()
+		star.name = "Star" + str(i + 1)
+		star.texture = star_icon_texture
+		star.hframes = 2
+		star.frame = 0  # Start with unearned star
+		star.scale = Vector2(2, 2)
+		star.position = star_positions[i]
+		contents.add_child(star)
+	
+	# Add button to main menu
+	main_menu_node.add_child(button)
+	
+	# Connect button press - pass level_data instead of pack/track info
+	button.pressed.connect(StateManager._on_grade_level_button_pressed.bind(level_data))
+	UIManager.connect_button_sounds(button)
+	
+	return button
 
 func create_single_button(global_number: int, pack_name: String, pack_level_index: int, track_id, button_position: Vector2, theme_color: Color) -> Button:
 	"""Create a single level button"""
@@ -285,21 +473,11 @@ func update_menu_stars():
 	"""Update the star display on menu level buttons based on save data"""
 	for button_data in level_buttons:
 		var button = button_data.button
-		var pack_name = button_data.pack_name
-		var pack_level_index = button_data.pack_level_index
+		var level_data = button_data.level_data
+		var level_id = level_data.id
 		
-		# Get the track ID for this level
-		var pack_config = GameConfig.level_packs[pack_name]
-		var level_track = pack_config.levels[pack_level_index]
-		var track_id = str(level_track) if typeof(level_track) == TYPE_STRING else "TRACK" + str(level_track)
-		
-		# Get save data for this level
-		var stars_earned = 0
-		if SaveManager.save_data.packs.has(pack_name):
-			var pack_data = SaveManager.save_data.packs[pack_name]
-			if pack_data.has("levels"):
-				if pack_data.levels.has(track_id):
-					stars_earned = pack_data.levels[track_id].highest_stars
+		# Get save data for this level using the new level ID format
+		var stars_earned = SaveManager.get_grade_level_stars(level_id)
 		
 		# Update star sprites
 		var contents = button.get_node("Contents")
@@ -310,44 +488,36 @@ func update_menu_stars():
 					star_sprite.frame = 1 if star_num <= stars_earned else 0
 
 func update_level_availability():
-	"""Update level button availability based on pack-based progression"""
+	"""Update level button availability based on category-based progression within current grade"""
+	# Track the previous level in each category
+	var category_prev_level = {}  # category_name -> previous level_id
+	
 	for button_data in level_buttons:
 		var button = button_data.button
-		var pack_name = button_data.pack_name
-		var pack_level_index = button_data.pack_level_index
+		var category_name = button_data.category_name
+		var level_data = button_data.level_data
+		var level_id = level_data.id
+		var level_index = button_data.level_index
 		
 		var should_be_available = true
 		
-		# First level of each pack is always available
-		if pack_level_index > 0:
-			# Get the track ID for the current level
-			var pack_config = GameConfig.level_packs[pack_name]
-			var current_level_track = pack_config.levels[pack_level_index]
-			var current_track_id = str(current_level_track) if typeof(current_level_track) == TYPE_STRING else "TRACK" + str(current_level_track)
-			
-			# Check if current level has at least 1 star
-			var current_has_stars = false
-			if SaveManager.save_data.packs.has(pack_name) and SaveManager.save_data.packs[pack_name].has("levels"):
-				if SaveManager.save_data.packs[pack_name].levels.has(current_track_id):
-					var current_stars = SaveManager.save_data.packs[pack_name].levels[current_track_id].highest_stars
-					current_has_stars = current_stars > 0
-			
-			# If current level has stars, it's unlocked
-			if current_has_stars:
+		# First level of each category is always available
+		if level_index > 0:
+			# Check if current level has at least 1 star (already unlocked)
+			var current_stars = SaveManager.get_grade_level_stars(level_id)
+			if current_stars > 0:
 				should_be_available = true
 			else:
-				# Otherwise, check if previous level in this pack has at least 1 star
-				var prev_level_track = pack_config.levels[pack_level_index - 1]
-				var prev_track_id = str(prev_level_track) if typeof(prev_level_track) == TYPE_STRING else "TRACK" + str(prev_level_track)
-				
-				if SaveManager.save_data.packs.has(pack_name) and SaveManager.save_data.packs[pack_name].has("levels"):
-					if SaveManager.save_data.packs[pack_name].levels.has(prev_track_id):
-						var prev_stars = SaveManager.save_data.packs[pack_name].levels[prev_track_id].highest_stars
-						should_be_available = prev_stars > 0
-					else:
-						should_be_available = false
+				# Check if previous level in this category has at least 1 star
+				var prev_level_id = category_prev_level.get(category_name, "")
+				if prev_level_id != "":
+					var prev_stars = SaveManager.get_grade_level_stars(prev_level_id)
+					should_be_available = prev_stars > 0
 				else:
 					should_be_available = false
+		
+		# Track this level as the previous for the next iteration
+		category_prev_level[category_name] = level_id
 		
 		# Set button state
 		button.disabled = not should_be_available
@@ -369,10 +539,10 @@ func update_drill_mode_availability():
 	if not drill_mode_button:
 		return
 	
-	# Check if all levels across all packs have at least 1 star
+	# Check if all levels across all packs have at least 1 star (legacy check)
 	var all_levels_completed = true
-	for pack_name in GameConfig.level_pack_order:
-		var pack_config = GameConfig.level_packs[pack_name]
+	for pack_name in GameConfig.legacy_level_pack_order:
+		var pack_config = GameConfig.legacy_level_packs[pack_name]
 		if not SaveManager.save_data.packs.has(pack_name):
 			all_levels_completed = false
 			break
@@ -412,10 +582,10 @@ func update_drill_mode_availability():
 			unlock_requirements.visible = false
 
 func get_global_level_number(pack_name: String, pack_level_index: int) -> int:
-	"""Get the global level number (1-11) for a pack and index"""
+	"""Get the global level number (1-11) for a pack and index (legacy)"""
 	var global_num = 1
-	for pack in GameConfig.level_pack_order:
-		var pack_config = GameConfig.level_packs[pack]
+	for pack in GameConfig.legacy_level_pack_order:
+		var pack_config = GameConfig.legacy_level_packs[pack]
 		if pack == pack_name:
 			return global_num + pack_level_index
 		else:

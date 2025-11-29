@@ -96,10 +96,10 @@ func calculate_question_difficulty(question_data):
 				# Get the track ID (could be "TRACK12" or "FRAC-07")
 				var track_id = level.id
 				
-				# Find global index across all level packs
+				# Find global index across all level packs (legacy)
 				var global_index = 0
-				for pack_name in GameConfig.level_pack_order:
-					var pack_config = GameConfig.level_packs[pack_name]
+				for pack_name in GameConfig.legacy_level_pack_order:
+					var pack_config = GameConfig.legacy_level_packs[pack_name]
 					for track_entry in pack_config.levels:
 						# Handle both numeric and string track IDs
 						var matches = false

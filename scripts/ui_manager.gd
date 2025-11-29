@@ -176,7 +176,12 @@ func update_play_ui(delta: float, is_drill_mode: bool, current_level_number: int
 		timer_label.text = time_string
 		
 		# Update accuracy display (correct/total format)
-		var level_config = GameConfig.level_configs.get(current_level_number, GameConfig.level_configs[1])
+		# Use grade-based config if playing a grade level, otherwise legacy config
+		var level_config
+		if StateManager.is_grade_level:
+			level_config = StateManager.current_level_config
+		else:
+			level_config = GameConfig.level_configs.get(current_level_number, GameConfig.level_configs[1])
 		var accuracy_string = "%d/%d" % [ScoreManager.correct_answers, level_config.problems]
 		accuracy_label.text = accuracy_string
 
@@ -551,6 +556,164 @@ func show_continue_button():
 	"""Show the continue button"""
 	if continue_button:
 		continue_button.visible = true
+
+# ============================================
+# Grade-Based Level Game Over Functions
+# ============================================
+
+func update_grade_level_game_over_labels(level_config: Dictionary):
+	"""Update the GameOver labels with player's final performance for grade-based levels"""
+	if not player_time_label or not player_accuracy_label:
+		return
+	
+	# Update player time display (mm:ss.ss format - same as in-game timer)
+	var minutes = int(ScoreManager.current_level_time / 60)
+	var seconds = int(ScoreManager.current_level_time) % 60
+	var hundredths = int((ScoreManager.current_level_time - int(ScoreManager.current_level_time)) * 100)
+	var time_string = "%d:%02d.%02d" % [minutes, seconds, hundredths]
+	player_time_label.text = time_string
+	
+	# Update player accuracy display (correct/total format)
+	var accuracy_string = "%d/%d" % [ScoreManager.correct_answers, level_config.problems]
+	player_accuracy_label.text = accuracy_string
+	
+	# Update CQPM display
+	if cqpm_label:
+		var cqpm = ScoreManager.calculate_cqpm(ScoreManager.correct_answers, ScoreManager.current_level_time)
+		cqpm_label.text = "%.2f" % cqpm
+
+func update_grade_level_star_requirement_labels(level_config: Dictionary):
+	"""Update the star requirement labels for grade-based levels"""
+	# Helper function to format time as mm:ss
+	var format_time = func(time_seconds: float) -> String:
+		var minutes = int(time_seconds / 60)
+		var seconds = int(time_seconds) % 60
+		return "%2d:%02d" % [minutes, seconds]
+	
+	# Update Star 1 requirements
+	if star1_accuracy_label:
+		star1_accuracy_label.text = "%d/%d" % [level_config.star1.accuracy, level_config.problems]
+	if star1_time_label:
+		star1_time_label.text = format_time.call(level_config.star1.time)
+	
+	# Update Star 2 requirements
+	if star2_accuracy_label:
+		star2_accuracy_label.text = "%d/%d" % [level_config.star2.accuracy, level_config.problems]
+	if star2_time_label:
+		star2_time_label.text = format_time.call(level_config.star2.time)
+	
+	# Update Star 3 requirements
+	if star3_accuracy_label:
+		star3_accuracy_label.text = "%d/%d" % [level_config.star3.accuracy, level_config.problems]
+	if star3_time_label:
+		star3_time_label.text = format_time.call(level_config.star3.time)
+
+func start_grade_level_star_animation_sequence(level_config: Dictionary):
+	"""Start the sequential star animation for grade-based levels"""
+	await get_tree().create_timer(GameConfig.animation_duration / 2.0).timeout
+	
+	# Evaluate which stars were earned
+	var stars_earned = StateManager.evaluate_grade_level_stars()
+	
+	# Animate stars in sequence
+	animate_grade_level_star(1, 1 in stars_earned, level_config)
+	await get_tree().create_timer(GameConfig.star_delay).timeout
+	
+	animate_grade_level_star(2, 2 in stars_earned, level_config)
+	await get_tree().create_timer(GameConfig.star_delay).timeout
+	
+	animate_grade_level_star(3, 3 in stars_earned, level_config)
+	# Show continue button when Star 3 starts animating
+	continue_button.visible = true
+
+func animate_grade_level_star(star_num: int, earned: bool, level_config: Dictionary):
+	"""Animate a single star for grade-based levels"""
+	var star_node: Control
+	var star_sprite: Sprite2D
+	var star_accuracy_label_node: Label
+	var star_time_label_node: Label
+	
+	# Get references for the specific star
+	match star_num:
+		1:
+			star_node = star1_node
+			star_sprite = star1_sprite
+			star_accuracy_label_node = star1_accuracy_label
+			star_time_label_node = star1_time_label
+		2:
+			star_node = star2_node
+			star_sprite = star2_sprite
+			star_accuracy_label_node = star2_accuracy_label
+			star_time_label_node = star2_time_label
+		3:
+			star_node = star3_node
+			star_sprite = star3_sprite
+			star_accuracy_label_node = star3_accuracy_label
+			star_time_label_node = star3_time_label
+		_:
+			return
+	
+	# Make star visible
+	star_node.visible = true
+	
+	# Set sprite frame based on earned status
+	star_sprite.frame = 1 if earned else 0
+	
+	# Create sprite animation tween
+	var sprite_tween = star_sprite.create_tween()
+	sprite_tween.set_ease(Tween.EASE_OUT)
+	sprite_tween.set_trans(Tween.TRANS_EXPO)
+	
+	if earned:
+		# Earned star animation: 0 -> 16 -> 8
+		sprite_tween.tween_property(star_sprite, "scale", Vector2(GameConfig.star_max_scale, GameConfig.star_max_scale), GameConfig.star_expand_time)
+		sprite_tween.tween_property(star_sprite, "scale", Vector2(GameConfig.star_final_scale, GameConfig.star_final_scale), GameConfig.star_shrink_time)
+		# Play get sound
+		AudioManager.play_get()
+	else:
+		# Unearned star animation: 0 -> 8
+		sprite_tween.tween_property(star_sprite, "scale", Vector2(GameConfig.star_final_scale, GameConfig.star_final_scale), GameConfig.star_shrink_time)
+		# Play close sound
+		AudioManager.play_close()
+	
+	# Animate labels (accuracy and time)
+	animate_grade_level_star_labels(star_num, star_accuracy_label_node, star_time_label_node, level_config)
+
+func animate_grade_level_star_labels(star_num: int, accuracy_label_node: Label, time_label_node: Label, level_config: Dictionary):
+	"""Animate the accuracy and time labels for a grade-based level star"""
+	# Get the requirements for this star
+	var star_config
+	match star_num:
+		1: star_config = level_config.star1
+		2: star_config = level_config.star2
+		3: star_config = level_config.star3
+		_: return
+	
+	# Check if individual requirements were met
+	var accuracy_met = ScoreManager.correct_answers >= star_config.accuracy
+	var time_met = ScoreManager.current_level_time <= star_config.time
+	
+	# Set colors based on whether requirements were met
+	if accuracy_met:
+		accuracy_label_node.self_modulate = Color(0, 0.5, 0, 0)  # Half green, start transparent
+	else:
+		accuracy_label_node.self_modulate = Color(0.5, 0, 0, 0)  # Half red, start transparent
+	
+	if time_met:
+		time_label_node.self_modulate = Color(0, 0.5, 0, 0)  # Half green, start transparent
+	else:
+		time_label_node.self_modulate = Color(0.5, 0, 0, 0)  # Half red, start transparent
+	
+	# Create fade-in animations
+	var accuracy_tween = accuracy_label_node.create_tween()
+	accuracy_tween.set_ease(Tween.EASE_OUT)
+	accuracy_tween.set_trans(Tween.TRANS_EXPO)
+	accuracy_tween.tween_property(accuracy_label_node, "self_modulate:a", 1.0, GameConfig.label_fade_time)
+	
+	var time_tween = time_label_node.create_tween()
+	time_tween.set_ease(Tween.EASE_OUT)
+	time_tween.set_trans(Tween.TRANS_EXPO)
+	time_tween.tween_property(time_label_node, "self_modulate:a", 1.0, GameConfig.label_fade_time)
 
 func create_flying_score_label(points_earned: int):
 	"""Create a flying score label that moves down and fades out simultaneously"""
