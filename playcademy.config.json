@@ -8,18 +8,38 @@
         },
         "kv": true,
         "timeback": {
-            "course": {
-                "subjects": [
-                    "FastMath"
-                ],
-                "grades": [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5
-                ]
-            }
+            "courses": [
+                {
+                    "subject": "FastMath",
+                    "grade": 1,
+                    "totalXp": null,
+                    "masterableUnits": null
+                },
+                {
+                    "subject": "FastMath",
+                    "grade": 2,
+                    "totalXp": null,
+                    "masterableUnits": null
+                },
+                {
+                    "subject": "FastMath",
+                    "grade": 3,
+                    "totalXp": null,
+                    "masterableUnits": null
+                },
+                {
+                    "subject": "FastMath",
+                    "grade": 4,
+                    "totalXp": null,
+                    "masterableUnits": null
+                },
+                {
+                    "subject": "FastMath",
+                    "grade": 5,
+                    "totalXp": null,
+                    "masterableUnits": null
+                }
+            ]
         }
     }
 }
