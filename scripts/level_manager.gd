@@ -122,6 +122,7 @@ func create_level_buttons():
 		# Iterate through each level in the category
 		for level_index in range(category_levels.size()):
 			var level_data = category_levels[level_index]
+			var remaining_levels = category_levels.size() - level_index
 			
 			# Check if this button is the first in a new category segment on this row
 			if category_first_button_in_row:
@@ -134,7 +135,23 @@ func create_level_buttons():
 			var button_right_edge = current_x + GameConfig.level_button_size.x
 			
 			# Check if we need to wrap to a new row
-			if button_right_edge > GameConfig.level_button_start_position.x + GameConfig.max_row_width:
+			var needs_wrap = button_right_edge > GameConfig.level_button_start_position.x + GameConfig.max_row_width
+			
+			# Special case: if this is the first button of a category and only 1 would fit,
+			# but there are more levels remaining, wrap the entire category to the next row
+			if not needs_wrap and category_first_button_in_row and remaining_levels > 1:
+				# Check if the second button would fit
+				var second_button_right_edge = current_x + GameConfig.level_button_spacing.x + GameConfig.level_button_size.x
+				if second_button_right_edge > GameConfig.level_button_start_position.x + GameConfig.max_row_width:
+					# Only 1 button would fit, wrap entire category
+					needs_wrap = true
+			
+			if needs_wrap:
+				# Create outline for current row's category segment BEFORE finalizing
+				if category_buttons_in_row.size() > 0:
+					create_pack_outline(category_name, category_buttons_in_row, outline_start_x, current_row_outlines, theme_color)
+					category_buttons_in_row.clear()
+				
 				# Finalize and center current row
 				finalize_and_center_row(current_row_buttons, current_row_outlines, current_row_start_x)
 				
@@ -145,13 +162,7 @@ func create_level_buttons():
 				current_row_buttons.clear()
 				current_row_outlines.clear()
 				
-				# Create new outline for continuation of category on new row
-				if category_buttons_in_row.size() > 0:
-					# Finalize previous row's category outline
-					create_pack_outline(category_name, category_buttons_in_row, outline_start_x, current_row_outlines, theme_color)
-					category_buttons_in_row.clear()
-				
-				# Reset for new row
+				# Reset for new row - outline starts at the new row's position
 				category_first_button_in_row = true
 				outline_start_x = current_x
 			
