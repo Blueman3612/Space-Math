@@ -19,6 +19,8 @@ var incorrect_label_move_distance = 192.0  # Distance to move incorrect label do
 var incorrect_label_move_distance_fractions = 256.0  # Distance to move incorrect label down for fractions
 var backspace_hold_time = 0.15  # Time to hold backspace before it repeats
 var timer_grace_period = 0.5  # Grace period before timer starts in seconds
+var loading_fade_duration = 0.2  # Duration for loading screen fade out
+var loading_fade_ease = Tween.EASE_OUT  # Easing type for loading screen fade
 
 # ============================================
 # Input
@@ -208,7 +210,7 @@ const GRADES = [1, 2, 3]
 const CATEGORY_COLORS = {
 	"Addition": Color(0, 0.5, 1),
 	"Subtraction": Color(1, 0.25, 0.25),
-	"Add & Sub": Color(0, 0.75, 0.5),
+	"Add./Sub.": Color(0, 0.75, 0.5),
 	"2-Digit Numbers": Color(1, 0.5, 0),
 	"3-Digit Numbers": Color(0.75, 0.25, 0.75),
 	"Multiplication": Color(1, 0.75, 0.25),
@@ -240,7 +242,7 @@ const GRADE_LEVELS = {
 				]
 			},
 			{
-				"name": "Add & Sub",
+				"name": "Add./Sub.",
 				"levels": [
 					{"id": "grade1_fact_families_0_5", "name": "Add/Subtract 0-5", "mastery_count": 40, "config": {"operators": ["+", "-"], "sum_max": 5, "range_max": 5}},
 					{"id": "grade1_fact_families_0_9", "name": "Add/Subtract 0-9", "mastery_count": 40, "config": {"operators": ["+", "-"], "sum_max": 9, "range_max": 9}},
@@ -267,7 +269,7 @@ const GRADE_LEVELS = {
 				]
 			},
 			{
-				"name": "Add & Sub",
+				"name": "Add./Sub.",
 				"levels": [
 					{"id": "grade2_fact_families_0_20", "name": "Add/Subtract 0-20", "mastery_count": 33, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}}
 				]
@@ -293,7 +295,7 @@ const GRADE_LEVELS = {
 	3: {
 		"categories": [
 			{
-				"name": "Add & Sub",
+				"name": "Add./Sub.",
 				"levels": [
 					{"id": "grade3_add_sub_sums_to_20", "name": "Sums to 20", "mastery_count": 33, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}},
 					{"id": "grade3_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 60, "config": {"operators": ["-"], "range_max": 9}},

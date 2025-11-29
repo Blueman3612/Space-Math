@@ -60,10 +60,13 @@ func _on_save_data_loaded(success: bool):
 	# Hide loading screen and show main menu now that everything is ready
 	var loading = get_node("Loading")
 	var main_menu = get_node("MainMenu")
-	if loading:
-		loading.visible = false
 	if main_menu:
 		main_menu.visible = true
+	if loading:
+		# Fade out the loading screen
+		var tween = create_tween()
+		tween.tween_property(loading, "modulate:a", 0.0, GameConfig.loading_fade_duration).set_ease(GameConfig.loading_fade_ease)
+		tween.tween_callback(func(): loading.visible = false)
 	
 	print("[Main] Game initialization complete!")
 
