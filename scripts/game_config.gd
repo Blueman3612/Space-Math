@@ -202,6 +202,10 @@ const legacy_level_packs = {
 # ============================================
 # Current grade being displayed (1-indexed)
 var current_grade = 1
+# Current page within the grade (1-indexed, for grades that overflow to multiple screens)
+var current_grade_page = 1
+# Maximum rows per grade screen before pagination kicks in
+var max_rows_per_screen = 2
 
 # Available grades
 const GRADES = [1, 2, 3]

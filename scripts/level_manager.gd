@@ -59,74 +59,212 @@ func get_current_grade_data() -> Dictionary:
 	"""Get the level data for the currently selected grade"""
 	return get_grade_data(GameConfig.current_grade)
 
-func has_previous_grade() -> bool:
-	"""Check if there's a previous grade available"""
+func calculate_grade_pages(grade: int) -> Array:
+	"""Calculate which levels go on each page for a grade.
+	Returns an array of pages, where each page is an array of {category, level_indices} dicts."""
+	var grade_data = get_grade_data(grade)
+	if grade_data.is_empty():
+		return []
+	
+	var pages = []
+	var current_page_levels = []  # Array of {category_name, category, start_index, end_index}
+	var current_x = GameConfig.level_button_start_position.x
+	var current_row = 0
+	
+	for category in grade_data.categories:
+		var category_name = category.name
+		var category_levels = category.levels
+		var category_start_index = 0
+		var levels_on_current_page = 0
+		
+		for level_index in range(category_levels.size()):
+			var remaining_levels = category_levels.size() - level_index
+			
+			# Check if this is the start of a new category segment
+			var is_first_in_segment = (level_index == category_start_index)
+			if is_first_in_segment and current_page_levels.size() > 0 or (is_first_in_segment and current_x > GameConfig.level_button_start_position.x):
+				# Add spacing before category
+				if current_x > GameConfig.level_button_start_position.x:
+					current_x += abs(GameConfig.pack_outline_offset.x)
+			
+			var button_right_edge = current_x + GameConfig.level_button_size.x
+			var needs_wrap = button_right_edge > GameConfig.level_button_start_position.x + GameConfig.max_row_width
+			
+			# Check for single-button split prevention
+			if not needs_wrap and is_first_in_segment and remaining_levels > 1:
+				var second_button_right_edge = current_x + GameConfig.level_button_spacing.x + GameConfig.level_button_size.x
+				if second_button_right_edge > GameConfig.level_button_start_position.x + GameConfig.max_row_width:
+					needs_wrap = true
+			
+			if needs_wrap:
+				current_row += 1
+				current_x = GameConfig.level_button_start_position.x
+				
+				# Check if we need a new page
+				if current_row >= GameConfig.max_rows_per_screen:
+					# Save current category progress if any
+					if levels_on_current_page > 0:
+						current_page_levels.append({
+							"category_name": category_name,
+							"category": category,
+							"start_index": category_start_index,
+							"end_index": level_index - 1
+						})
+					
+					# Start new page
+					if current_page_levels.size() > 0:
+						pages.append(current_page_levels)
+					current_page_levels = []
+					current_row = 0
+					category_start_index = level_index
+					levels_on_current_page = 0
+			
+			# "Place" button
+			current_x += GameConfig.level_button_spacing.x
+			levels_on_current_page += 1
+		
+		# End of category - record it
+		if levels_on_current_page > 0:
+			current_page_levels.append({
+				"category_name": category_name,
+				"category": category,
+				"start_index": category_start_index,
+				"end_index": category_levels.size() - 1
+			})
+			levels_on_current_page = 0
+	
+	# Add final page
+	if current_page_levels.size() > 0:
+		pages.append(current_page_levels)
+	
+	return pages
+
+func get_total_pages_for_grade(grade: int) -> int:
+	"""Get the total number of pages for a grade"""
+	var pages = calculate_grade_pages(grade)
+	return max(1, pages.size())
+
+func get_current_grade_total_pages() -> int:
+	"""Get total pages for the current grade"""
+	return get_total_pages_for_grade(GameConfig.current_grade)
+
+func has_previous_screen() -> bool:
+	"""Check if there's a previous screen available (either previous page or previous grade)"""
+	# If we're on page > 1, we can go back a page
+	if GameConfig.current_grade_page > 1:
+		return true
+	# Otherwise check if there's a previous grade
 	var current_index = GameConfig.GRADES.find(GameConfig.current_grade)
 	return current_index > 0
 
-func has_next_grade() -> bool:
-	"""Check if there's a next grade available"""
+func has_next_screen() -> bool:
+	"""Check if there's a next screen available (either next page or next grade)"""
+	# If we're not on the last page of this grade, we can go forward
+	var total_pages = get_current_grade_total_pages()
+	if GameConfig.current_grade_page < total_pages:
+		return true
+	# Otherwise check if there's a next grade
 	var current_index = GameConfig.GRADES.find(GameConfig.current_grade)
 	return current_index < GameConfig.GRADES.size() - 1
 
-func go_to_previous_grade() -> bool:
-	"""Go to the previous grade. Returns true if successful."""
-	if has_previous_grade():
+func go_to_previous_screen() -> bool:
+	"""Go to the previous screen (page or grade). Returns true if successful."""
+	if GameConfig.current_grade_page > 1:
+		# Go to previous page of same grade
+		GameConfig.current_grade_page -= 1
+		return true
+	elif has_previous_screen():
+		# Go to previous grade (last page)
 		var current_index = GameConfig.GRADES.find(GameConfig.current_grade)
 		GameConfig.current_grade = GameConfig.GRADES[current_index - 1]
+		GameConfig.current_grade_page = get_current_grade_total_pages()
 		return true
 	return false
 
-func go_to_next_grade() -> bool:
-	"""Go to the next grade. Returns true if successful."""
-	if has_next_grade():
+func go_to_next_screen() -> bool:
+	"""Go to the next screen (page or grade). Returns true if successful."""
+	var total_pages = get_current_grade_total_pages()
+	if GameConfig.current_grade_page < total_pages:
+		# Go to next page of same grade
+		GameConfig.current_grade_page += 1
+		return true
+	elif has_next_screen():
+		# Go to next grade (first page)
 		var current_index = GameConfig.GRADES.find(GameConfig.current_grade)
 		GameConfig.current_grade = GameConfig.GRADES[current_index + 1]
+		GameConfig.current_grade_page = 1
 		return true
 	return false
+
+# Legacy functions for backwards compatibility
+func has_previous_grade() -> bool:
+	return has_previous_screen()
+
+func has_next_grade() -> bool:
+	return has_next_screen()
+
+func go_to_previous_grade() -> bool:
+	return go_to_previous_screen()
+
+func go_to_next_grade() -> bool:
+	return go_to_next_screen()
 
 # ============================================
 # Level Button Creation
 # ============================================
 
 func create_level_buttons():
-	"""Dynamically create level buttons for the current grade"""
+	"""Dynamically create level buttons for the current grade and page"""
 	# Clear any existing buttons first
 	clear_level_buttons()
 	
 	# Update grade label and navigation buttons
 	update_grade_display()
 	
-	var grade_data = get_current_grade_data()
-	if grade_data.is_empty():
-		print("Error: No data for current grade")
+	# Get page data for current grade
+	var pages = calculate_grade_pages(GameConfig.current_grade)
+	if pages.is_empty():
+		print("Error: No pages for current grade")
 		return
 	
+	# Ensure current page is valid
+	var page_index = GameConfig.current_grade_page - 1  # Convert to 0-indexed
+	if page_index < 0 or page_index >= pages.size():
+		GameConfig.current_grade_page = 1
+		page_index = 0
+	
+	var current_page_data = pages[page_index]
+	
+	# Calculate global button number offset (levels on previous pages)
 	var global_button_number = 1
+	for prev_page_idx in range(page_index):
+		for segment in pages[prev_page_idx]:
+			global_button_number += segment.end_index - segment.start_index + 1
+	
 	var current_row_buttons = []  # Track buttons in current row for centering
 	var current_row_outlines = []  # Track outlines in current row for centering
 	var current_x = GameConfig.level_button_start_position.x
 	var current_y = GameConfig.level_button_start_position.y
 	var current_row_start_x = current_x
 	
-	# Iterate through each category in the current grade
-	for category in grade_data.categories:
-		var category_name = category.name
+	# Iterate through each category segment on this page
+	for segment in current_page_data:
+		var category_name = segment.category_name
+		var category = segment.category
 		var category_levels = category.levels
 		var theme_color = GameConfig.CATEGORY_COLORS.get(category_name, Color(0.5, 0.5, 0.5))
 		
-		var category_first_button_in_row = true  # Track if this is the first button of the category in this row
-		var category_buttons_in_row = []  # Track buttons of this category in current row
-		var outline_start_x = 0.0  # Track where outline should start
+		var category_first_button_in_row = true
+		var category_buttons_in_row = []
+		var outline_start_x = 0.0
 		
-		# Iterate through each level in the category
-		for level_index in range(category_levels.size()):
+		# Iterate through levels in this segment (start_index to end_index)
+		for level_index in range(segment.start_index, segment.end_index + 1):
 			var level_data = category_levels[level_index]
-			var remaining_levels = category_levels.size() - level_index
+			var remaining_in_segment = segment.end_index - level_index + 1
 			
-			# Check if this button is the first in a new category segment on this row
+			# Check if this is the first button in a new category segment on this row
 			if category_first_button_in_row:
-				# Add extra spacing if not the first category on the row
 				if current_row_buttons.size() > 0:
 					current_x += abs(GameConfig.pack_outline_offset.x)
 				outline_start_x = current_x
@@ -137,13 +275,10 @@ func create_level_buttons():
 			# Check if we need to wrap to a new row
 			var needs_wrap = button_right_edge > GameConfig.level_button_start_position.x + GameConfig.max_row_width
 			
-			# Special case: if this is the first button of a category and only 1 would fit,
-			# but there are more levels remaining, wrap the entire category to the next row
-			if not needs_wrap and category_first_button_in_row and remaining_levels > 1:
-				# Check if the second button would fit
+			# Single-button split prevention
+			if not needs_wrap and category_first_button_in_row and remaining_in_segment > 1:
 				var second_button_right_edge = current_x + GameConfig.level_button_spacing.x + GameConfig.level_button_size.x
 				if second_button_right_edge > GameConfig.level_button_start_position.x + GameConfig.max_row_width:
-					# Only 1 button would fit, wrap entire category
 					needs_wrap = true
 			
 			if needs_wrap:
@@ -162,7 +297,7 @@ func create_level_buttons():
 				current_row_buttons.clear()
 				current_row_outlines.clear()
 				
-				# Reset for new row - outline starts at the new row's position
+				# Reset for new row
 				category_first_button_in_row = true
 				outline_start_x = current_x
 			
@@ -186,7 +321,7 @@ func create_level_buttons():
 			global_button_number += 1
 			category_first_button_in_row = false
 		
-		# Create outline for this category segment (or final segment if wrapped)
+		# Create outline for this category segment
 		if category_buttons_in_row.size() > 0:
 			create_pack_outline(category_name, category_buttons_in_row, outline_start_x, current_row_outlines, theme_color)
 			category_buttons_in_row.clear()
@@ -212,16 +347,21 @@ func clear_level_buttons():
 func update_grade_display():
 	"""Update the grade label and navigation button states"""
 	if grade_label:
-		grade_label.text = "Grade " + str(GameConfig.current_grade)
+		var total_pages = get_current_grade_total_pages()
+		if total_pages > 1:
+			# Show page number for multi-page grades
+			grade_label.text = "Grade " + str(GameConfig.current_grade) + " (" + str(GameConfig.current_grade_page) + "/" + str(total_pages) + ")"
+		else:
+			grade_label.text = "Grade " + str(GameConfig.current_grade)
 	
 	if left_button:
-		left_button.disabled = not has_previous_grade()
+		left_button.disabled = not has_previous_screen()
 		var left_icon = left_button.get_node_or_null("Icon")
 		if left_icon:
 			left_icon.modulate.a = 0.5 if left_button.disabled else 1.0
 	
 	if right_button:
-		right_button.disabled = not has_next_grade()
+		right_button.disabled = not has_next_screen()
 		var right_icon = right_button.get_node_or_null("Icon")
 		if right_icon:
 			right_icon.modulate.a = 0.5 if right_button.disabled else 1.0
