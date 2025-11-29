@@ -205,9 +205,15 @@ func update_grade_display():
 	
 	if left_button:
 		left_button.disabled = not has_previous_grade()
+		var left_icon = left_button.get_node_or_null("Icon")
+		if left_icon:
+			left_icon.modulate.a = 0.5 if left_button.disabled else 1.0
 	
 	if right_button:
 		right_button.disabled = not has_next_grade()
+		var right_icon = right_button.get_node_or_null("Icon")
+		if right_icon:
+			right_icon.modulate.a = 0.5 if right_button.disabled else 1.0
 
 func switch_to_previous_grade():
 	"""Switch to the previous grade and recreate buttons"""
@@ -215,7 +221,6 @@ func switch_to_previous_grade():
 		create_level_buttons()
 		update_menu_stars()
 		update_level_availability()
-		AudioManager.play_select()
 
 func switch_to_next_grade():
 	"""Switch to the next grade and recreate buttons"""
@@ -223,7 +228,6 @@ func switch_to_next_grade():
 		create_level_buttons()
 		update_menu_stars()
 		update_level_availability()
-		AudioManager.play_select()
 
 func create_grade_level_button(global_number: int, _category_name: String, _level_index: int, level_data: Dictionary, button_position: Vector2, theme_color: Color) -> Button:
 	"""Create a single level button for the grade-based system"""
