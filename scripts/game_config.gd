@@ -62,11 +62,11 @@ var fraction_problem_min_x = 32.0  # Minimum x position for fraction problems to
 # Multiple Choice Question Layout
 # ============================================
 var multiple_choice_prompt_y_offset = -256.0  # Vertical offset from center for prompt display
-var multiple_choice_prompt_x_offset = -48.0  # Horizontal offset for prompt (fractions and question mark)
+var multiple_choice_prompt_x_offset = 0.0  # Horizontal offset for prompt (fractions and question mark)
 var multiple_choice_answers_y_offset = 64.0  # Vertical offset from center for answer buttons
 var multiple_choice_button_spacing = 64.0  # Horizontal spacing between answer buttons
 var multiple_choice_button_min_size = Vector2(256, 256)  # Minimum size for answer buttons
-var multiple_choice_button_x_offset = -16.0  # Horizontal offset for answer buttons
+var multiple_choice_button_x_offset = 0.0  # Horizontal offset for answer buttons
 var multiple_choice_element_spacing = 80.0  # Spacing between fractions and question mark in multiple choice
 var multiple_choice_keybind_labels = ["Q", "W", "E", "R", "T"]  # Keybind labels for answer buttons
 

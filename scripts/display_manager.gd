@@ -682,53 +682,62 @@ func create_multiple_choice_problem():
 		right_width = right_node.current_divisor_width
 		is_fraction_display = true
 	
-	# Measure "?" width
-	var temp_question_mark = Label.new()
-	temp_question_mark.label_settings = label_settings_resource
-	temp_question_mark.text = "?"
-	temp_question_mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	play_node.add_child(temp_question_mark)
-	temp_question_mark.reset_size()
-	var question_mark_width = temp_question_mark.get_minimum_size().x
-	temp_question_mark.queue_free()
+	# Create "?" label first so we can measure its actual size
+	var question_mark_label = Label.new()
+	question_mark_label.label_settings = label_settings_resource
+	question_mark_label.text = "?"
+	question_mark_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	question_mark_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	question_mark_label.self_modulate = Color(0.75, 0.75, 0.75)
+	question_mark_label.z_index = -1
+	play_node.add_child(question_mark_label)
+	question_mark_label.reset_size()
+	var question_mark_width = question_mark_label.size.x
 	
-	# Calculate expression layout
-	var total_expr_width = left_width + GameConfig.multiple_choice_element_spacing + question_mark_width + GameConfig.multiple_choice_element_spacing + right_width
-	var expr_start_x = center_x - (total_expr_width / 2.0)
-	var left_x = expr_start_x + (left_width / 2.0) + GameConfig.multiple_choice_prompt_x_offset
-	var question_mark_x = expr_start_x + left_width + GameConfig.multiple_choice_element_spacing
-	var right_x = expr_start_x + left_width + GameConfig.multiple_choice_element_spacing + question_mark_width + GameConfig.multiple_choice_element_spacing + (right_width / 2.0) + GameConfig.multiple_choice_prompt_x_offset
+	# Calculate expression layout - center the "?" with equal spacing on both sides
+	# Question mark is centered at center_x
+	var question_mark_x = center_x + GameConfig.multiple_choice_prompt_x_offset
+	
+	# Calculate "?" position (left edge, so center is at question_mark_x)
+	var qmark_left_edge = question_mark_x - (question_mark_width / 2.0)
+	var qmark_right_edge = question_mark_x + (question_mark_width / 2.0)
+	
+	# Left operand: right edge should be at qmark_left_edge - spacing
+	var left_right_edge = qmark_left_edge - GameConfig.multiple_choice_element_spacing
+	var left_left_edge = left_right_edge - left_width
+	
+	# Right operand: left edge should be at qmark_right_edge + spacing  
+	var right_left_edge = qmark_right_edge + GameConfig.multiple_choice_element_spacing
 	
 	# Position operand nodes (off-screen initially)
 	if is_fraction_display:
-		left_node.position = Vector2(left_x, start_y_prompt) + GameConfig.fraction_offset
-		right_node.position = Vector2(right_x, start_y_prompt) + GameConfig.fraction_offset
+		# For fractions, position is the center
+		# Only use y component of fraction_offset since we've calculated correct x positions
+		var left_center = left_left_edge + (left_width / 2.0)
+		var right_center = right_left_edge + (right_width / 2.0)
+		left_node.position = Vector2(left_center, start_y_prompt + GameConfig.fraction_offset.y)
+		right_node.position = Vector2(right_center, start_y_prompt + GameConfig.fraction_offset.y)
 	else:
-		left_node.position = Vector2(left_x - left_width/2, start_y_prompt - 64)
-		right_node.position = Vector2(right_x - right_width/2, start_y_prompt - 64)
+		# For labels, position is the left edge
+		left_node.position = Vector2(left_left_edge, start_y_prompt - 64)
+		right_node.position = Vector2(right_left_edge, start_y_prompt - 64)
 	
 	left_node.z_index = -1
 	right_node.z_index = -1
 	current_problem_nodes.append(left_node)
 	current_problem_nodes.append(right_node)
 	
-	# Create "?" label
-	var question_mark_label = Label.new()
-	question_mark_label.label_settings = label_settings_resource
-	question_mark_label.text = "?"
-	question_mark_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	question_mark_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	question_mark_label.self_modulate = Color(1, 1, 1)
-	question_mark_label.z_index = -1
-	
+	# Position "?" label
 	if is_fraction_display:
-		# Position relative to left fraction
-		question_mark_label.position = Vector2(question_mark_x - left_x, 0) + GameConfig.operator_offset - GameConfig.fraction_offset
+		# Position relative to left fraction for fraction display
+		# Only subtract y component of fraction_offset since we're not using x
+		var left_center = left_left_edge + (left_width / 2.0)
+		question_mark_label.position = Vector2(qmark_left_edge - left_center, 0) + GameConfig.operator_offset - Vector2(0, GameConfig.fraction_offset.y)
+		question_mark_label.get_parent().remove_child(question_mark_label)
 		left_node.add_child(question_mark_label)
 	else:
-		# Position as independent label
-		question_mark_label.position = Vector2(question_mark_x, start_y_prompt - 64)
-		play_node.add_child(question_mark_label)
+		# Position at calculated left edge
+		question_mark_label.position = Vector2(qmark_left_edge, start_y_prompt - 64)
 	current_problem_nodes.append(question_mark_label)
 	
 	# Create answer buttons
@@ -782,12 +791,15 @@ func create_multiple_choice_problem():
 	var qmark_target: Vector2
 	
 	if is_fraction_display:
-		left_target = Vector2(left_x, target_y_prompt) + GameConfig.fraction_offset
-		right_target = Vector2(right_x, target_y_prompt) + GameConfig.fraction_offset
+		# Only use y component of fraction_offset since we've calculated correct x positions
+		var left_center = left_left_edge + (left_width / 2.0)
+		var right_center = right_left_edge + (right_width / 2.0)
+		left_target = Vector2(left_center, target_y_prompt + GameConfig.fraction_offset.y)
+		right_target = Vector2(right_center, target_y_prompt + GameConfig.fraction_offset.y)
 	else:
-		left_target = Vector2(left_x - left_width/2, target_y_prompt - 64)
-		right_target = Vector2(right_x - right_width/2, target_y_prompt - 64)
-		qmark_target = Vector2(question_mark_x, target_y_prompt - 64)
+		left_target = Vector2(left_left_edge, target_y_prompt - 64)
+		right_target = Vector2(right_left_edge, target_y_prompt - 64)
+		qmark_target = Vector2(qmark_left_edge, target_y_prompt - 64)
 	
 	# Animate all elements
 	var tween = create_tween()
@@ -929,7 +941,7 @@ func continue_after_multiple_choice_incorrect(is_correct: bool, timer_was_active
 	# Get level config (grade-based or legacy)
 	var total_problems: int
 	if StateManager.is_grade_level and StateManager.current_level_config:
-		total_problems = StateManager.current_level_config.get("total_problems", 10)
+		total_problems = StateManager.current_level_config.get("problems", 10)
 	else:
 		var level_config = GameConfig.level_configs.get(StateManager.current_level_number, GameConfig.level_configs[1])
 		total_problems = level_config.problems
