@@ -284,17 +284,17 @@ const GRADE_LEVELS = {
 			{
 				"name": "2-Digit Numbers",
 				"levels": [
-					{"id": "grade2_2digit_add_no_regroup", "name": "Add 2-Digit without Regrouping", "mastery_count": 16, "config": {"operators": ["+"], "digit_count": 2, "requires_regrouping": false}},
-					{"id": "grade2_2digit_sub_no_regroup", "name": "Subtract 2-Digit without Regrouping", "mastery_count": 20, "config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": false}},
-					{"id": "grade2_2digit_add_regroup", "name": "Add 2-Digit with Regrouping", "mastery_count": 10, "config": {"operators": ["+"], "digit_count": 2, "requires_regrouping": true}},
-					{"id": "grade2_2digit_sub_regroup", "name": "Subtract 2-Digit with Regrouping", "mastery_count": 10, "config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": true}}
+					{"id": "grade2_2digit_add_no_regroup", "name": "Add 2-Digit without Regrouping", "mastery_count": 16, "config": {"operators": ["+"], "digit_count": 2, "requires_regrouping": false, "max_answer": 100}},
+					{"id": "grade2_2digit_sub_no_regroup", "name": "Subtract 2-Digit without Regrouping", "mastery_count": 20, "config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": false, "max_answer": 100}},
+					{"id": "grade2_2digit_add_regroup", "name": "Add 2-Digit with Regrouping", "mastery_count": 10, "config": {"operators": ["+"], "digit_count": 2, "requires_regrouping": true, "max_answer": 100}},
+					{"id": "grade2_2digit_sub_regroup", "name": "Subtract 2-Digit with Regrouping", "mastery_count": 10, "config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": true, "max_answer": 100}}
 				]
 			},
 			{
 				"name": "3-Digit Numbers",
 				"levels": [
-					{"id": "grade2_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 9, "config": {"operators": ["+"], "digit_count": 3}},
-					{"id": "grade2_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 10, "config": {"operators": ["-"], "digit_count": 3}}
+					{"id": "grade2_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 9, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1000}},
+					{"id": "grade2_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 10, "config": {"operators": ["-"], "digit_count": 3, "max_answer": 1000}}
 				]
 			}
 		]
@@ -313,9 +313,9 @@ const GRADE_LEVELS = {
 			{
 				"name": "3-Digit Numbers",
 				"levels": [
-					{"id": "grade3_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 14, "config": {"operators": ["+"], "digit_count": 3}},
-					{"id": "grade3_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 15, "config": {"operators": ["-"], "digit_count": 3}},
-					{"id": "grade3_3digit_add_sub", "name": "Add/Subtract 3-Digit Numbers", "mastery_count": 16, "config": {"operators": ["+", "-"], "digit_count": 3}}
+					{"id": "grade3_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 14, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1000}},
+					{"id": "grade3_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 15, "config": {"operators": ["-"], "digit_count": 3, "max_answer": 1000}},
+					{"id": "grade3_3digit_add_sub", "name": "Add/Subtract 3-Digit Numbers", "mastery_count": 16, "config": {"operators": ["+", "-"], "digit_count": 3, "max_answer": 1000}}
 				]
 			},
 			{

@@ -348,18 +348,19 @@ func _generate_addition_problem(config: Dictionary) -> Dictionary:
 		# Multi-digit addition
 		var digit_count = config.digit_count
 		var requires_regrouping = config.get("requires_regrouping", false)
+		var max_answer = config.get("max_answer", 9999)
 		
 		if digit_count == 2:
 			if requires_regrouping:
-				var generated = _generate_2digit_addition_with_regrouping()
+				var generated = _generate_2digit_addition_with_regrouping(max_answer)
 				operand1 = generated[0]
 				operand2 = generated[1]
 			else:
-				var generated = _generate_2digit_addition_without_regrouping()
+				var generated = _generate_2digit_addition_without_regrouping(max_answer)
 				operand1 = generated[0]
 				operand2 = generated[1]
 		elif digit_count == 3:
-			var generated = _generate_3digit_addition()
+			var generated = _generate_3digit_addition(max_answer)
 			operand1 = generated[0]
 			operand2 = generated[1]
 		
@@ -400,18 +401,19 @@ func _generate_subtraction_problem(config: Dictionary) -> Dictionary:
 		# Multi-digit subtraction
 		var digit_count = config.digit_count
 		var requires_regrouping = config.get("requires_regrouping", false)
+		var max_answer = config.get("max_answer", 9999)
 		
 		if digit_count == 2:
 			if requires_regrouping:
-				var generated = _generate_2digit_subtraction_with_regrouping()
+				var generated = _generate_2digit_subtraction_with_regrouping(max_answer)
 				operand1 = generated[0]
 				operand2 = generated[1]
 			else:
-				var generated = _generate_2digit_subtraction_without_regrouping()
+				var generated = _generate_2digit_subtraction_without_regrouping(max_answer)
 				operand1 = generated[0]
 				operand2 = generated[1]
 		elif digit_count == 3:
-			var generated = _generate_3digit_subtraction()
+			var generated = _generate_3digit_subtraction(max_answer)
 			operand1 = generated[0]
 			operand2 = generated[1]
 		
@@ -517,31 +519,35 @@ func _generate_division_problem(config: Dictionary) -> Dictionary:
 # Multi-digit Problem Helpers
 # ============================================
 
-func _generate_2digit_addition_without_regrouping() -> Array:
-	"""Generate 2-digit addition where no column exceeds 9"""
-	# Generate digits that won't require carrying
-	var tens1 = rng.randi_range(1, 8)
-	var ones1 = rng.randi_range(0, 8)
-	var tens2 = rng.randi_range(0, 9 - tens1)
-	var ones2 = rng.randi_range(0, 9 - ones1)
+func _generate_2digit_addition_without_regrouping(max_answer: int = 198) -> Array:
+	"""Generate 2-digit addition where no column exceeds 9 and sum doesn't exceed max_answer"""
+	var operand1: int
+	var operand2: int
+	var attempts = 0
 	
-	var operand1 = tens1 * 10 + ones1
-	var operand2 = tens2 * 10 + ones2
+	while attempts < 100:
+		# Generate digits that won't require carrying
+		var tens1 = rng.randi_range(1, 8)
+		var ones1 = rng.randi_range(0, 8)
+		var tens2 = rng.randi_range(1, min(9 - tens1, 8))  # Ensure 2-digit and no carry
+		var ones2 = rng.randi_range(0, 9 - ones1)
+		
+		operand1 = tens1 * 10 + ones1
+		operand2 = tens2 * 10 + ones2
+		
+		# Check if sum is within max_answer
+		if operand1 + operand2 <= max_answer:
+			return [operand1, operand2]
+		
+		attempts += 1
 	
-	# Ensure operand2 is at least 10 (2-digit)
-	if operand2 < 10:
-		operand2 = rng.randi_range(10, 9 - tens1) * 10 + ones2 if tens1 < 9 else 10
-		# Recalculate to ensure no regrouping
-		tens2 = operand2 / 10
-		ones2 = operand2 % 10
-		if ones1 + ones2 > 9:
-			ones2 = 9 - ones1
-			operand2 = tens2 * 10 + ones2
-	
+	# Fallback: generate operands that definitely work
+	operand1 = rng.randi_range(10, min(48, max_answer - 10))
+	operand2 = rng.randi_range(10, max_answer - operand1)
 	return [operand1, operand2]
 
-func _generate_2digit_addition_with_regrouping() -> Array:
-	"""Generate 2-digit addition that requires carrying in at least one column"""
+func _generate_2digit_addition_with_regrouping(max_answer: int = 198) -> Array:
+	"""Generate 2-digit addition that requires carrying in at least one column and sum doesn't exceed max_answer"""
 	var operand1: int
 	var operand2: int
 	var attempts = 0
@@ -555,6 +561,11 @@ func _generate_2digit_addition_with_regrouping() -> Array:
 		operand1 = tens1 * 10 + ones1
 		operand2 = tens2 * 10 + ones2
 		
+		# Check if sum is within max_answer
+		if operand1 + operand2 > max_answer:
+			attempts += 1
+			continue
+		
 		# Check if regrouping is required (ones sum > 9 OR tens sum > 9)
 		var ones_sum = ones1 + ones2
 		var carry_from_ones = 1 if ones_sum > 9 else 0
@@ -565,28 +576,44 @@ func _generate_2digit_addition_with_regrouping() -> Array:
 		
 		attempts += 1
 	
-	# Fallback: force regrouping in ones place
+	# Fallback: force regrouping in ones place while respecting max_answer
 	var fallback_ones1 = rng.randi_range(5, 9)
 	var fallback_ones2 = rng.randi_range(10 - fallback_ones1, 9)
-	operand1 = rng.randi_range(1, 8) * 10 + fallback_ones1
-	operand2 = rng.randi_range(1, 8) * 10 + fallback_ones2
+	var max_tens = (max_answer - fallback_ones1 - fallback_ones2) / 20  # Divide by 20 since both operands contribute
+	max_tens = max(1, min(max_tens, 4))  # Clamp to reasonable range
+	operand1 = rng.randi_range(1, max_tens) * 10 + fallback_ones1
+	operand2 = rng.randi_range(1, max_tens) * 10 + fallback_ones2
 	return [operand1, operand2]
 
-func _generate_2digit_subtraction_without_regrouping() -> Array:
-	"""Generate 2-digit subtraction where no borrowing is needed"""
-	# Top digit must be >= bottom digit in each column
-	var tens1 = rng.randi_range(2, 9)
-	var ones1 = rng.randi_range(1, 9)
-	var tens2 = rng.randi_range(1, tens1 - 1) if tens1 > 1 else 1
-	var ones2 = rng.randi_range(0, ones1)
+func _generate_2digit_subtraction_without_regrouping(max_answer: int = 99) -> Array:
+	"""Generate 2-digit subtraction where no borrowing is needed and result doesn't exceed max_answer"""
+	var operand1: int
+	var operand2: int
+	var attempts = 0
 	
-	var operand1 = tens1 * 10 + ones1
-	var operand2 = tens2 * 10 + ones2
+	while attempts < 100:
+		# Top digit must be >= bottom digit in each column
+		var tens1 = rng.randi_range(2, 9)
+		var ones1 = rng.randi_range(1, 9)
+		var tens2 = rng.randi_range(1, tens1 - 1) if tens1 > 1 else 1
+		var ones2 = rng.randi_range(0, ones1)
+		
+		operand1 = tens1 * 10 + ones1
+		operand2 = tens2 * 10 + ones2
+		
+		# Check if result is within max_answer
+		if operand1 - operand2 <= max_answer:
+			return [operand1, operand2]
+		
+		attempts += 1
 	
+	# Fallback
+	operand1 = min(99, max_answer + 10)
+	operand2 = operand1 - rng.randi_range(1, min(max_answer, operand1 - 10))
 	return [operand1, operand2]
 
-func _generate_2digit_subtraction_with_regrouping() -> Array:
-	"""Generate 2-digit subtraction that requires borrowing"""
+func _generate_2digit_subtraction_with_regrouping(max_answer: int = 99) -> Array:
+	"""Generate 2-digit subtraction that requires borrowing and result doesn't exceed max_answer"""
 	var operand1: int
 	var operand2: int
 	var attempts = 0
@@ -600,33 +627,59 @@ func _generate_2digit_subtraction_with_regrouping() -> Array:
 		operand1 = tens1 * 10 + ones1
 		operand2 = tens2 * 10 + ones2
 		
-		# Verify borrowing is needed and result is positive
-		if ones2 > ones1 and operand1 > operand2:
+		# Verify borrowing is needed, result is positive, and within max_answer
+		if ones2 > ones1 and operand1 > operand2 and operand1 - operand2 <= max_answer:
 			return [operand1, operand2]
 		
 		attempts += 1
 	
-	# Fallback
+	# Fallback - ensure result is within max_answer
 	operand1 = 52
-	operand2 = 27
+	operand2 = max(27, 52 - max_answer)
 	return [operand1, operand2]
 
-func _generate_3digit_addition() -> Array:
-	"""Generate 3-digit addition problem"""
-	var operand1 = rng.randi_range(100, 999)
-	var operand2 = rng.randi_range(100, 999)
+func _generate_3digit_addition(max_answer: int = 1998) -> Array:
+	"""Generate 3-digit addition problem with sum not exceeding max_answer"""
+	var operand1: int
+	var operand2: int
+	var attempts = 0
 	
-	# Ensure sum doesn't exceed reasonable bounds for display
-	while operand1 + operand2 > 1998:
-		operand2 = rng.randi_range(100, 999)
+	while attempts < 100:
+		operand1 = rng.randi_range(100, min(999, max_answer - 100))
+		operand2 = rng.randi_range(100, min(999, max_answer - operand1))
+		
+		if operand1 + operand2 <= max_answer:
+			return [operand1, operand2]
+		
+		attempts += 1
 	
+	# Fallback - ensure sum is within max_answer
+	operand1 = rng.randi_range(100, min(499, max_answer / 2))
+	operand2 = rng.randi_range(100, max_answer - operand1)
 	return [operand1, operand2]
 
-func _generate_3digit_subtraction() -> Array:
-	"""Generate 3-digit subtraction problem (no negative results)"""
-	var operand1 = rng.randi_range(200, 999)
-	var operand2 = rng.randi_range(100, operand1 - 1)
+func _generate_3digit_subtraction(max_answer: int = 899) -> Array:
+	"""Generate 3-digit subtraction problem (no negative results) with result not exceeding max_answer"""
+	var operand1: int
+	var operand2: int
+	var attempts = 0
 	
+	while attempts < 100:
+		operand1 = rng.randi_range(200, 999)
+		# Ensure operand2 is large enough that result doesn't exceed max_answer
+		var min_operand2 = max(100, operand1 - max_answer)
+		operand2 = rng.randi_range(min_operand2, operand1 - 1)
+		
+		if operand1 - operand2 <= max_answer and operand2 >= 100:
+			return [operand1, operand2]
+		
+		attempts += 1
+	
+	# Fallback - ensure result is within max_answer
+	operand1 = rng.randi_range(200, 999)
+	operand2 = max(100, operand1 - max_answer) + rng.randi_range(0, 50)
+	if operand2 >= operand1:
+		operand2 = operand1 - 1
 	return [operand1, operand2]
 
 func _generate_multidigit_multiplication(requires_regrouping: bool) -> Array:

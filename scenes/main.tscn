@@ -146,6 +146,7 @@ position = Vector2(1, 1)
 texture = ExtResource("6_muem4")
 
 [node name="DrillModeButton" type="Button" parent="MainMenu"]
+visible = false
 self_modulate = Color(0.5019608, 0, 1, 1)
 layout_mode = 1
 anchors_preset = 1
