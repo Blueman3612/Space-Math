@@ -21,6 +21,9 @@ var backspace_hold_time = 0.15  # Time to hold backspace before it repeats
 var timer_grace_period = 0.5  # Grace period before timer starts in seconds
 var loading_fade_duration = 0.2  # Duration for loading screen fade out
 var loading_fade_ease = Tween.EASE_OUT  # Easing type for loading screen fade
+var page_transition_duration = 0.25  # Duration for page slide transitions
+var page_transition_ease = Tween.EASE_OUT  # Easing type for page transitions
+var page_width = 1920.0  # Width offset between pages
 
 # ============================================
 # Input
@@ -219,7 +222,7 @@ const CATEGORY_COLORS = {
 	"3-Digit Numbers": Color(0.75, 0.25, 0.75),
 	"Multiplication": Color(1, 0.75, 0.25),
 	"Division": Color(1, 0.5, 1),
-	"Multiply & Divide": Color(0.8, 0.4, 0)
+	"Mul./Div.": Color(0.8, 0.4, 0)
 }
 
 # Grade definitions with categories and levels
@@ -336,7 +339,7 @@ const GRADE_LEVELS = {
 				]
 			},
 			{
-				"name": "Multiply & Divide",
+				"name": "Mul./Div.",
 				"levels": [
 					{"id": "grade3_multiply_divide_0_9", "name": "Multiply/Divide 0-9", "mastery_count": 51, "config": {"operators": ["x", "/"], "factor_min": 1, "factor_max": 9, "divisor_min": 1, "divisor_max": 9}}
 				]
