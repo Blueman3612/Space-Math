@@ -180,9 +180,11 @@ func submit_answer():
 	var player_answer_value = null  # Can be int or string depending on question type
 	
 	if QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", "")):
-		# For fraction questions, compare strings directly
+		# For fraction questions, compare both string equality and numeric equivalence
 		player_answer_value = StateManager.user_answer
-		is_correct = (StateManager.user_answer == QuestionManager.current_question.result)
+		var correct_answer = QuestionManager.current_question.result
+		# Accept exact match OR equivalent fraction value
+		is_correct = (StateManager.user_answer == correct_answer) or fractions_are_equivalent(StateManager.user_answer, correct_answer)
 	elif "." in StateManager.user_answer or (QuestionManager.current_question.result is float):
 		# For decimal questions, normalize and compare as floats
 		player_answer_value = normalize_decimal_answer(StateManager.user_answer)
@@ -516,3 +518,49 @@ func normalize_decimal_answer(answer: String) -> float:
 func is_close_float(a: float, b: float, epsilon: float = 0.001) -> bool:
 	"""Compare two floats with a small epsilon for floating point errors"""
 	return abs(a - b) < epsilon
+
+func fractions_are_equivalent(fraction1: String, fraction2: String) -> bool:
+	"""Check if two fraction strings represent the same value.
+	Handles: mixed numbers (2 1/2), improper fractions (5/2), simple fractions (1/2), whole numbers (3)"""
+	var value1 = fraction_string_to_float(fraction1)
+	var value2 = fraction_string_to_float(fraction2)
+	return is_close_float(value1, value2)
+
+func fraction_string_to_float(fraction_str: String) -> float:
+	"""Convert a fraction string to a float value.
+	Handles: mixed numbers (2 1/2), improper fractions (5/2), simple fractions (1/2), whole numbers (3)"""
+	fraction_str = fraction_str.strip_edges()
+	
+	if fraction_str == "":
+		return 0.0
+	
+	# Check if it's a mixed number (contains space and slash)
+	if " " in fraction_str and "/" in fraction_str:
+		var parts = fraction_str.split(" ")
+		if parts.size() >= 2:
+			var whole = float(parts[0])
+			var frac_part = parts[1]
+			if "/" in frac_part:
+				var frac_parts = frac_part.split("/")
+				if frac_parts.size() == 2:
+					var numer = float(frac_parts[0])
+					var denom = float(frac_parts[1])
+					if denom != 0:
+						if whole >= 0:
+							return whole + (numer / denom)
+						else:
+							return whole - (numer / denom)
+		return 0.0
+	
+	# Check if it's a simple fraction (contains slash but no space)
+	if "/" in fraction_str:
+		var parts = fraction_str.split("/")
+		if parts.size() == 2:
+			var numer = float(parts[0])
+			var denom = float(parts[1])
+			if denom != 0:
+				return numer / denom
+		return 0.0
+	
+	# Otherwise it's a whole number
+	return float(fraction_str)
