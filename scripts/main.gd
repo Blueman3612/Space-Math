@@ -183,6 +183,13 @@ func submit_answer():
 		# For fraction questions, compare strings directly
 		player_answer_value = StateManager.user_answer
 		is_correct = (StateManager.user_answer == QuestionManager.current_question.result)
+	elif "." in StateManager.user_answer or (QuestionManager.current_question.result is float):
+		# For decimal questions, normalize and compare as floats
+		player_answer_value = normalize_decimal_answer(StateManager.user_answer)
+		var correct_value = QuestionManager.current_question.result
+		if correct_value is String:
+			correct_value = float(correct_value)
+		is_correct = is_close_float(player_answer_value, correct_value)
 	else:
 		# For integer questions, compare as integers
 		player_answer_value = int(StateManager.user_answer)
@@ -481,3 +488,31 @@ func connect_game_over_buttons():
 	if UIManager.continue_button:
 		UIManager.continue_button.pressed.connect(StateManager._on_continue_button_pressed)
 		UIManager.connect_button_sounds(UIManager.continue_button)
+
+# ============================================
+# Decimal Answer Helpers
+# ============================================
+
+func normalize_decimal_answer(answer: String) -> float:
+	"""Normalize a decimal answer string to a float.
+	Handles: leading zeros (.5 → 0.5), trailing decimals (5. → 5), etc."""
+	if answer == "" or answer == "." or answer == "-" or answer == "-.":
+		return 0.0
+	
+	var normalized = answer
+	
+	# Handle leading decimal (.5 → 0.5)
+	if normalized.begins_with("."):
+		normalized = "0" + normalized
+	elif normalized.begins_with("-."):
+		normalized = "-0" + normalized.substr(1)
+	
+	# Handle trailing decimal (5. → 5)
+	if normalized.ends_with("."):
+		normalized = normalized.substr(0, normalized.length() - 1)
+	
+	return float(normalized)
+
+func is_close_float(a: float, b: float, epsilon: float = 0.001) -> bool:
+	"""Compare two floats with a small epsilon for floating point errors"""
+	return abs(a - b) < epsilon

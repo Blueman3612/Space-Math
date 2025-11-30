@@ -127,7 +127,7 @@ func update_fraction_problem_display(user_answer: String, answer_submitted: bool
 
 func create_new_problem_label():
 	"""Create a new problem label for the current question"""
-	# Check if this is a multiple choice problem
+	# Check if this is a multiple choice problem (includes 2-choice and 3-choice)
 	if QuestionManager.current_question and QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", "")):
 		create_multiple_choice_problem()
 		# Start timing this question immediately for multiple choice problems
@@ -574,7 +574,7 @@ func create_equivalence_problem():
 	tween.tween_callback(ScoreManager.start_question_timing)
 
 func create_multiple_choice_problem():
-	"""Create a multiple choice problem display with fraction prompt and answer buttons"""
+	"""Create a multiple choice problem display (handles all comparison question types)"""
 	if not QuestionManager.current_question or not QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", "")):
 		return
 	
@@ -586,28 +586,11 @@ func create_multiple_choice_problem():
 	multiple_choice_answered = false
 	multiple_choice_correct_index = -1
 	
-	# Get the expression (e.g., "3/12 ? 2/6 = <")
-	var expr = QuestionManager.current_question.get("expression", "")
-	if expr == "":
-		print("Error: No expression for multiple choice problem")
-		return
-	
-	# Remove the " = result" part to get just the prompt (e.g., "3/12 ? 2/6")
-	var prompt_expr = expr.split(" = ")[0]
-	
-	# Parse the prompt to extract fractions and the "?" operator
-	# Format: "fraction1 ? fraction2"
-	var parts = prompt_expr.split(" ? ")
-	if parts.size() != 2:
-		print("Error: Invalid multiple choice expression format")
-		return
-	
-	var left_fraction_data = parse_mixed_fraction_from_string(parts[0])
-	var right_fraction_data = parse_mixed_fraction_from_string(parts[1])
-	
-	# Get answer choices
-	var answer_choices = QuestionManager.get_multiple_choice_answers(QuestionManager.current_question)
+	var question_type = QuestionManager.current_question.get("type", "")
 	var correct_answer = QuestionManager.current_question.result
+	
+	# Get answer choices (dynamically sized based on question type)
+	var answer_choices = QuestionManager.get_multiple_choice_answers(QuestionManager.current_question)
 	
 	# Find correct answer index
 	for i in range(answer_choices.size()):
@@ -615,36 +598,91 @@ func create_multiple_choice_problem():
 			multiple_choice_correct_index = i
 			break
 	
-	# Calculate screen center
-	var center_x = 960.0  # 1920 / 2
-	var center_y = 540.0  # 1080 / 2
-	
-	# Calculate target Y positions
+	# Calculate screen center and positions
+	var center_x = 960.0
+	var center_y = 540.0
 	var target_y_prompt = center_y + GameConfig.multiple_choice_prompt_y_offset
 	var target_y_answers = center_y + GameConfig.multiple_choice_answers_y_offset
-	
-	# Calculate a common starting Y position (off-screen at top)
-	# Use the higher target position as reference and apply same delta to all elements
 	var common_start_y = GameConfig.off_screen_bottom.y
 	var prompt_delta_y = target_y_prompt - common_start_y
 	var answers_delta_y = target_y_answers - common_start_y
-	
-	# Start positions with offsets so all elements move the same distance
 	var start_y_prompt = common_start_y
 	var start_y_answers = common_start_y + (answers_delta_y - prompt_delta_y)
 	
-	# Create left fraction
-	var left_fraction = create_fraction(Vector2(0, 0), left_fraction_data[1], left_fraction_data[2], play_node)
-	# Create right fraction
-	var right_fraction = create_fraction(Vector2(0, 0), right_fraction_data[1], right_fraction_data[2], play_node)
+	# Variables for the operand display nodes
+	var left_node: Node
+	var right_node: Node
+	var left_width: float
+	var right_width: float
+	var is_fraction_display = false  # Whether left/right are fraction nodes
 	
-	# Get actual widths
-	var left_fraction_width = left_fraction.current_divisor_width
-	var right_fraction_width = right_fraction.current_divisor_width
-	var left_fraction_half_width = left_fraction_width / 2.0
-	var right_fraction_half_width = right_fraction_width / 2.0
+	# Check what type of operand display we need
+	if question_type == "decimal_comparison":
+		# Decimal comparison - use labels with decimal operands
+		var operands = QuestionManager.current_question.get("operands", [])
+		if operands.size() < 2:
+			print("Error: Decimal comparison requires 2 operands")
+			return
+		
+		left_node = Label.new()
+		left_node.label_settings = label_settings_resource
+		left_node.text = str(operands[0])
+		left_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		left_node.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		play_node.add_child(left_node)
+		left_node.reset_size()
+		left_width = left_node.get_minimum_size().x
+		
+		right_node = Label.new()
+		right_node.label_settings = label_settings_resource
+		right_node.text = str(operands[1])
+		right_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		right_node.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		play_node.add_child(right_node)
+		right_node.reset_size()
+		right_width = right_node.get_minimum_size().x
+		
+	elif question_type == "fraction_comparison":
+		# New fraction comparison - use operands array with dict format
+		var operands = QuestionManager.current_question.get("operands", [])
+		if operands.size() < 2:
+			print("Error: Fraction comparison requires 2 operands")
+			return
+		
+		var left_data = operands[0]
+		var right_data = operands[1]
+		
+		left_node = create_fraction(Vector2(0, 0), left_data.numerator, left_data.denominator, play_node)
+		right_node = create_fraction(Vector2(0, 0), right_data.numerator, right_data.denominator, play_node)
+		
+		left_width = left_node.current_divisor_width
+		right_width = right_node.current_divisor_width
+		is_fraction_display = true
+		
+	else:
+		# Legacy fraction comparison - parse from expression string
+		var expr = QuestionManager.current_question.get("expression", "")
+		if expr == "":
+			print("Error: No expression for multiple choice problem")
+			return
+		
+		var prompt_expr = expr.split(" = ")[0]
+		var parts = prompt_expr.split(" ? ")
+		if parts.size() != 2:
+			print("Error: Invalid multiple choice expression format")
+			return
+		
+		var left_fraction_data = parse_mixed_fraction_from_string(parts[0])
+		var right_fraction_data = parse_mixed_fraction_from_string(parts[1])
+		
+		left_node = create_fraction(Vector2(0, 0), left_fraction_data[1], left_fraction_data[2], play_node)
+		right_node = create_fraction(Vector2(0, 0), right_fraction_data[1], right_fraction_data[2], play_node)
+		
+		left_width = left_node.current_divisor_width
+		right_width = right_node.current_divisor_width
+		is_fraction_display = true
 	
-	# Measure "?" width to center it properly
+	# Measure "?" width
 	var temp_question_mark = Label.new()
 	temp_question_mark.label_settings = label_settings_resource
 	temp_question_mark.text = "?"
@@ -654,30 +692,27 @@ func create_multiple_choice_problem():
 	var question_mark_width = temp_question_mark.get_minimum_size().x
 	temp_question_mark.queue_free()
 	
-	# Calculate total expression width: left_fraction + spacing + question_mark + spacing + right_fraction
-	var total_expr_width = left_fraction_width + GameConfig.multiple_choice_element_spacing + question_mark_width + GameConfig.multiple_choice_element_spacing + right_fraction_width
-	
-	# Calculate starting x position to center the entire expression
+	# Calculate expression layout
+	var total_expr_width = left_width + GameConfig.multiple_choice_element_spacing + question_mark_width + GameConfig.multiple_choice_element_spacing + right_width
 	var expr_start_x = center_x - (total_expr_width / 2.0)
+	var left_x = expr_start_x + (left_width / 2.0) + GameConfig.multiple_choice_prompt_x_offset
+	var question_mark_x = expr_start_x + left_width + GameConfig.multiple_choice_element_spacing
+	var right_x = expr_start_x + left_width + GameConfig.multiple_choice_element_spacing + question_mark_width + GameConfig.multiple_choice_element_spacing + (right_width / 2.0) + GameConfig.multiple_choice_prompt_x_offset
 	
-	# Position left fraction (at its center point)
-	var left_fraction_x = expr_start_x + left_fraction_half_width + GameConfig.multiple_choice_prompt_x_offset
+	# Position operand nodes (off-screen initially)
+	if is_fraction_display:
+		left_node.position = Vector2(left_x, start_y_prompt) + GameConfig.fraction_offset
+		right_node.position = Vector2(right_x, start_y_prompt) + GameConfig.fraction_offset
+	else:
+		left_node.position = Vector2(left_x - left_width/2, start_y_prompt - 64)
+		right_node.position = Vector2(right_x - right_width/2, start_y_prompt - 64)
 	
-	# Position question mark (at its left edge)
-	var question_mark_x = expr_start_x + left_fraction_width + GameConfig.multiple_choice_element_spacing
+	left_node.z_index = -1
+	right_node.z_index = -1
+	current_problem_nodes.append(left_node)
+	current_problem_nodes.append(right_node)
 	
-	# Position right fraction (at its center point)
-	var right_fraction_x = expr_start_x + left_fraction_width + GameConfig.multiple_choice_element_spacing + question_mark_width + GameConfig.multiple_choice_element_spacing + right_fraction_half_width + GameConfig.multiple_choice_prompt_x_offset
-	
-	# Position fractions (off-screen initially, using start_y_prompt)
-	left_fraction.position = Vector2(left_fraction_x, start_y_prompt) + GameConfig.fraction_offset
-	right_fraction.position = Vector2(right_fraction_x, start_y_prompt) + GameConfig.fraction_offset
-	left_fraction.z_index = -1
-	right_fraction.z_index = -1
-	current_problem_nodes.append(left_fraction)
-	current_problem_nodes.append(right_fraction)
-	
-	# Create "?" label as child of left fraction so it moves with it
+	# Create "?" label
 	var question_mark_label = Label.new()
 	question_mark_label.label_settings = label_settings_resource
 	question_mark_label.text = "?"
@@ -685,89 +720,86 @@ func create_multiple_choice_problem():
 	question_mark_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	question_mark_label.self_modulate = Color(1, 1, 1)
 	question_mark_label.z_index = -1
-	# Position relative to left_fraction
-	question_mark_label.position = Vector2(question_mark_x - left_fraction_x, 0) + GameConfig.operator_offset - GameConfig.fraction_offset
-	left_fraction.add_child(question_mark_label)
+	
+	if is_fraction_display:
+		# Position relative to left fraction
+		question_mark_label.position = Vector2(question_mark_x - left_x, 0) + GameConfig.operator_offset - GameConfig.fraction_offset
+		left_node.add_child(question_mark_label)
+	else:
+		# Position as independent label
+		question_mark_label.position = Vector2(question_mark_x, start_y_prompt - 64)
+		play_node.add_child(question_mark_label)
 	current_problem_nodes.append(question_mark_label)
 	
-	# Load answer button scene
-	var button_scene = load("res://scenes/answer_button.tscn")
-	
 	# Create answer buttons
-	# Calculate total width needed for all buttons
+	var button_scene = load("res://scenes/answer_button.tscn")
 	var total_buttons_width = 0.0
 	var button_instances = []
 	
 	for i in range(answer_choices.size()):
 		var button_instance = button_scene.instantiate()
-		button_instance.visible = false  # Hide initially for measurement
+		button_instance.visible = false
 		play_node.add_child(button_instance)
 		
-		# Set answer text
 		var answer_label = button_instance.get_node("Answer")
 		answer_label.text = answer_choices[i]
 		
-		# Set keybind label
 		var key_label = button_instance.get_node("Key")
 		if i < GameConfig.multiple_choice_keybind_labels.size():
 			key_label.text = GameConfig.multiple_choice_keybind_labels[i]
 		
-		# Wait for size update
 		button_instance.reset_size()
-		
-		# Get button size (use minimum size or explicit size)
 		var button_width = max(button_instance.size.x, GameConfig.multiple_choice_button_min_size.x)
 		var button_height = max(button_instance.size.y, GameConfig.multiple_choice_button_min_size.y)
 		button_instance.custom_minimum_size = Vector2(button_width, button_height)
-		
-		# Update Answer label size to match button dimensions
 		answer_label.offset_right = answer_label.offset_left + button_width
 		answer_label.offset_bottom = button_height
 		
 		total_buttons_width += button_width
 		button_instances.append(button_instance)
 	
-	# Add spacing to total width
 	total_buttons_width += GameConfig.multiple_choice_button_spacing * (answer_choices.size() - 1)
-	
-	# Position buttons horizontally centered (with x offset)
 	var buttons_start_x = center_x - (total_buttons_width / 2.0) + GameConfig.multiple_choice_button_x_offset
-	
-	# Declare current_x at the function level to avoid scope warnings
 	var current_x = buttons_start_x
 	
 	for i in range(button_instances.size()):
 		var button_instance = button_instances[i]
 		var button_width = button_instance.custom_minimum_size.x
-		
-		# Position button (off-screen initially, using start_y_answers)
 		button_instance.position = Vector2(current_x, start_y_answers)
 		button_instance.visible = true
 		button_instance.z_index = -1
 		
-		# Connect button press signal
 		var answer_index = i
 		button_instance.pressed.connect(_on_multiple_choice_answer_selected.bind(answer_index))
 		
 		multiple_choice_buttons.append(button_instance)
 		current_problem_nodes.append(button_instance)
-		
-		# Move to next button position
 		current_x += button_width + GameConfig.multiple_choice_button_spacing
 	
 	# Calculate target positions
-	var left_fraction_target = Vector2(left_fraction_x, target_y_prompt) + GameConfig.fraction_offset
-	var right_fraction_target = Vector2(right_fraction_x, target_y_prompt) + GameConfig.fraction_offset
+	var left_target: Vector2
+	var right_target: Vector2
+	var qmark_target: Vector2
 	
-	# Animate all elements to their target positions
+	if is_fraction_display:
+		left_target = Vector2(left_x, target_y_prompt) + GameConfig.fraction_offset
+		right_target = Vector2(right_x, target_y_prompt) + GameConfig.fraction_offset
+	else:
+		left_target = Vector2(left_x - left_width/2, target_y_prompt - 64)
+		right_target = Vector2(right_x - right_width/2, target_y_prompt - 64)
+		qmark_target = Vector2(question_mark_x, target_y_prompt - 64)
+	
+	# Animate all elements
 	var tween = create_tween()
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_EXPO)
 	tween.set_parallel(true)
 	
-	# Animate fractions
-	tween.tween_property(left_fraction, "position", left_fraction_target, GameConfig.animation_duration)
-	tween.tween_property(right_fraction, "position", right_fraction_target, GameConfig.animation_duration)
+	tween.tween_property(left_node, "position", left_target, GameConfig.animation_duration)
+	tween.tween_property(right_node, "position", right_target, GameConfig.animation_duration)
+	
+	if not is_fraction_display:
+		tween.tween_property(question_mark_label, "position", qmark_target, GameConfig.animation_duration)
 	
 	# Animate buttons
 	current_x = buttons_start_x
@@ -776,10 +808,7 @@ func create_multiple_choice_problem():
 		tween.tween_property(button_instance, "position", button_target, GameConfig.animation_duration)
 		current_x += button_instance.custom_minimum_size.x + GameConfig.multiple_choice_button_spacing
 	
-	# Exit parallel mode before callback
 	tween.set_parallel(false)
-	
-	# Start timing when animation completes
 	tween.tween_callback(ScoreManager.start_question_timing)
 
 func _on_multiple_choice_answer_selected(answer_index: int):
@@ -805,7 +834,8 @@ func _on_multiple_choice_answer_selected(answer_index: int):
 		question_time = (Time.get_ticks_msec() / 1000.0) - ScoreManager.current_question_start_time
 	
 	# Get player answer value
-	var player_answer = QuestionManager.get_multiple_choice_answers(QuestionManager.current_question)[answer_index]
+	var answer_choices = QuestionManager.get_multiple_choice_answers(QuestionManager.current_question)
+	var player_answer = answer_choices[answer_index]
 	
 	# Save question data
 	if QuestionManager.current_question:
@@ -896,12 +926,19 @@ func continue_after_multiple_choice_incorrect(is_correct: bool, timer_was_active
 	# Increment problems completed
 	StateManager.problems_completed += 1
 	
+	# Get level config (grade-based or legacy)
+	var total_problems: int
+	if StateManager.is_grade_level and StateManager.current_level_config:
+		total_problems = StateManager.current_level_config.get("total_problems", 10)
+	else:
+		var level_config = GameConfig.level_configs.get(StateManager.current_level_number, GameConfig.level_configs[1])
+		total_problems = level_config.problems
+	
 	# Animate progress line (only for non-drill mode)
 	if not StateManager.is_drill_mode:
-		var level_config = GameConfig.level_configs.get(StateManager.current_level_number, GameConfig.level_configs[1])
 		if UIManager.progress_line and play_node:
 			var play_width = play_node.size.x
-			var progress_increment = play_width / level_config.problems
+			var progress_increment = play_width / total_problems
 			var new_x_position = progress_increment * StateManager.problems_completed
 			
 			# Animate progress line
@@ -917,8 +954,7 @@ func continue_after_multiple_choice_incorrect(is_correct: bool, timer_was_active
 		level_complete = false
 	else:
 		# Check if level is complete
-		var level_config = GameConfig.level_configs[StateManager.current_level_number]
-		if StateManager.problems_completed >= level_config.problems:
+		if StateManager.problems_completed >= total_problems:
 			level_complete = true
 	
 	# Schedule next question or game over
@@ -933,7 +969,11 @@ func continue_after_multiple_choice_incorrect(is_correct: bool, timer_was_active
 				var target_pos = node.position + Vector2(0, 1400)
 				tween.tween_property(node, "position", target_pos, GameConfig.animation_duration)
 		tween.set_parallel(false)
-		tween.tween_callback(StateManager.go_to_game_over)
+		# Use appropriate game over function based on level type
+		if StateManager.is_grade_level:
+			tween.tween_callback(StateManager.go_to_grade_level_game_over)
+		else:
+			tween.tween_callback(StateManager.go_to_game_over)
 	else:
 		# Resume timer after transition delay or start it if grace period completed during transition
 		if timer_was_active or should_start_timer:

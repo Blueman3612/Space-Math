@@ -45,12 +45,16 @@ func is_multiple_choice_display_type(question_type: String) -> bool:
 	return GameConfig.PROBLEM_DISPLAY_FORMATS.get(question_type, "") == "multiple_choice"
 
 func get_multiple_choice_answers(question_data) -> Array:
-	"""Generate answer choices for multiple choice questions"""
+	"""Generate answer choices for multiple choice questions (dynamic number of choices)"""
 	var question_type = question_data.get("type", "")
 	
-	# For comparison questions, the choices are always <, =, >
+	# For legacy 3-choice comparison questions
 	if question_type == "Compare unlike denominators (4.NF.A)":
 		return ["<", "=", ">"]
+	
+	# For 2-choice comparison questions (decimal and fraction comparison)
+	if question_type == "decimal_comparison" or question_type == "fraction_comparison":
+		return ["<", ">"]
 	
 	# Default fallback (shouldn't be reached for now)
 	return []
@@ -281,6 +285,12 @@ func generate_dynamic_question() -> Dictionary:
 		return {}
 	
 	var config = current_level_config
+	
+	# Check for special problem types first
+	var problem_type = config.get("type", "")
+	if problem_type != "":
+		return _generate_special_type_question(problem_type, config)
+	
 	var operators = config.get("operators", ["+"])
 	
 	var max_attempts = 100  # Max attempts before resetting used questions
@@ -312,6 +322,53 @@ func generate_dynamic_question() -> Dictionary:
 	used_questions_this_level[question_key] = true
 	return question_data
 
+func _generate_special_type_question(problem_type: String, config: Dictionary) -> Dictionary:
+	"""Generate a special type question (decimal/fraction comparison, mixed numbers, etc.)"""
+	var max_attempts = 100
+	var attempts = 0
+	var question_data: Dictionary
+	var question_key: String
+	
+	while attempts < max_attempts:
+		match problem_type:
+			"decimal_comparison":
+				question_data = _generate_decimal_comparison_problem(config)
+			"decimal_add_sub":
+				question_data = _generate_decimal_add_sub_problem(config)
+			"fraction_comparison":
+				question_data = _generate_fraction_comparison_problem(config)
+			"mixed_numbers_like_denom":
+				question_data = _generate_mixed_numbers_like_denom_problem(config)
+			_:
+				print("Error: Unknown problem type: ", problem_type)
+				return {}
+		
+		question_key = _get_dynamic_question_key(question_data)
+		
+		if not used_questions_this_level.has(question_key):
+			used_questions_this_level[question_key] = true
+			return question_data
+		
+		attempts += 1
+	
+	# Reset and try once more
+	print("[QuestionManager] Ran out of unique questions for type: ", problem_type)
+	used_questions_this_level.clear()
+	
+	match problem_type:
+		"decimal_comparison":
+			question_data = _generate_decimal_comparison_problem(config)
+		"decimal_add_sub":
+			question_data = _generate_decimal_add_sub_problem(config)
+		"fraction_comparison":
+			question_data = _generate_fraction_comparison_problem(config)
+		"mixed_numbers_like_denom":
+			question_data = _generate_mixed_numbers_like_denom_problem(config)
+	
+	question_key = _get_dynamic_question_key(question_data)
+	used_questions_this_level[question_key] = true
+	return question_data
+
 func _generate_question_for_operator(operator: String, config: Dictionary) -> Dictionary:
 	"""Generate a question for the given operator"""
 	match operator:
@@ -329,6 +386,22 @@ func _get_dynamic_question_key(question_data: Dictionary) -> String:
 	"""Generate a unique key for a dynamically generated question"""
 	var operands = question_data.get("operands", [0, 0])
 	var operator = question_data.get("operator", "+")
+	var question_type = question_data.get("type", "")
+	
+	# Handle special types with complex operands
+	if question_type == "fraction_comparison":
+		var op1 = operands[0]
+		var op2 = operands[1]
+		return str(op1.numerator) + "/" + str(op1.denominator) + "_" + operator + "_" + str(op2.numerator) + "/" + str(op2.denominator)
+	elif question_type == "mixed_numbers_like_denom":
+		var op1 = operands[0]
+		var op2 = operands[1]
+		return str(op1.whole) + "_" + str(op1.numerator) + "/" + str(op1.denominator) + "_" + operator + "_" + str(op2.whole) + "_" + str(op2.numerator) + "/" + str(op2.denominator)
+	elif question_type == "decimal_comparison" or question_type == "decimal_add_sub":
+		# Format decimals with enough precision
+		return str(snapped(operands[0], 0.01)) + "_" + operator + "_" + str(snapped(operands[1], 0.01))
+	
+	# Standard format for regular problems
 	return str(operands[0]) + "_" + operator + "_" + str(operands[1])
 
 func _generate_addition_problem(config: Dictionary) -> Dictionary:
@@ -443,7 +516,18 @@ func _generate_multiplication_problem(config: Dictionary) -> Dictionary:
 	var operand2: int
 	var result: int
 	
-	if config.has("factor_min") and config.has("factor_max"):
+	if config.has("two_digit_by_two_digit"):
+		# 2-digit by 2-digit multiplication
+		var requires_regrouping = config.get("requires_regrouping", false)
+		var generated: Array
+		if requires_regrouping:
+			generated = _generate_2digit_by_2digit_multiplication_with_regrouping()
+		else:
+			generated = _generate_2digit_by_2digit_multiplication_without_regrouping()
+		operand1 = generated[0]
+		operand2 = generated[1]
+		result = operand1 * operand2
+	elif config.has("factor_min") and config.has("factor_max"):
 		# Standard multiplication within factor range
 		var factor_min = config.factor_min
 		var factor_max = config.factor_max
@@ -719,6 +803,330 @@ func _generate_multidigit_division() -> Array:
 		dividend = divisor * result
 	
 	return [dividend, divisor]
+
+func _generate_2digit_by_2digit_multiplication_without_regrouping() -> Array:
+	"""Generate 2-digit by 2-digit multiplication without regrouping (no carries)"""
+	# For no regrouping: each partial product digit multiplication must not exceed 9
+	# and adding partial products must not cause carries
+	var attempts = 0
+	
+	while attempts < 100:
+		# Generate digits that won't cause carries when multiplied
+		# Keep all digits small (1-3) to avoid carries
+		var tens1 = rng.randi_range(1, 3)
+		var ones1 = rng.randi_range(0, 3)
+		var tens2 = rng.randi_range(1, 3)
+		var ones2 = rng.randi_range(0, 3)
+		
+		var operand1 = tens1 * 10 + ones1
+		var operand2 = tens2 * 10 + ones2
+		
+		# Check for regrouping:
+		# ones1 * ones2 <= 9 (no carry in ones place)
+		# ones1 * tens2 + tens1 * ones2 <= 9 (no carry in tens place)
+		# tens1 * tens2 <= 9 (no carry in hundreds place)
+		var check1 = ones1 * ones2
+		var check2 = ones1 * tens2 + tens1 * ones2
+		var check3 = tens1 * tens2
+		
+		if check1 <= 9 and check2 <= 9 and check3 <= 9:
+			return [operand1, operand2]
+		
+		attempts += 1
+	
+	# Fallback: guaranteed safe values
+	return [11, 11]
+
+func _generate_2digit_by_2digit_multiplication_with_regrouping() -> Array:
+	"""Generate 2-digit by 2-digit multiplication with regrouping (at least one carry)"""
+	var attempts = 0
+	
+	while attempts < 100:
+		var tens1 = rng.randi_range(1, 9)
+		var ones1 = rng.randi_range(0, 9)
+		var tens2 = rng.randi_range(1, 9)
+		var ones2 = rng.randi_range(0, 9)
+		
+		var operand1 = tens1 * 10 + ones1
+		var operand2 = tens2 * 10 + ones2
+		
+		# Check for at least one carry
+		var check1 = ones1 * ones2  # ones place product
+		var check2 = ones1 * tens2 + tens1 * ones2  # Cross products
+		var check3 = tens1 * tens2  # tens place product
+		
+		# At least one must exceed 9 to require regrouping
+		if check1 > 9 or check2 > 9 or check3 > 9:
+			return [operand1, operand2]
+		
+		attempts += 1
+	
+	# Fallback: guaranteed to require regrouping
+	return [15, 15]
+
+# ============================================
+# Decimal Problem Generation
+# ============================================
+
+func _generate_decimal_comparison_problem(config: Dictionary) -> Dictionary:
+	"""Generate a decimal comparison problem (0.01 to 9.99)"""
+	# Generate first operand
+	var operand1 = _generate_decimal_operand(0.01, 9.99)
+	
+	# Generate 10 candidates for second operand, pick the closest to operand1
+	var best_operand2 = 0.0
+	var min_diff = 999999.0
+	
+	for _i in range(10):
+		var candidate = _generate_decimal_operand(0.01, 9.99)
+		# Ensure not equal
+		if abs(candidate - operand1) < 0.001:
+			continue
+		var diff = abs(candidate - operand1)
+		if diff < min_diff:
+			min_diff = diff
+			best_operand2 = candidate
+	
+	# If all 10 were equal (very unlikely), just generate a different one
+	if min_diff > 999990.0:
+		best_operand2 = operand1 + (0.01 if rng.randi() % 2 == 0 else -0.01)
+		best_operand2 = clamp(best_operand2, 0.01, 9.99)
+	
+	var operand2 = best_operand2
+	var result = "<" if operand1 < operand2 else ">"
+	
+	# Format operands for display
+	var op1_display = _format_decimal_for_display(operand1)
+	var op2_display = _format_decimal_for_display(operand2)
+	
+	return {
+		"operands": [operand1, operand2],
+		"operator": "?",
+		"result": result,
+		"expression": op1_display + " ? " + op2_display + " = " + result,
+		"question": op1_display + " ? " + op2_display,
+		"title": config.get("name", "Decimal Comparison"),
+		"grade": "",
+		"type": "decimal_comparison"
+	}
+
+func _generate_decimal_add_sub_problem(config: Dictionary) -> Dictionary:
+	"""Generate a decimal addition/subtraction problem (0.01 to 9.99, max answer 10)"""
+	var operators = config.get("operators", ["+", "-"])
+	var operator = operators[rng.randi() % operators.size()]
+	
+	var operand1: float
+	var operand2: float
+	var result: float
+	var attempts = 0
+	
+	while attempts < 100:
+		operand1 = _generate_decimal_operand(0.01, 9.99)
+		operand2 = _generate_decimal_operand(0.01, 9.99)
+		
+		if operator == "+":
+			result = operand1 + operand2
+			# Ensure result doesn't exceed 10
+			if result <= 10.0:
+				break
+		else:  # "-"
+			# Ensure no negative result
+			if operand1 >= operand2:
+				result = operand1 - operand2
+				break
+			else:
+				# Swap operands
+				var temp = operand1
+				operand1 = operand2
+				operand2 = temp
+				result = operand1 - operand2
+				break
+		
+		attempts += 1
+	
+	# Round result to 2 decimal places
+	result = snapped(result, 0.01)
+	
+	var op1_display = _format_decimal_for_display(operand1)
+	var op2_display = _format_decimal_for_display(operand2)
+	var result_display = _format_decimal_for_display(result)
+	var question_text = op1_display + " " + operator + " " + op2_display
+	
+	return {
+		"operands": [operand1, operand2],
+		"operator": operator,
+		"result": result,
+		"expression": question_text + " = " + result_display,
+		"question": question_text,
+		"title": config.get("name", "Decimal Add/Subtract"),
+		"grade": "",
+		"type": "decimal_add_sub"
+	}
+
+func _generate_decimal_operand(min_val: float, max_val: float) -> float:
+	"""Generate a random decimal value between min and max (to hundredths)"""
+	# Generate in hundredths to avoid floating point issues
+	var min_hundredths = int(min_val * 100)
+	var max_hundredths = int(max_val * 100)
+	var value_hundredths = rng.randi_range(min_hundredths, max_hundredths)
+	return value_hundredths / 100.0
+
+func _format_decimal_for_display(value: float) -> String:
+	"""Format a decimal value for display (e.g., 12.50 not 12.5)"""
+	# Use snapped to ensure proper rounding
+	value = snapped(value, 0.01)
+	var str_val = str(value)
+	
+	# Handle integers
+	if not "." in str_val:
+		return str_val + ".00"
+	
+	# Ensure we have exactly 2 decimal places
+	var parts = str_val.split(".")
+	if parts.size() == 2:
+		while parts[1].length() < 2:
+			parts[1] += "0"
+		# Truncate if more than 2
+		if parts[1].length() > 2:
+			parts[1] = parts[1].substr(0, 2)
+		return parts[0] + "." + parts[1]
+	
+	return str_val
+
+# ============================================
+# Fraction Problem Generation
+# ============================================
+
+const FRACTION_DENOMINATORS = [2, 3, 4, 5, 6, 8, 10]
+
+func _generate_fraction_comparison_problem(config: Dictionary) -> Dictionary:
+	"""Generate a fraction comparison problem with unlike denominators"""
+	# Generate first fraction
+	var denom1 = FRACTION_DENOMINATORS[rng.randi() % FRACTION_DENOMINATORS.size()]
+	var numer1 = rng.randi_range(1, denom1 - 1)  # Proper fraction
+	var frac1_value = float(numer1) / float(denom1)
+	
+	# Generate 10 candidates for second fraction, pick the closest
+	var best_numer2 = 0
+	var best_denom2 = 2
+	var min_diff = 999999.0
+	
+	for _i in range(10):
+		# Use a different denominator
+		var denom2 = FRACTION_DENOMINATORS[rng.randi() % FRACTION_DENOMINATORS.size()]
+		var numer2 = rng.randi_range(1, denom2 - 1)
+		var frac2_value = float(numer2) / float(denom2)
+		
+		# Ensure fractions are not equal in value
+		if abs(frac2_value - frac1_value) < 0.001:
+			continue
+		
+		var diff = abs(frac2_value - frac1_value)
+		if diff < min_diff:
+			min_diff = diff
+			best_numer2 = numer2
+			best_denom2 = denom2
+	
+	# Fallback if all were equal (shouldn't happen with proper fractions)
+	if min_diff > 999990.0:
+		best_denom2 = FRACTION_DENOMINATORS[(FRACTION_DENOMINATORS.find(denom1) + 1) % FRACTION_DENOMINATORS.size()]
+		best_numer2 = 1
+	
+	var frac2_value_final = float(best_numer2) / float(best_denom2)
+	var result = "<" if frac1_value < frac2_value_final else ">"
+	
+	var op1_display = str(numer1) + "/" + str(denom1)
+	var op2_display = str(best_numer2) + "/" + str(best_denom2)
+	
+	return {
+		"operands": [{"numerator": numer1, "denominator": denom1}, {"numerator": best_numer2, "denominator": best_denom2}],
+		"operator": "?",
+		"result": result,
+		"expression": op1_display + " ? " + op2_display + " = " + result,
+		"question": op1_display + " ? " + op2_display,
+		"title": config.get("name", "Fraction Comparison"),
+		"grade": "",
+		"type": "fraction_comparison"
+	}
+
+func _generate_mixed_numbers_like_denom_problem(config: Dictionary) -> Dictionary:
+	"""Generate a mixed number addition/subtraction problem with like denominators"""
+	var operators = config.get("operators", ["+", "-"])
+	var operator = operators[rng.randi() % operators.size()]
+	
+	# Generate a common denominator
+	var common_denom = FRACTION_DENOMINATORS[rng.randi() % FRACTION_DENOMINATORS.size()]
+	
+	var whole1: int
+	var numer1: int
+	var whole2: int
+	var numer2: int
+	var result_whole: int
+	var result_numer: int
+	var result_denom: int = common_denom
+	var attempts = 0
+	
+	while attempts < 100:
+		# Generate mixed numbers
+		whole1 = rng.randi_range(1, 9)
+		numer1 = rng.randi_range(1, common_denom - 1)
+		whole2 = rng.randi_range(1, 9)
+		numer2 = rng.randi_range(1, common_denom - 1)
+		
+		# Calculate result as improper fraction first
+		var total_numer1 = whole1 * common_denom + numer1
+		var total_numer2 = whole2 * common_denom + numer2
+		var result_numer_total: int
+		
+		if operator == "+":
+			result_numer_total = total_numer1 + total_numer2
+		else:  # "-"
+			result_numer_total = total_numer1 - total_numer2
+		
+		# Check constraints: result >= 0 and result <= 10
+		if result_numer_total < 0:
+			attempts += 1
+			continue
+		
+		result_whole = result_numer_total / common_denom
+		result_numer = result_numer_total % common_denom
+		
+		var result_value = float(result_whole) + float(result_numer) / float(common_denom)
+		if result_value > 10.0:
+			attempts += 1
+			continue
+		
+		# Valid result found
+		break
+	
+	# Format operands
+	var op1_str = str(whole1) + " " + str(numer1) + "/" + str(common_denom)
+	var op2_str = str(whole2) + " " + str(numer2) + "/" + str(common_denom)
+	
+	# Format result
+	var result_str: String
+	if result_numer == 0:
+		result_str = str(result_whole)
+	elif result_whole == 0:
+		result_str = str(result_numer) + "/" + str(result_denom)
+	else:
+		result_str = str(result_whole) + " " + str(result_numer) + "/" + str(result_denom)
+	
+	var question_text = op1_str + " " + operator + " " + op2_str
+	
+	return {
+		"operands": [
+			{"whole": whole1, "numerator": numer1, "denominator": common_denom},
+			{"whole": whole2, "numerator": numer2, "denominator": common_denom}
+		],
+		"operator": operator,
+		"result": result_str,
+		"expression": question_text + " = " + result_str,
+		"question": question_text,
+		"title": config.get("name", "Mixed Numbers"),
+		"grade": "",
+		"type": "mixed_numbers_like_denom"
+	}
 
 func get_question_key(question_data):
 	"""Generate a unique key for a question based on its operands and operator"""

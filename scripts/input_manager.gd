@@ -43,7 +43,8 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 	
 	# Handle multiple choice input (AnswerOne through AnswerFive)
 	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY):
-		if QuestionManager.current_question and QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", "")):
+		var is_choice_question = QuestionManager.current_question and QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", ""))
+		if is_choice_question:
 			if event is InputEventKey and event.pressed and not event.echo:
 				var answer_actions = ["AnswerOne", "AnswerTwo", "AnswerThree", "AnswerFour", "AnswerFive"]
 				for i in range(answer_actions.size()):
@@ -105,6 +106,8 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 						var effective_length = user_answer.length()
 						if user_answer.begins_with("-"):
 							effective_length -= 1  # Don't count negative sign toward limit
+						if "." in user_answer:
+							effective_length -= 1  # Don't count decimal point toward limit
 						if effective_length < GameConfig.max_answer_chars:
 							user_answer += digit
 							AudioManager.play_tick()  # Play tick sound on digit input
@@ -114,6 +117,13 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 			if Input.is_action_just_pressed("Negative") and user_answer == "" and not is_fraction_input:
 				user_answer = "-"
 				AudioManager.play_tick()  # Play tick sound on minus input
+			
+			# Handle decimal point input (only one allowed, not in fraction mode)
+			if Input.is_action_just_pressed("Decimal") and not is_fraction_input and not is_mixed_fraction_input:
+				# Only allow if no decimal point exists yet
+				if not "." in user_answer:
+					user_answer += "."
+					AudioManager.play_tick()
 			
 			# Handle Fraction key - create mixed fraction (only for fraction-type questions, and NOT in locked mode)
 			if Input.is_action_just_pressed("Fraction") and QuestionManager.current_question and QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", "")):
@@ -306,8 +316,8 @@ func update_control_guide_visibility(user_answer: String, answer_submitted: bool
 		return
 	
 	# Hide all controls for multiple choice questions (when not waiting for continue)
-	var is_multiple_choice = QuestionManager.current_question and QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", ""))
-	if is_multiple_choice:
+	var is_choice_question = QuestionManager.current_question and QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", ""))
+	if is_choice_question:
 		control_guide_enter.visible = false
 		control_guide_tab.visible = false
 		control_guide_divide.visible = false

@@ -211,7 +211,7 @@ var current_grade_page = 1
 var max_rows_per_screen = 2
 
 # Available grades
-const GRADES = [1, 2, 3]
+const GRADES = [1, 2, 3, 4]
 
 # Theme colors for categories
 const CATEGORY_COLORS = {
@@ -222,7 +222,9 @@ const CATEGORY_COLORS = {
 	"3-Digit Numbers": Color(0.75, 0.25, 0.75),
 	"Multiplication": Color(1, 0.75, 0.25),
 	"Division": Color(1, 0.5, 1),
-	"Mul./Div.": Color(0.8, 0.4, 0)
+	"Mul./Div.": Color(0.8, 0.4, 0),
+	"Decimals": Color(0.4, 0.8, 0.9),
+	"Fractions": Color(0, 0.7, 0.3)
 }
 
 # Grade definitions with categories and levels
@@ -345,6 +347,60 @@ const GRADE_LEVELS = {
 				]
 			}
 		]
+	},
+	4: {
+		"categories": [
+			{
+				"name": "Addition",
+				"levels": [
+					{"id": "grade4_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 44, "config": {"operators": ["+"], "sum_max": 20}},
+					{"id": "grade4_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 19, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1000}}
+				]
+			},
+			{
+				"name": "Subtraction",
+				"levels": [
+					{"id": "grade4_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 80, "config": {"operators": ["-"], "range_max": 9}},
+					{"id": "grade4_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 20, "config": {"operators": ["-"], "digit_count": 3, "max_answer": 1000}}
+				]
+			},
+			{
+				"name": "Multiplication",
+				"levels": [
+					{"id": "grade4_multiply_0_12", "name": "Multiplication 0-12", "mastery_count": 46, "config": {"operators": ["x"], "factor_min": 0, "factor_max": 12}},
+					{"id": "grade4_multiply_1digit_by_multidigit", "name": "1-Digit Multiply by 2-3 Digit", "mastery_count": 25, "config": {"operators": ["x"], "multi_digit": true}},
+					{"id": "grade4_multiply_2digit_no_regroup", "name": "2-Digit Multiply by 2-Digit without Regrouping", "mastery_count": 11, "config": {"operators": ["x"], "two_digit_by_two_digit": true, "requires_regrouping": false}},
+					{"id": "grade4_multiply_2digit_regroup", "name": "2-Digit Multiply by 2-Digit with Regrouping", "mastery_count": 9, "config": {"operators": ["x"], "two_digit_by_two_digit": true, "requires_regrouping": true}}
+				]
+			},
+			{
+				"name": "Division",
+				"levels": [
+					{"id": "grade4_divide_0_12", "name": "Division 0-12", "mastery_count": 64, "config": {"operators": ["/"], "divisor_min": 1, "divisor_max": 12}},
+					{"id": "grade4_divide_multidigit", "name": "Divide 2-3-Digit by 1-Digit", "mastery_count": 12, "config": {"operators": ["/"], "multi_digit": true}}
+				]
+			},
+			{
+				"name": "Mul./Div.",
+				"levels": [
+					{"id": "grade4_multiply_divide_0_12", "name": "Multiplication/Division 0-12", "mastery_count": 56, "config": {"operators": ["x", "/"], "factor_min": 0, "factor_max": 12, "divisor_min": 1, "divisor_max": 12}}
+				]
+			},
+			{
+				"name": "Decimals",
+				"levels": [
+					{"id": "grade4_decimal_comparison", "name": "Quantity Comparison of Decimals to Hundredths", "mastery_count": 80, "config": {"type": "decimal_comparison"}},
+					{"id": "grade4_decimal_add_sub", "name": "Add and Subtract Decimals to the Hundredths", "mastery_count": 15, "config": {"type": "decimal_add_sub", "operators": ["+", "-"]}}
+				]
+			},
+			{
+				"name": "Fractions",
+				"levels": [
+					{"id": "grade4_fraction_comparison", "name": "Quantity Comparison of Fractions with Unlike Denominators", "mastery_count": 20, "config": {"type": "fraction_comparison"}},
+					{"id": "grade4_mixed_numbers", "name": "Add/Subtract Mixed Numbers with Like Denominators", "mastery_count": 19, "config": {"type": "mixed_numbers_like_denom", "operators": ["+", "-"]}}
+				]
+			}
+		]
 	}
 }
 
@@ -360,7 +416,12 @@ const PROBLEM_DISPLAY_FORMATS = {
 	"Subtract unlike denominators": "fraction",
 	"Multiply fraction by fraction": "fraction",
 	"Division with unit fractions": "fraction",
-	"Compare unlike denominators (4.NF.A)": "multiple_choice"
+	"Compare unlike denominators (4.NF.A)": "multiple_choice",
+	# New Grade 4 types
+	"decimal_comparison": "multiple_choice",
+	"fraction_comparison": "multiple_choice",
+	"decimal_add_sub": "standard",
+	"mixed_numbers_like_denom": "fraction"
 }
 
 # ============================================
