@@ -151,10 +151,17 @@ func create_new_problem_label():
 	new_label.label_settings = label_settings_resource
 	new_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	new_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	new_label.position = GameConfig.off_screen_bottom
 	new_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	new_label.self_modulate = Color(1, 1, 1)  # Reset to white color
 	new_label.z_index = -1  # Render behind UI elements
+	
+	# Calculate the centered X position based on full expression width
+	var target_x = calculate_centered_problem_x(new_label)
+	var target_y = GameConfig.primary_position.y
+	var target_position = Vector2(target_x, target_y)
+	
+	# Set initial position off-screen at bottom, with the same X as target
+	new_label.position = Vector2(target_x, GameConfig.off_screen_bottom.y)
 	
 	# Add to Play node so it renders behind Play UI elements
 	play_node.add_child(new_label)
@@ -166,10 +173,34 @@ func create_new_problem_label():
 	var tween = create_tween()
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_EXPO)
-	tween.tween_property(new_label, "position", GameConfig.primary_position, GameConfig.animation_duration)
+	tween.tween_property(new_label, "position", target_position, GameConfig.animation_duration)
 	
 	# Start timing this question when animation completes
 	tween.tween_callback(ScoreManager.start_question_timing)
+
+func calculate_centered_problem_x(label: Label) -> float:
+	"""Calculate the X position to center a problem based on its full expression width (including answer)"""
+	if not QuestionManager.current_question:
+		return GameConfig.primary_position.x
+	
+	# Build the full expression: "question = answer"
+	var question_text = QuestionManager.current_question.question
+	var answer_text = str(QuestionManager.current_question.result)
+	var full_expression = question_text + " = " + answer_text
+	
+	# Temporarily set the label text to measure width
+	var original_text = label.text
+	label.text = full_expression
+	label.reset_size()
+	var full_width = label.get_minimum_size().x
+	label.text = original_text
+	
+	# Calculate X position to center the full expression horizontally
+	# Screen center is 960 (1920 / 2)
+	var screen_center_x = 960.0
+	var centered_x = screen_center_x - (full_width / 2.0)
+	
+	return centered_x
 
 func create_fraction(fraction_position: Vector2, numerator: int = 1, denominator: int = 1, parent: Node = null) -> Control:
 	"""Create a fraction instance at the given position with the specified numerator and denominator"""

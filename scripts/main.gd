@@ -402,7 +402,9 @@ func animate_problem_off_screen(is_correct: bool):
 		var tween = create_tween()
 		tween.set_ease(Tween.EASE_OUT)
 		tween.set_trans(Tween.TRANS_EXPO)
-		tween.tween_property(old_label, "position", GameConfig.off_screen_top, GameConfig.animation_duration)
+		# Preserve X position, only change Y to move off-screen
+		var target_pos = Vector2(old_label.position.x, GameConfig.off_screen_top.y)
+		tween.tween_property(old_label, "position", target_pos, GameConfig.animation_duration)
 		tween.tween_callback(old_label.queue_free)
 
 func animate_progress_line():
