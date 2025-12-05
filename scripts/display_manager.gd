@@ -1041,20 +1041,19 @@ func continue_after_multiple_choice_incorrect(is_correct: bool, timer_was_active
 	# Increment problems completed
 	StateManager.problems_completed += 1
 	
-	# Get level config (grade-based or legacy)
-	var total_problems: int
-	if StateManager.is_grade_level and StateManager.current_level_config:
-		total_problems = StateManager.current_level_config.get("problems", 10)
-	else:
-		var level_config = GameConfig.level_configs.get(StateManager.current_level_number, GameConfig.level_configs[1])
-		total_problems = level_config.problems
-	
-	# Animate progress line (only for non-drill mode)
+	# Animate progress line (only for non-drill mode, based on correct answers towards mastery_count)
 	if not StateManager.is_drill_mode:
 		if UIManager.progress_line and play_node:
+			var max_value: int
+			if StateManager.is_grade_level and StateManager.current_level_config:
+				max_value = StateManager.current_level_config.mastery_count
+			else:
+				max_value = 20  # Fallback
+			
 			var play_width = play_node.size.x
-			var progress_increment = play_width / total_problems
-			var new_x_position = progress_increment * StateManager.problems_completed
+			var progress = min(ScoreManager.correct_answers, max_value)
+			var progress_increment = play_width / float(max_value)
+			var new_x_position = progress_increment * progress
 			
 			# Animate progress line
 			var progress_tween = create_tween()
@@ -1067,13 +1066,17 @@ func continue_after_multiple_choice_incorrect(is_correct: bool, timer_was_active
 	if StateManager.is_drill_mode:
 		# In drill mode, never end - just continue to next question
 		level_complete = false
+	elif StateManager.is_grade_level and StateManager.current_level_config:
+		# Check for mastery completion (correct answers >= mastery_count with >= 85% accuracy)
+		level_complete = ScoreManager.check_mastery_complete(StateManager.current_level_config.mastery_count)
 	else:
-		# Check if level is complete
-		if StateManager.problems_completed >= total_problems:
-			level_complete = true
+		level_complete = false  # Legacy levels not using this code path
 	
 	# Schedule next question or game over
 	if level_complete:
+		# Hide all play UI elements when level completes
+		UIManager.hide_play_ui_for_level_complete()
+		
 		# Animate current problem off screen DOWN
 		var tween = create_tween()
 		tween.set_ease(Tween.EASE_OUT)

@@ -207,8 +207,13 @@ func end_session_and_award_xp(pack_name: String, pack_level_index: int, current_
 	
 	return details
 
-func end_grade_level_session_and_award_xp(level_data: Dictionary, stars_earned: int) -> Dictionary:
-	"""End session tracking for grade-based levels and calculate XP to award"""
+func end_grade_level_session_and_award_xp(level_data: Dictionary, previous_stars: int, new_stars: int) -> Dictionary:
+	"""End session tracking for grade-based levels and calculate XP to award using the new simplified system.
+	XP = (base_time_xp + new_star_bonus) × previous_star_multiplier
+	- base_time_xp: 0.5 XP per minute of active play (excluding idle time)
+	- new_star_bonus: +0.25 for 1st star, +0.25 for 2nd star, +0.5 for 3rd star (only for newly earned stars)
+	- previous_star_multiplier: x1.0 (0 stars), x0.75 (1 star), x0.5 (2 stars), x0.25 (3 stars)
+	- No XP is awarded if player didn't earn at least 1 star this playthrough"""
 	if not is_session_active:
 		return {"xp_awarded": 0, "details": "No active session"}
 	
@@ -229,42 +234,34 @@ func end_grade_level_session_and_award_xp(level_data: Dictionary, stars_earned: 
 	var active_time = max(0.0, total_duration - total_idle_time)
 	var active_minutes = active_time / 60.0
 	
-	# Calculate CQPM using in-game timer (not wall clock)
+	# Get performance stats for logging
 	var correct_answers = ScoreManager.correct_answers
+	var total_answers = ScoreManager.total_answers
 	var game_time = ScoreManager.current_level_time
 	var cqpm = 0.0
 	if game_time > 0:
 		cqpm = (float(correct_answers) / game_time) * 60.0
 	
-	# Get level config for total questions
-	var level_config = LevelManager.calculate_level_thresholds(level_data.mastery_count)
+	# Calculate base XP from time spent (0.5 XP per minute, rounded to nearest hundredth)
+	var base_time_xp = snapped(active_minutes * GameConfig.timeback_base_xp_per_minute, 0.01)
 	
-	# Use a simple CQPM multiplier based on mastery_count expectations
-	# Base expectation: mastery_count / 120 seconds = expected CQPM
-	var expected_cqpm = float(level_data.mastery_count) / 2.0  # mastery_count in 2 minutes
-	var cqpm_multiplier = 1.0
-	if cqpm >= expected_cqpm * 1.5:
-		cqpm_multiplier = 3.0
-	elif cqpm >= expected_cqpm * 1.25:
-		cqpm_multiplier = 2.0
-	elif cqpm >= expected_cqpm:
-		cqpm_multiplier = 1.5
-	elif cqpm >= expected_cqpm * 0.75:
-		cqpm_multiplier = 1.0
-	elif cqpm >= expected_cqpm * 0.5:
-		cqpm_multiplier = 0.5
-	else:
-		cqpm_multiplier = 0.25
+	# Calculate star bonus for newly earned stars
+	var new_star_bonus = 0.0
+	if new_stars >= 1 and previous_stars < 1:
+		new_star_bonus += GameConfig.timeback_star1_bonus
+	if new_stars >= 2 and previous_stars < 2:
+		new_star_bonus += GameConfig.timeback_star2_bonus
+	if new_stars >= 3 and previous_stars < 3:
+		new_star_bonus += GameConfig.timeback_star3_bonus
 	
-	cqpm_multiplier = clamp(cqpm_multiplier, GameConfig.timeback_min_multiplier, GameConfig.timeback_max_multiplier)
+	# Get multiplier based on previously earned stars
+	var previous_star_multiplier = GameConfig.timeback_previous_star_multipliers.get(previous_stars, 1.0)
 	
-	# Get star-based multiplier (discourages farming mastered levels)
-	var star_multiplier = GameConfig.timeback_star_multipliers.get(stars_earned, 1.0)
-	
-	# Calculate XP with both CQPM and star multipliers
-	var base_xp = active_minutes * GameConfig.timeback_base_xp_per_minute
-	var xp_before_star_gate = base_xp * cqpm_multiplier
-	var final_xp = round(xp_before_star_gate * star_multiplier)
+	# Calculate final XP: (base + bonus) × multiplier
+	# NO XP if player didn't earn at least 1 star this playthrough
+	var final_xp = 0.0
+	if new_stars >= 1:
+		final_xp = snapped((base_time_xp + new_star_bonus) * previous_star_multiplier, 0.01)
 	
 	# Build detailed breakdown
 	var details = {
@@ -274,14 +271,14 @@ func end_grade_level_session_and_award_xp(level_data: Dictionary, stars_earned: 
 		"active_minutes": active_minutes,
 		"game_time": game_time,
 		"correct_answers": correct_answers,
+		"total_answers": total_answers,
 		"cqpm": cqpm,
-		"expected_cqpm": expected_cqpm,
-		"cqpm_multiplier": cqpm_multiplier,
-		"star_multiplier": star_multiplier,
-		"xp_before_star_gate": xp_before_star_gate,
-		"base_xp": base_xp,
+		"base_time_xp": base_time_xp,
+		"new_star_bonus": new_star_bonus,
+		"previous_stars": previous_stars,
+		"new_stars": new_stars,
+		"previous_star_multiplier": previous_star_multiplier,
 		"final_xp": final_xp,
-		"stars_earned": stars_earned,
 		"level_id": level_data.id,
 		"level_name": level_data.name
 	}
@@ -291,36 +288,39 @@ func end_grade_level_session_and_award_xp(level_data: Dictionary, stars_earned: 
 	print("[TimeBack] GRADE LEVEL COMPLETION METRICS")
 	print("=".repeat(60))
 	print("Level: %s (ID: %s)" % [level_data.name, level_data.id])
-	print("Stars Earned: %d" % stars_earned)
+	print("Stars: %d previously, %d earned this session" % [previous_stars, new_stars])
 	print("")
 	print("TIME METRICS:")
 	print("  Total session duration: %.1fs (%.2f minutes)" % [total_duration, total_duration / 60.0])
 	print("  Idle time subtracted:   %.1fs (%.2f minutes)" % [total_idle_time, total_idle_time / 60.0])
-	print("  Active time counted:    %.1fs (%.2f minutes) [for XP base]" % [active_time, active_minutes])
-	print("  Game timer (in-game):   %.1fs (%.2f minutes) [for CQPM]" % [game_time, game_time / 60.0])
+	print("  Active time counted:    %.1fs (%.2f minutes)" % [active_time, active_minutes])
+	print("  Game timer (in-game):   %.1fs (%.2f minutes)" % [game_time, game_time / 60.0])
 	print("")
 	print("PERFORMANCE METRICS:")
-	print("  Correct answers: %d" % correct_answers)
+	print("  Correct answers: %d / %d" % [correct_answers, total_answers])
 	print("  CQPM (%.0f / %.1fs × 60): %.2f" % [correct_answers, game_time, cqpm])
-	print("  Expected CQPM for level: %.2f" % expected_cqpm)
-	print("  CQPM Multiplier: %.2fx" % cqpm_multiplier)
-	print("  Already Earned Star Multiplier (%d stars): %.2fx" % [stars_earned, star_multiplier])
 	print("")
 	print("XP CALCULATION:")
-	print("  Base XP (%.2f min × %.1f XP/min) = %.2f" % [active_minutes, GameConfig.timeback_base_xp_per_minute, base_xp])
-	print("  After CQPM (%.2f × %.2fx) = %.2f" % [base_xp, cqpm_multiplier, xp_before_star_gate])
-	print("  After Star Gate (%.2f × %.2fx) = %d XP" % [xp_before_star_gate, star_multiplier, final_xp])
+	print("  Base time XP (%.2f min × %.1f XP/min) = %.2f" % [active_minutes, GameConfig.timeback_base_xp_per_minute, base_time_xp])
+	print("  New star bonus: +%.2f" % new_star_bonus)
+	print("  Previous star multiplier (%d stars): %.2fx" % [previous_stars, previous_star_multiplier])
+	if new_stars >= 1:
+		print("  Final XP ((%.2f + %.2f) × %.2fx) = %.2f XP" % [base_time_xp, new_star_bonus, previous_star_multiplier, final_xp])
+	else:
+		print("  Final XP: 0 (no stars earned this playthrough)")
 	print("=".repeat(60) + "\n")
 	
-	# Only award if session meets minimum duration
-	if total_duration >= GameConfig.timeback_min_session_duration:
-		award_grade_level_timeback_xp(final_xp, details, level_config)
+	# Only award if session meets minimum duration and player earned at least 1 star
+	if total_duration >= GameConfig.timeback_min_session_duration and new_stars >= 1:
+		award_grade_level_timeback_xp(int(round(final_xp)), details, level_data.mastery_count)
+	elif new_stars < 1:
+		print("[TimeBack] ⚠ No stars earned this playthrough, no XP awarded")
 	else:
 		print("[TimeBack] ⚠ Session too short (%.1fs < %.1fs minimum), no XP awarded" % [total_duration, GameConfig.timeback_min_session_duration])
 	
 	return details
 
-func award_grade_level_timeback_xp(xp: int, details: Dictionary, level_config: Dictionary):
+func award_grade_level_timeback_xp(xp: int, details: Dictionary, _mastery_count: int):
 	"""Award XP through Playcademy TimeBack API for grade-based levels"""
 	if not PlaycademySdk or not PlaycademySdk.is_ready() or not PlaycademySdk.timeback:
 		print("[TimeBack] SDK not ready, cannot award XP")
@@ -329,7 +329,7 @@ func award_grade_level_timeback_xp(xp: int, details: Dictionary, level_config: D
 	# Prepare score data with manual XP override - only the 3 required fields
 	var score_data = {
 		"correctQuestions": details.correct_answers,
-		"totalQuestions": level_config.problems,
+		"totalQuestions": details.total_answers,
 		"xpAwarded": xp
 	}
 	

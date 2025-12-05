@@ -99,7 +99,14 @@ func _process(delta):
 					StateManager.go_to_drill_mode_game_over()
 					return
 			else:
-				ScoreManager.update_normal_timer(delta)
+				# Normal mode: countdown timer - check if time ran out
+				var time_ran_out = ScoreManager.update_normal_timer(delta)
+				if time_ran_out and StateManager.is_grade_level:
+					# Hide play UI elements immediately
+					UIManager.hide_play_ui_for_level_complete()
+					# Timer ran out - go to game over (player may get stars based on performance)
+					StateManager.go_to_grade_level_game_over()
+					return
 		
 		# Update blink timer
 		DisplayManager.update_blink_timer(delta)
@@ -299,33 +306,26 @@ func continue_after_incorrect_internal(is_correct: bool, timer_was_active: bool,
 	# Increment problems completed
 	StateManager.problems_completed += 1
 	
-	# Animate progress line after incrementing
+	# Animate progress line after incrementing (based on mastery_count for grade levels)
 	if not StateManager.is_drill_mode:
 		animate_progress_line()
 	
-	# Get level config - use grade-based config if playing a grade level, otherwise legacy config
-	var level_config
-	if StateManager.is_grade_level:
-		level_config = StateManager.current_level_config
-	else:
-		level_config = GameConfig.level_configs.get(StateManager.current_level_number, GameConfig.level_configs[1])
+	# Check level completion for grade-based levels
+	var level_complete = false
+	if StateManager.is_grade_level and StateManager.current_level_config:
+		var mastery_count = StateManager.current_level_config.mastery_count
+		# Check if player has achieved mastery (correct answers >= mastery_count with >= 85% accuracy)
+		level_complete = ScoreManager.check_mastery_complete(mastery_count)
 	
-	# Check if we've completed the required number of problems (only for normal mode)
-	if not StateManager.is_drill_mode and StateManager.problems_completed >= level_config.problems:
-		# Hide play UI labels when play state ends
-		if UIManager.timer_label:
-			UIManager.timer_label.visible = false
-		if UIManager.accuracy_label:
-			UIManager.accuracy_label.visible = false
+	if level_complete:
+		# Hide all play UI elements when level completes
+		UIManager.hide_play_ui_for_level_complete()
 		
 		# Wait for the problem to finish animating off screen before transitioning
 		await get_tree().create_timer(GameConfig.animation_duration).timeout
 		
-		# Go to appropriate game over based on level type
-		if StateManager.is_grade_level:
-			StateManager.go_to_grade_level_game_over()
-		else:
-			StateManager.go_to_game_over()
+		# Go to game over - player achieved mastery (automatic 3 stars)
+		StateManager.go_to_grade_level_game_over()
 	else:
 		# Resume timer after transition delay or start it if grace period completed during transition
 		if timer_was_active or should_start_timer:
@@ -418,24 +418,29 @@ func animate_problem_off_screen(is_correct: bool):
 		tween.tween_callback(old_label.queue_free)
 
 func animate_progress_line():
-	"""Animate the progress line for normal mode levels"""
-	# Get level config - use grade-based config if playing a grade level, otherwise legacy config
-	var level_config
-	if StateManager.is_grade_level:
-		level_config = StateManager.current_level_config
-	else:
-		level_config = GameConfig.level_configs.get(StateManager.current_level_number, GameConfig.level_configs[1])
+	"""Animate the progress line for normal mode levels based on correct answers towards mastery_count"""
+	if not UIManager.progress_line or not DisplayManager.play_node:
+		return
 	
-	if UIManager.progress_line and DisplayManager.play_node:
-		var play_width = DisplayManager.play_node.size.x
-		var progress_increment = play_width / level_config.problems
-		var new_x_position = progress_increment * StateManager.problems_completed
-		
-		# Animate point 1 to the new x position
-		var tween = create_tween()
-		tween.set_ease(Tween.EASE_OUT)
-		tween.set_trans(Tween.TRANS_EXPO)
-		tween.tween_method(UIManager.update_progress_line_point, UIManager.progress_line.get_point_position(1).x, new_x_position, GameConfig.animation_duration)
+	# Get mastery_count for grade levels
+	var max_value: int
+	if StateManager.is_grade_level and StateManager.current_level_config:
+		max_value = StateManager.current_level_config.mastery_count
+	else:
+		# Fallback for legacy levels
+		max_value = 20
+	
+	var play_width = DisplayManager.play_node.size.x
+	# Progress is based on correct_answers towards mastery_count
+	var progress = min(ScoreManager.correct_answers, max_value)
+	var progress_increment = play_width / float(max_value)
+	var new_x_position = progress_increment * progress
+	
+	# Animate point 1 to the new x position
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.tween_method(UIManager.update_progress_line_point, UIManager.progress_line.get_point_position(1).x, new_x_position, GameConfig.animation_duration)
 
 func connect_menu_buttons():
 	"""Connect all menu buttons to their respective functions"""

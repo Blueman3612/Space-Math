@@ -296,8 +296,8 @@ func start_grade_level_play_state(level_data: Dictionary):
 	problems_completed = 0
 	current_level_data = level_data
 	
-	# Calculate level config (star thresholds) from mastery count
-	current_level_config = LevelManager.calculate_level_thresholds(level_data.mastery_count)
+	# Store mastery_count directly in level_config for easy access
+	current_level_config = {"mastery_count": level_data.mastery_count}
 	
 	# Set up the dynamic question generation config
 	var generation_config = level_data.config.duplicate()
@@ -340,8 +340,10 @@ func start_grade_level_play_state(level_data: Dictionary):
 	# Set UI visibility for normal mode
 	UIManager.update_normal_mode_ui_visibility()
 	
-	# Initialize progress line
+	# Initialize progress line and new timer/accuracy lines
 	UIManager.initialize_progress_line()
+	UIManager.initialize_timer_line()
+	UIManager.initialize_accuracy_line()
 	
 	# Start TimeBack session tracking
 	PlaycademyManager.start_session_tracking("Grade" + str(GameConfig.current_grade), 0)
@@ -357,23 +359,34 @@ func go_to_grade_level_game_over():
 	# Stop the timer (should already be stopped, but ensure it)
 	ScoreManager.timer_active = false
 	
-	# Get stars the player ALREADY had before this session (for XP star gate)
+	# Get mastery_count from level config
+	var mastery_count = current_level_config.mastery_count
+	
+	# Get stars the player ALREADY had before this session (for XP calculation)
 	var level_id = current_level_data.id
 	var previous_stars = SaveManager.get_grade_level_stars(level_id)
 	
-	# Calculate and save level performance data
-	var stars_earned = evaluate_grade_level_stars().size()
+	# Calculate stars earned using the new mastery-based system
+	var stars_earned_array = ScoreManager.evaluate_stars_for_mastery_count(mastery_count)
+	var stars_earned = stars_earned_array.size()
+	
+	# Save level performance data
 	SaveManager.update_grade_level_data(level_id, ScoreManager.correct_answers, ScoreManager.current_level_time, stars_earned)
 	
-	# End session tracking and award XP through TimeBack (using PREVIOUS stars for star gate)
+	# End session tracking and award XP through TimeBack (using PREVIOUS stars for multiplier)
+	var xp_result = {}
 	if PlaycademyManager:
-		PlaycademyManager.end_grade_level_session_and_award_xp(current_level_data, previous_stars)
+		xp_result = PlaycademyManager.end_grade_level_session_and_award_xp(current_level_data, previous_stars, stars_earned)
 	
 	# Update GameOver labels with player performance
-	UIManager.update_grade_level_game_over_labels(current_level_config)
+	UIManager.update_game_over_labels_for_mastery(mastery_count)
 	
-	# Update star requirement labels to show actual level requirements
-	UIManager.update_grade_level_star_requirement_labels(current_level_config)
+	# Update XP earned label
+	var xp_earned = xp_result.get("final_xp", 0.0) if xp_result else 0.0
+	UIManager.update_xp_earned_label(xp_earned)
+	
+	# Update star requirement labels to show requirements based on mastery_count
+	UIManager.update_star_requirement_labels_for_mastery(mastery_count)
 	
 	# Set normal mode game over UI visibility
 	UIManager.update_normal_mode_game_over_ui_visibility()
@@ -401,26 +414,7 @@ func go_to_grade_level_game_over():
 	tween.tween_property(game_over_node, "position", GameConfig.menu_on_screen, GameConfig.animation_duration)
 	
 	# Start star animation sequence after GameOver animation completes
-	tween.tween_callback(UIManager.start_grade_level_star_animation_sequence.bind(current_level_config))
-
-func evaluate_grade_level_stars() -> Array:
-	"""Evaluate which stars were earned for a grade-based level"""
-	var earned_stars = []
-	var config = current_level_config
-	
-	# Check star 1
-	if ScoreManager.correct_answers >= config.star1.accuracy and ScoreManager.current_level_time <= config.star1.time:
-		earned_stars.append(1)
-	
-	# Check star 2
-	if ScoreManager.correct_answers >= config.star2.accuracy and ScoreManager.current_level_time <= config.star2.time:
-		earned_stars.append(2)
-	
-	# Check star 3
-	if ScoreManager.correct_answers >= config.star3.accuracy and ScoreManager.current_level_time <= config.star3.time:
-		earned_stars.append(3)
-	
-	return earned_stars
+	tween.tween_callback(UIManager.start_star_animation_sequence_for_mastery.bind(mastery_count))
 
 func _on_exit_button_pressed():
 	"""Handle exit button press"""

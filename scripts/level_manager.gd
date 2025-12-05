@@ -35,30 +35,8 @@ func initialize(main_node: Control):
 	current_global_page_index = get_global_page_index(GameConfig.current_grade, GameConfig.current_grade_page)
 
 # ============================================
-# Grade Navigation & Star Threshold Functions
+# Grade Navigation Functions
 # ============================================
-
-func calculate_level_thresholds(mastery_count: int) -> Dictionary:
-	"""Calculate star thresholds based on mastery count.
-	Formula:
-	- Total problems = ceil(mastery_count / 0.85)
-	- 3 star accuracy = mastery_count
-	- 2 star accuracy = 2 * mastery_count - total
-	- 1 star accuracy = 3 * mastery_count - 2 * total
-	Time requirements are fixed for all levels:
-	- 3 stars: 2:00 (120s), 2 stars: 2:30 (150s), 1 star: 3:00 (180s)
-	"""
-	var total_problems = int(ceil(mastery_count / 0.85))
-	var star3_accuracy = mastery_count
-	var star2_accuracy = 2 * mastery_count - total_problems
-	var star1_accuracy = 3 * mastery_count - 2 * total_problems
-	
-	return {
-		"problems": total_problems,
-		"star1": {"accuracy": star1_accuracy, "time": 180.0},
-		"star2": {"accuracy": star2_accuracy, "time": 150.0},
-		"star3": {"accuracy": star3_accuracy, "time": 120.0}
-	}
 
 func get_grade_data(grade: int) -> Dictionary:
 	"""Get the level data for a specific grade"""

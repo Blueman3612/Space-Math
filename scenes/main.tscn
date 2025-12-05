@@ -542,7 +542,7 @@ label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Time" type="Label" parent="GameOver/Star3"]
+[node name="Accuracy" type="Label" parent="GameOver/Star3"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -645,7 +645,7 @@ label_settings = ExtResource("13_trceg")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="DrillAccuracyTitle" type="Label" parent="GameOver"]
+[node name="XPEarnedTitle" type="Label" parent="GameOver"]
 self_modulate = Color(0.5019608, 0.5019608, 0.5019608, 1)
 layout_mode = 1
 anchors_preset = 5
@@ -656,12 +656,12 @@ offset_top = 816.0
 offset_right = -572.0
 offset_bottom = 880.0
 grow_horizontal = 2
-text = "ACCURACY"
+text = "XP Earned"
 label_settings = ExtResource("9_85g3d")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="DrillAccuracy" type="Label" parent="GameOver"]
+[node name="XPEarned" type="Label" parent="GameOver"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -671,7 +671,7 @@ offset_top = 896.0
 offset_right = -492.0
 offset_bottom = 960.0
 grow_horizontal = 2
-text = "69/69"
+text = "1.47"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -752,13 +752,13 @@ z_index = 1
 position = Vector2(0, 4)
 points = PackedVector2Array(0, 0, 0, 0)
 width = 8.0
-default_color = Color(0, 0, 1, 1)
+default_color = Color(0, 1, 1, 1)
 
 [node name="AccuracyLine" type="Line2D" parent="Play"]
 z_index = 1
-position = Vector2(0, 1074)
+position = Vector2(0, 1072)
 points = PackedVector2Array(0, 0, 0, 0)
-width = 12.0
+width = 16.0
 default_color = Color(1, 1, 0, 1)
 
 [node name="ProgressLine" type="Line2D" parent="Play"]
@@ -766,7 +766,7 @@ z_index = 1
 position = Vector2(0, 1076)
 points = PackedVector2Array(0, 0, 0, 0)
 width = 8.0
-default_color = Color(0, 1, 1, 1)
+default_color = Color(0, 0, 1, 1)
 
 [node name="ControlGuide" type="Control" parent="Play"]
 anchors_preset = 0

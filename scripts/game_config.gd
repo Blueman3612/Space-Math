@@ -154,23 +154,24 @@ var pack_outline_height = 32.0  # Height of ShapeHorizontal
 var pack_outline_vertical_height = 128.0  # Height of ShapeVertical
 
 # ============================================
-# Level Configuration (per-level star requirements)
+# Level Timer and Mastery Configuration
 # ============================================
-var level_configs = {
-	1: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
-	2: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
-	3: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
-	4: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
-	5: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
-	6: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
-	7: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
-	8: {"problems": 40, "star1": {"accuracy": 25, "time": 120.0}, "star2": {"accuracy": 30, "time": 100.0}, "star3": {"accuracy": 35, "time": 80.0}},
-	9: {"problems": 20, "star1": {"accuracy": 12, "time": 120.0}, "star2": {"accuracy": 14, "time": 100.0}, "star3": {"accuracy": 16, "time": 80.0}},
-	10: {"problems": 20, "star1": {"accuracy": 13, "time": 100.0}, "star2": {"accuracy": 15, "time": 80.0}, "star3": {"accuracy": 17, "time": 60.0}},
-	11: {"problems": 20, "star1": {"accuracy": 12, "time": 150.0}, "star2": {"accuracy": 14, "time": 120.0}, "star3": {"accuracy": 16, "time": 90.0}},
-	12: {"problems": 20, "star1": {"accuracy": 12, "time": 180.0}, "star2": {"accuracy": 14, "time": 150.0}, "star3": {"accuracy": 16, "time": 120.0}},
-	13: {"problems": 20, "star1": {"accuracy": 12, "time": 210.0}, "star2": {"accuracy": 14, "time": 180.0}, "star3": {"accuracy": 16, "time": 150.0}}
-}
+var level_timer_duration = 120.0  # 2 minutes countdown timer for each level
+var mastery_accuracy_threshold = 0.85  # 85% accuracy required to achieve mastery
+
+# Star requirements (percentage of mastery_count for correct answers, accuracy percentage)
+var star1_correct_percent = 0.50  # 50% of mastery_count
+var star1_accuracy_threshold = 0.55  # 55% accuracy
+var star2_correct_percent = 0.75  # 75% of mastery_count
+var star2_accuracy_threshold = 0.70  # 70% accuracy
+var star3_correct_percent = 1.0  # 100% of mastery_count
+var star3_accuracy_threshold = 0.85  # 85% accuracy
+
+# Accuracy line colors (based on star threshold proximity)
+var accuracy_color_3star = Color(0, 1, 0)  # Green for >= 85%
+var accuracy_color_2star = Color(1, 1, 0)  # Yellow for >= 70%
+var accuracy_color_1star = Color(1, 0.5, 0)  # Orange for >= 55%
+var accuracy_color_0star = Color(1, 0, 0)  # Red for < 55%
 
 # ============================================
 # Legacy Level Packs (kept for reference, no longer loaded)
@@ -487,48 +488,31 @@ const PROBLEM_DISPLAY_FORMATS = {
 # ============================================
 # TimeBack / XP System Configuration
 # ============================================
-var timeback_base_xp_per_minute = 1.0  # Base XP: 1 minute = 1 XP
+var timeback_base_xp_per_minute = 0.5  # Base XP: 0.5 XP per minute of active play
 var timeback_idle_threshold = 10.0  # Seconds of no input before considered idle
 var timeback_min_session_duration = 5.0  # Minimum seconds for a session to count
-var timeback_max_multiplier = 4.0  # Cap on CQPM multiplier
-var timeback_min_multiplier = 0.1  # Floor for CQPM multiplier (for very poor performance)
 
-# Star-based XP gating (discourages farming easy/mastered levels)
-# Applied as final multiplier to normal level XP (not drill mode)
-var timeback_star_multipliers = {
-	0: 1.0,   # 0 stars = 100% XP (still learning)
-	1: 1.0,   # 1 star = 100% XP (still learning)
-	2: 0.75,  # 2 stars = 75% XP (getting good)
-	3: 0.25   # 3 stars = 25% XP (mastered, move on)
+# XP bonus for newly earned stars (only awarded for stars not previously earned)
+var timeback_star1_bonus = 0.25  # +0.25 XP for earning first star
+var timeback_star2_bonus = 0.25  # +0.25 XP for earning second star
+var timeback_star3_bonus = 0.5   # +0.5 XP for earning third star
+
+# XP multiplier based on previously earned stars (discourages farming)
+# Applied to (base_time_xp + new_star_bonus)
+var timeback_previous_star_multipliers = {
+	0: 1.0,   # 0 stars previously = 100% XP
+	1: 0.75,  # 1 star previously = 75% XP
+	2: 0.5,   # 2 stars previously = 50% XP
+	3: 0.25   # 3 stars previously = 25% XP
 }
 
-# CQPM multiplier scales per individual level
-# Format: {level_number: [[cqpm_threshold, multiplier], ...]}
-# Thresholds are checked in descending order; first match wins
-var timeback_level_multipliers = {
-	1: [[60.0, 4.0], [45.0, 2.0], [30.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],  # Addition Level 1
-	2: [[60.0, 4.0], [45.0, 2.0], [30.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],  # Addition Level 2
-	3: [[60.0, 4.0], [45.0, 2.0], [30.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],  # Addition Level 3
-	4: [[60.0, 4.0], [45.0, 2.0], [30.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],   # Subtraction Level 1
-	5: [[60.0, 4.0], [45.0, 2.0], [30.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],   # Subtraction Level 2
-	6: [[55.0, 4.0], [40.0, 2.0], [25.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],   # Multiplication Level 1
-	7: [[50.0, 4.0], [40.0, 2.0], [25.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],   # Multiplication Level 2
-	8: [[50.0, 4.0], [40.0, 2.0], [25.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],    # Division Level 1
-	9: [[20.0, 4.0], [15.0, 2.0], [10.0, 1.0], [8.0, 0.5], [5.0, 0.25], [0.0, 0.1]],     # Fractions Level 1 (Equivalence)
-	10: [[40.0, 4.0], [30.0, 2.0], [20.0, 1.0], [15.0, 0.5], [10.0, 0.25], [0.0, 0.1]],     # Fractions Level 1 (Equivalence)
-	11: [[15.0, 4.0], [12.0, 2.0], [10.0, 1.0], [8.0, 0.5], [5.0, 0.25], [0.0, 0.1]],     # Fractions Level 2
-	12: [[12.0, 4.0], [10.0, 2.0], [8.0, 1.0], [5.0, 0.5], [3.0, 0.25], [0.0, 0.1]],     # Fractions Level 3
-	13: [[12.0, 4.0], [10.0, 2.0], [8.0, 1.0], [5.0, 0.5], [3.0, 0.25], [0.0, 0.1]]      # Fractions Level 4
-}
-
-# Drill mode CQPM multiplier scale
-# Uses average difficulty across all included packs
+# Drill mode CQPM multiplier scale (kept for drill mode only)
 var timeback_drill_mode_multipliers = [
-	[60.0, 3.0],   # 25+ CQPM = 3x multiplier
-	[50.0, 2.0],   # 18+ CQPM = 2.5x multiplier
-	[40.0, 1.5],   # 12+ CQPM = 2x multiplier
-	[30.0, 1.0],    # 8+ CQPM = 1.5x multiplier
-	[20.0, 0.5],    # 5+ CQPM = 1.2x multiplier
-	[10.0, 0.25],    # 2+ CQPM = 1x multiplier (baseline)
-	[0.0, 0.1]     # < 2 CQPM = 0.5x multiplier
+	[60.0, 3.0],   # 60+ CQPM = 3x multiplier
+	[50.0, 2.0],   # 50+ CQPM = 2x multiplier
+	[40.0, 1.5],   # 40+ CQPM = 1.5x multiplier
+	[30.0, 1.0],   # 30+ CQPM = 1x multiplier
+	[20.0, 0.5],   # 20+ CQPM = 0.5x multiplier
+	[10.0, 0.25],  # 10+ CQPM = 0.25x multiplier
+	[0.0, 0.1]     # < 10 CQPM = 0.1x multiplier
 ]

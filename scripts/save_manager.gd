@@ -428,14 +428,14 @@ func unlock_all_levels():
 		for category in grade_data.categories:
 			for level_data in category.levels:
 				var level_id = level_data.id
-				var level_config = LevelManager.calculate_level_thresholds(level_data.mastery_count)
+				var mastery_count = level_data.mastery_count
 				
-				# Set each level to have 3 stars and max values
+				# Set each level to have 3 stars with mastery performance
 				save_data.grade_levels[level_id] = {
 					"highest_stars": 3,
-					"best_accuracy": level_config.problems,
-					"best_time": level_config.star3.time,
-					"best_cqpm": ScoreManager.calculate_cqpm(level_config.problems, level_config.star3.time)
+					"best_correct": mastery_count,
+					"best_time": GameConfig.level_timer_duration,  # Full time
+					"best_cqpm": ScoreManager.calculate_cqpm(mastery_count, GameConfig.level_timer_duration)
 				}
 	
 	save_save_data()

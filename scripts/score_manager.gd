@@ -4,11 +4,13 @@ extends Node
 
 # Timer and accuracy tracking variables (these will be accessed by UIManager)
 var level_start_time = 0.0  # Time when the level started
-var current_level_time = 0.0  # Current elapsed time for the level
+var current_level_time = 0.0  # Current elapsed time for the level (counts up for drill, down for normal)
+var level_timer_remaining = 0.0  # Time remaining in level countdown timer
 var timer_active = false  # Whether the timer is currently running
 var grace_period_timer = 0.0  # Timer for the grace period
 var timer_started = false  # Whether the timer has started (past grace period)
 var correct_answers = 0  # Number of correct answers in current level
+var total_answers = 0  # Total questions answered in current level (correct + incorrect)
 var current_question_start_time = 0.0  # Track when current question timing started
 
 # Drill mode variables
@@ -33,39 +35,81 @@ func calculate_cqpm(correct_answers_in_level, time_in_seconds):
 		return 0.0
 	return (float(correct_answers_in_level) / time_in_seconds) * 60.0
 
-func evaluate_stars(current_level_number: int):
-	"""Evaluate which stars the player has earned"""
+func evaluate_stars_for_mastery_count(mastery_count: int) -> Array:
+	"""Evaluate which stars the player has earned based on mastery_count.
+	This uses the new scoring system with correct count thresholds and accuracy percentages."""
 	var stars_earned = []
-	var level_config = GameConfig.level_configs.get(current_level_number, GameConfig.level_configs[1])
 	
-	# Check Star 1
-	if correct_answers >= level_config.star1.accuracy and current_level_time <= level_config.star1.time:
+	# Calculate current accuracy percentage
+	var accuracy = 0.0
+	if total_answers > 0:
+		accuracy = float(correct_answers) / float(total_answers)
+	
+	# Calculate star thresholds based on mastery_count
+	var star1_correct = int(ceil(mastery_count * GameConfig.star1_correct_percent))
+	var star2_correct = int(ceil(mastery_count * GameConfig.star2_correct_percent))
+	var star3_correct = int(ceil(mastery_count * GameConfig.star3_correct_percent))
+	
+	# Check Star 1: correct answers >= 50% of mastery_count AND accuracy >= 55%
+	if correct_answers >= star1_correct and accuracy >= GameConfig.star1_accuracy_threshold:
 		stars_earned.append(1)
 	
-	# Check Star 2
-	if correct_answers >= level_config.star2.accuracy and current_level_time <= level_config.star2.time:
+	# Check Star 2: correct answers >= 75% of mastery_count AND accuracy >= 70%
+	if correct_answers >= star2_correct and accuracy >= GameConfig.star2_accuracy_threshold:
 		stars_earned.append(2)
 	
-	# Check Star 3
-	if correct_answers >= level_config.star3.accuracy and current_level_time <= level_config.star3.time:
+	# Check Star 3: correct answers >= 100% of mastery_count AND accuracy >= 85%
+	if correct_answers >= star3_correct and accuracy >= GameConfig.star3_accuracy_threshold:
 		stars_earned.append(3)
 	
 	return stars_earned
 
-func check_star_requirement(star_num: int, requirement_type: String, current_level_number: int) -> bool:
-	"""Check if a specific requirement for a star has been met"""
-	var level_config = GameConfig.level_configs.get(current_level_number, GameConfig.level_configs[1])
-	var requirements
-	match star_num:
-		1: requirements = level_config.star1
-		2: requirements = level_config.star2
-		3: requirements = level_config.star3
-		_: return false
+func check_mastery_complete(mastery_count: int) -> bool:
+	"""Check if the player has achieved mastery (reached mastery_count correct with >= 85% accuracy)"""
+	if correct_answers < mastery_count:
+		return false
 	
-	match requirement_type:
-		"accuracy": return correct_answers >= requirements.accuracy
-		"time": return current_level_time <= requirements.time
-		_: return false
+	# Check if accuracy is >= 85%
+	if total_answers == 0:
+		return false
+	
+	var accuracy = float(correct_answers) / float(total_answers)
+	return accuracy >= GameConfig.mastery_accuracy_threshold
+
+func get_star_requirements(mastery_count: int) -> Dictionary:
+	"""Get the star requirements based on mastery_count"""
+	return {
+		"star1": {
+			"correct": int(ceil(mastery_count * GameConfig.star1_correct_percent)),
+			"accuracy": GameConfig.star1_accuracy_threshold
+		},
+		"star2": {
+			"correct": int(ceil(mastery_count * GameConfig.star2_correct_percent)),
+			"accuracy": GameConfig.star2_accuracy_threshold
+		},
+		"star3": {
+			"correct": int(ceil(mastery_count * GameConfig.star3_correct_percent)),
+			"accuracy": GameConfig.star3_accuracy_threshold
+		}
+	}
+
+func get_current_accuracy() -> float:
+	"""Get current accuracy as a decimal (0.0 to 1.0)"""
+	if total_answers == 0:
+		return 1.0  # Default to 100% when no answers yet
+	return float(correct_answers) / float(total_answers)
+
+func get_current_accuracy_percent() -> int:
+	"""Get current accuracy as an integer percentage (0 to 100), rounded down"""
+	return int(get_current_accuracy() * 100.0)
+
+# ============================================
+# Legacy Functions (for backwards compatibility with pack-based levels)
+# ============================================
+
+func evaluate_stars(_current_level_number: int) -> Array:
+	"""Legacy function - uses default mastery count for evaluation"""
+	return evaluate_stars_for_mastery_count(20)  # Default fallback
 
 func calculate_question_difficulty(question_data):
 	"""Calculate the difficulty of a question based on its track"""
@@ -123,10 +167,12 @@ func reset_for_new_level():
 	"""Reset score tracking for a new level"""
 	level_start_time = 0.0
 	current_level_time = 0.0
+	level_timer_remaining = GameConfig.level_timer_duration
 	timer_active = false
 	timer_started = false
 	grace_period_timer = 0.0
 	correct_answers = 0
+	total_answers = 0
 	current_question_start_time = 0.0
 
 func reset_for_drill_mode():
@@ -142,6 +188,7 @@ func reset_for_drill_mode():
 func process_correct_answer(is_drill_mode: bool, current_question):
 	"""Process a correct answer and update scores"""
 	correct_answers += 1
+	total_answers += 1
 	if is_drill_mode:
 		drill_streak += 1
 		# Calculate drill mode score: difficulty + streak
@@ -155,6 +202,7 @@ func process_correct_answer(is_drill_mode: bool, current_question):
 
 func process_incorrect_answer(is_drill_mode: bool):
 	"""Process an incorrect answer"""
+	total_answers += 1
 	if is_drill_mode:
 		drill_streak = 0  # Reset streak on incorrect answer
 
@@ -168,10 +216,15 @@ func update_drill_timer(delta: float):
 			return true
 	return false
 
-func update_normal_timer(delta: float):
-	"""Update normal mode timer"""
+func update_normal_timer(delta: float) -> bool:
+	"""Update normal mode countdown timer. Returns true if time ran out."""
 	if timer_active:
-		current_level_time += delta
+		current_level_time += delta  # Track total elapsed time for XP calculation
+		level_timer_remaining -= delta
+		if level_timer_remaining <= 0.0:
+			level_timer_remaining = 0.0
+			return true
+	return false
 
 func update_grace_period(delta: float):
 	"""Update grace period timer and return true if grace period ended"""
