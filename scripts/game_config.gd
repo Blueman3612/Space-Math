@@ -315,9 +315,9 @@ const GRADE_LEVELS = {
 			{
 				"name": "3-Digit Numbers",
 				"levels": [
-					{"id": "grade3_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 14, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1000}},
+					{"id": "grade3_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 14, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1998}},
 					{"id": "grade3_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 15, "config": {"operators": ["-"], "digit_count": 3, "max_answer": 1000}},
-					{"id": "grade3_3digit_add_sub", "name": "Add/Subtract 3-Digit Numbers", "mastery_count": 16, "config": {"operators": ["+", "-"], "digit_count": 3, "max_answer": 1000}}
+					{"id": "grade3_3digit_add_sub", "name": "Add/Subtract 3-Digit Numbers", "mastery_count": 16, "config": {"operators": ["+", "-"], "digit_count": 3, "max_answer": 1998}}
 				]
 			},
 			{
@@ -354,7 +354,7 @@ const GRADE_LEVELS = {
 				"name": "Addition",
 				"levels": [
 					{"id": "grade4_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 44, "config": {"operators": ["+"], "sum_max": 20}},
-					{"id": "grade4_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 19, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1000}}
+					{"id": "grade4_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 19, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1998}}
 				]
 			},
 			{
@@ -408,7 +408,7 @@ const GRADE_LEVELS = {
 				"name": "Addition",
 				"levels": [
 					{"id": "grade5_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 44, "config": {"operators": ["+"], "sum_max": 20}},
-					{"id": "grade5_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 19, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1000}}
+					{"id": "grade5_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 19, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1998}}
 				]
 			},
 			{

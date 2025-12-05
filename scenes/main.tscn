@@ -368,22 +368,22 @@ vertical_alignment = 1
 [node name="CorrectTitle" type="Label" parent="GameOver"]
 self_modulate = Color(0.5019608, 0.5019608, 0.5019608, 1)
 layout_mode = 0
-offset_left = 24.0
+offset_left = 56.0
 offset_top = 576.0
-offset_right = 432.0
+offset_right = 464.0
 offset_bottom = 640.0
 text = "Correct"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 2
 
-[node name="TimeTitle" type="Label" parent="GameOver"]
+[node name="AccuracyTitle" type="Label" parent="GameOver"]
 self_modulate = Color(0.5019608, 0.5019608, 0.5019608, 1)
 layout_mode = 0
-offset_left = 24.0
+offset_left = 16.0
 offset_top = 688.0
-offset_right = 432.0
+offset_right = 464.0
 offset_bottom = 752.0
-text = "Time"
+text = "Accuracy"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 2
 
@@ -403,7 +403,7 @@ label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PlayerAccuracy" type="Label" parent="GameOver"]
+[node name="PlayerCorrect" type="Label" parent="GameOver"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -418,7 +418,7 @@ label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PlayerTime" type="Label" parent="GameOver"]
+[node name="PlayerAccuracy" type="Label" parent="GameOver"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -428,7 +428,7 @@ offset_top = 688.0
 offset_right = 960.0
 offset_bottom = 752.0
 grow_horizontal = 2
-text = "4:20"
+text = "69%"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -441,7 +441,7 @@ offset_right = 608.0
 offset_bottom = 416.0
 mouse_filter = 2
 
-[node name="Accuracy" type="Label" parent="GameOver/Star1"]
+[node name="Correct" type="Label" parent="GameOver/Star1"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -451,12 +451,12 @@ offset_top = 160.0
 offset_right = 148.0
 offset_bottom = 224.0
 grow_horizontal = 2
-text = "25/40"
+text = "10"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Time" type="Label" parent="GameOver/Star1"]
+[node name="Accuracy" type="Label" parent="GameOver/Star1"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -466,7 +466,7 @@ offset_top = 272.0
 offset_right = 148.0
 offset_bottom = 336.0
 grow_horizontal = 2
-text = "2:00"
+text = "55%"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -484,7 +484,7 @@ offset_right = 960.0
 offset_bottom = 416.0
 mouse_filter = 2
 
-[node name="Accuracy" type="Label" parent="GameOver/Star2"]
+[node name="Correct" type="Label" parent="GameOver/Star2"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -494,12 +494,12 @@ offset_top = 160.0
 offset_right = 148.0
 offset_bottom = 224.0
 grow_horizontal = 2
-text = "30/40"
+text = "15"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Time" type="Label" parent="GameOver/Star2"]
+[node name="Accuracy" type="Label" parent="GameOver/Star2"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -509,7 +509,7 @@ offset_top = 272.0
 offset_right = 148.0
 offset_bottom = 336.0
 grow_horizontal = 2
-text = "1:40"
+text = "70%"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -527,7 +527,7 @@ offset_right = 1312.0
 offset_bottom = 416.0
 mouse_filter = 2
 
-[node name="Accuracy" type="Label" parent="GameOver/Star3"]
+[node name="Correct" type="Label" parent="GameOver/Star3"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -537,7 +537,7 @@ offset_top = 160.0
 offset_right = 148.0
 offset_bottom = 224.0
 grow_horizontal = 2
-text = "35/40"
+text = "20"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -552,7 +552,7 @@ offset_top = 272.0
 offset_right = 148.0
 offset_bottom = 336.0
 grow_horizontal = 2
-text = "1:20"
+text = "85%"
 label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -629,6 +629,7 @@ offset_bottom = 984.0
 tooltip_text = "Correct Questions Per Minute"
 
 [node name="DrillModeScore" type="Label" parent="GameOver"]
+visible = false
 self_modulate = Color(0.5019608, 0, 1, 1)
 layout_mode = 1
 anchors_preset = 14
@@ -745,6 +746,20 @@ offset_right = 72.0
 offset_bottom = 55.0
 text = "69420"
 label_settings = ExtResource("6_tefeu")
+
+[node name="TimerLine" type="Line2D" parent="Play"]
+z_index = 1
+position = Vector2(0, 4)
+points = PackedVector2Array(0, 0, 0, 0)
+width = 8.0
+default_color = Color(0, 0, 1, 1)
+
+[node name="AccuracyLine" type="Line2D" parent="Play"]
+z_index = 1
+position = Vector2(0, 1074)
+points = PackedVector2Array(0, 0, 0, 0)
+width = 12.0
+default_color = Color(1, 1, 0, 1)
 
 [node name="ProgressLine" type="Line2D" parent="Play"]
 z_index = 1
