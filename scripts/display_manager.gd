@@ -37,8 +37,9 @@ func update_blink_timer(delta: float):
 
 func update_problem_display(user_answer: String, answer_submitted: bool, is_fraction_input: bool, is_mixed_fraction_input: bool, editing_numerator: bool):
 	"""Update the problem display based on current question type"""
-	# Handle fraction-type problems differently
-	if QuestionManager.current_question and QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", "")):
+	# Handle fraction-type problems (including conversions) differently
+	var q_type = QuestionManager.current_question.get("type", "") if QuestionManager.current_question else ""
+	if QuestionManager.current_question and (QuestionManager.is_fraction_display_type(q_type) or QuestionManager.is_fraction_conversion_display_type(q_type)):
 		update_fraction_problem_display(user_answer, answer_submitted, is_fraction_input, is_mixed_fraction_input, editing_numerator)
 	elif current_problem_label and QuestionManager.current_question:
 		var base_text = QuestionManager.current_question.question + " = "
@@ -131,6 +132,13 @@ func create_new_problem_label():
 	if QuestionManager.current_question and QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", "")):
 		create_multiple_choice_problem()
 		# Start timing this question immediately for multiple choice problems
+		ScoreManager.start_question_timing()
+		return
+	
+	# Check if this is a fraction conversion problem (mixed to improper or improper to mixed)
+	if QuestionManager.current_question and QuestionManager.is_fraction_conversion_display_type(QuestionManager.current_question.get("type", "")):
+		create_fraction_conversion_problem()
+		# Start timing this question immediately for conversion problems
 		ScoreManager.start_question_timing()
 		return
 	
@@ -392,8 +400,9 @@ func create_fraction_problem():
 	operator_label.z_index = -1  # Render behind UI elements
 	# Position relative to fraction1
 	var op_offset = GameConfig.operator_offset
-	# Apply simple operator offset for converted unicode operators
-	if QuestionManager.current_question.operator == "×" or QuestionManager.current_question.operator == "÷":
+	# Apply simple operator offset for multiplication/division operators (both unicode and ASCII)
+	var op_text = QuestionManager.current_question.operator
+	if op_text == "×" or op_text == "÷" or op_text == "x" or op_text == "/":
 		op_offset += GameConfig.simple_operator_offset
 	operator_label.position = Vector2(operator_x - fraction1_x, 0) + op_offset - GameConfig.fraction_offset
 	fraction1.add_child(operator_label)
@@ -566,6 +575,100 @@ func create_equivalence_problem():
 	tween.set_parallel(true)
 	tween.tween_property(left_fraction, "position", left_fraction_target, GameConfig.animation_duration)
 	tween.tween_property(right_fraction, "position", right_fraction_target, GameConfig.animation_duration)
+	
+	# Exit parallel mode before adding callback
+	tween.set_parallel(false)
+	
+	# Start timing this question when animation completes
+	tween.tween_callback(ScoreManager.start_question_timing)
+
+func create_fraction_conversion_problem():
+	"""Create a fraction conversion problem display (mixed to improper or improper to mixed)"""
+	if not QuestionManager.current_question or not QuestionManager.is_fraction_conversion_display_type(QuestionManager.current_question.get("type", "")):
+		return
+	
+	# Clean up any existing problem nodes
+	cleanup_problem_labels()
+	
+	var problem_type = QuestionManager.current_question.get("type", "")
+	var operands = QuestionManager.current_question.get("operands", [])
+	
+	if operands.size() < 1:
+		print("Error: Conversion problem requires at least 1 operand")
+		return
+	
+	var operand = operands[0]
+	
+	# Calculate positions
+	var base_x = GameConfig.primary_position.x + GameConfig.fraction_problem_x_offset
+	var target_y = GameConfig.primary_position.y
+	var start_y = GameConfig.off_screen_bottom.y
+	
+	# Create the source fraction/mixed number
+	var source_fraction: Node
+	
+	if problem_type == "mixed_to_improper":
+		# Display mixed number
+		source_fraction = create_fraction(Vector2(0, 0), operand.numerator, operand.denominator, play_node)
+		source_fraction.set_mixed_fraction(operand.whole, operand.numerator, operand.denominator)
+	else:  # improper_to_mixed
+		# Display improper fraction
+		source_fraction = create_fraction(Vector2(0, 0), operand.numerator, operand.denominator, play_node)
+	
+	# Get width of source fraction
+	var source_width = source_fraction.current_total_width if source_fraction.is_mixed_fraction else source_fraction.current_divisor_width
+	var source_half_width = source_width / 2.0
+	
+	# Position source fraction
+	var source_x = base_x + 200.0  # Position to the left
+	
+	# Position equals sign
+	var equals_x = source_x + source_half_width + GameConfig.fraction_element_spacing + 48.0
+	
+	# Position answer area
+	var answer_x = equals_x + GameConfig.fraction_element_spacing + GameConfig.fraction_answer_offset
+	var answer_number_x = answer_x + GameConfig.fraction_answer_number_offset
+	
+	# Position source fraction (off-screen initially)
+	source_fraction.position = Vector2(source_x, start_y) + GameConfig.fraction_offset
+	source_fraction.z_index = -1
+	current_problem_nodes.append(source_fraction)
+	
+	# Create equals label - child of source fraction so it moves with it
+	var equals_label = Label.new()
+	equals_label.label_settings = label_settings_resource
+	equals_label.text = "="
+	equals_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	equals_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	equals_label.self_modulate = Color(1, 1, 1)
+	equals_label.z_index = -1
+	equals_label.position = Vector2(equals_x - source_x, 0) + GameConfig.operator_offset - GameConfig.fraction_offset
+	source_fraction.add_child(equals_label)
+	current_problem_nodes.append(equals_label)
+	
+	# Create answer label (will show underscore or typed number before fraction mode)
+	current_problem_label = Label.new()
+	current_problem_label.label_settings = label_settings_resource
+	current_problem_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	current_problem_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	current_problem_label.position = Vector2(answer_number_x, start_y) + GameConfig.operator_offset
+	current_problem_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	current_problem_label.self_modulate = Color(1, 1, 1)
+	current_problem_label.z_index = -1
+	play_node.add_child(current_problem_label)
+	current_problem_nodes.append(current_problem_label)
+	
+	# Calculate target positions
+	var source_target = Vector2(source_x, target_y) + GameConfig.fraction_offset
+	var answer_target = Vector2(answer_number_x, target_y) + GameConfig.operator_offset
+	
+	# Animate all elements to their target positions
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.set_parallel(true)
+	tween.tween_property(source_fraction, "position", source_target, GameConfig.animation_duration)
+	tween.tween_property(current_problem_label, "position", answer_target, GameConfig.animation_duration)
 	
 	# Exit parallel mode before adding callback
 	tween.set_parallel(false)
@@ -1114,8 +1217,9 @@ func create_incorrect_answer_label():
 	if not QuestionManager.current_question:
 		return
 	
-	# Check if this is a fraction problem - handle differently
-	if QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", "")):
+	# Check if this is a fraction problem (including conversion) - handle differently
+	var q_type = QuestionManager.current_question.get("type", "")
+	if QuestionManager.is_fraction_display_type(q_type) or QuestionManager.is_fraction_conversion_display_type(q_type):
 		create_incorrect_fraction_answer()
 		return
 	
@@ -1147,7 +1251,8 @@ func create_incorrect_answer_label():
 
 func create_incorrect_fraction_answer():
 	"""Create and animate fraction elements showing the correct answer for fraction problems"""
-	if not QuestionManager.current_question or not QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", "")):
+	var q_type = QuestionManager.current_question.get("type", "") if QuestionManager.current_question else ""
+	if not QuestionManager.current_question or not (QuestionManager.is_fraction_display_type(q_type) or QuestionManager.is_fraction_conversion_display_type(q_type)):
 		return
 	
 	# Clear any existing correct answer nodes
@@ -1332,9 +1437,10 @@ func create_incorrect_fraction_answer():
 	var operator_label = Label.new()
 	operator_label.label_settings = label_settings_resource
 	operator_label.text = QuestionManager.get_display_operator(QuestionManager.current_question.operator)
-	# Apply simple operator offset for converted unicode operators
+	# Apply simple operator offset for multiplication/division operators (both unicode and ASCII)
 	var op_offset = GameConfig.operator_offset
-	if QuestionManager.current_question.operator == "×" or QuestionManager.current_question.operator == "÷":
+	var op_text = QuestionManager.current_question.operator
+	if op_text == "×" or op_text == "÷" or op_text == "x" or op_text == "/":
 		op_offset += GameConfig.simple_operator_offset
 	operator_label.position = Vector2(operator_x - fraction1_x, 0) + op_offset - GameConfig.fraction_offset
 	operator_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

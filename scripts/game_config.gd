@@ -211,7 +211,7 @@ var current_grade_page = 1
 var max_rows_per_screen = 2
 
 # Available grades
-const GRADES = [1, 2, 3, 4]
+const GRADES = [1, 2, 3, 4, 5]
 
 # Theme colors for categories
 const CATEGORY_COLORS = {
@@ -401,6 +401,60 @@ const GRADE_LEVELS = {
 				]
 			}
 		]
+	},
+	5: {
+		"categories": [
+			{
+				"name": "Addition",
+				"levels": [
+					{"id": "grade5_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 44, "config": {"operators": ["+"], "sum_max": 20}},
+					{"id": "grade5_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 19, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1000}}
+				]
+			},
+			{
+				"name": "Subtraction",
+				"levels": [
+					{"id": "grade5_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 80, "config": {"operators": ["-"], "range_max": 9}},
+					{"id": "grade5_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 20, "config": {"operators": ["-"], "digit_count": 3, "max_answer": 1000}}
+				]
+			},
+			{
+				"name": "Decimals",
+				"levels": [
+					{"id": "grade5_decimal_add_sub", "name": "Add/Subtract Decimals to the Hundredths", "mastery_count": 15, "config": {"type": "decimal_add_sub", "operators": ["+", "-"]}},
+					{"id": "grade5_decimal_multiply_divide", "name": "Multiply/Divide Decimals", "mastery_count": 11, "config": {"type": "decimal_multiply_divide", "operators": ["x", "/"]}}
+				]
+			},
+			{
+				"name": "Multiplication",
+				"levels": [
+					{"id": "grade5_multiply_0_12", "name": "Multiplication 0-12", "mastery_count": 46, "config": {"operators": ["x"], "factor_min": 0, "factor_max": 12}},
+					{"id": "grade5_multiply_2digit", "name": "2-Digit Multiply by 2-Digit", "mastery_count": 10, "config": {"operators": ["x"], "two_digit_by_two_digit": true}}
+				]
+			},
+			{
+				"name": "Division",
+				"levels": [
+					{"id": "grade5_divide_0_12", "name": "Division 0-12", "mastery_count": 46, "config": {"operators": ["/"], "divisor_min": 1, "divisor_max": 12}}
+				]
+			},
+			{
+				"name": "Mul./Div.",
+				"levels": [
+					{"id": "grade5_multiply_divide_0_12", "name": "Fact Families: Multiplication/Division 0-12", "mastery_count": 56, "config": {"operators": ["x", "/"], "factor_min": 0, "factor_max": 12, "divisor_min": 1, "divisor_max": 12}}
+				]
+			},
+			{
+				"name": "Fractions",
+				"levels": [
+					{"id": "grade5_fractions_unlike_denom", "name": "Add/Subtract Fractions with Unlike Denominators", "mastery_count": 6, "config": {"type": "fractions_unlike_denom", "operators": ["+", "-"]}},
+					{"id": "grade5_mixed_to_improper", "name": "Convert Mixed Numbers to Improper Fractions", "mastery_count": 24, "config": {"type": "mixed_to_improper"}},
+					{"id": "grade5_improper_to_mixed", "name": "Convert Improper Fractions to Mixed Numbers", "mastery_count": 23, "config": {"type": "improper_to_mixed"}},
+					{"id": "grade5_mixed_numbers", "name": "Add/Subtract Mixed Numbers with Like Denominators", "mastery_count": 19, "config": {"type": "mixed_numbers_like_denom", "operators": ["+", "-"]}},
+					{"id": "grade5_multiply_divide_fractions", "name": "Multiply/Divide Proper and Improper Fractions", "mastery_count": 11, "config": {"type": "multiply_divide_fractions", "operators": ["x", "/"]}}
+				]
+			}
+		]
 	}
 }
 
@@ -417,11 +471,17 @@ const PROBLEM_DISPLAY_FORMATS = {
 	"Multiply fraction by fraction": "fraction",
 	"Division with unit fractions": "fraction",
 	"Compare unlike denominators (4.NF.A)": "multiple_choice",
-	# New Grade 4 types
+	# Grade 4 types
 	"decimal_comparison": "multiple_choice",
 	"fraction_comparison": "multiple_choice",
 	"decimal_add_sub": "standard",
-	"mixed_numbers_like_denom": "fraction"
+	"mixed_numbers_like_denom": "fraction",
+	# Grade 5 types
+	"decimal_multiply_divide": "standard",
+	"fractions_unlike_denom": "fraction",
+	"mixed_to_improper": "fraction_conversion",
+	"improper_to_mixed": "fraction_conversion",
+	"multiply_divide_fractions": "fraction"
 }
 
 # ============================================

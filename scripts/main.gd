@@ -179,8 +179,9 @@ func submit_answer():
 	var is_correct = false
 	var player_answer_value = null  # Can be int or string depending on question type
 	
-	if QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", "")):
-		# For fraction questions, compare both string equality and numeric equivalence
+	var question_type = QuestionManager.current_question.get("type", "")
+	if QuestionManager.is_fraction_display_type(question_type) or QuestionManager.is_fraction_conversion_display_type(question_type):
+		# For fraction questions (including conversion), compare both string equality and numeric equivalence
 		player_answer_value = StateManager.user_answer
 		var correct_answer = QuestionManager.current_question.result
 		# Accept exact match OR equivalent fraction value

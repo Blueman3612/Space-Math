@@ -126,7 +126,9 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 					AudioManager.play_tick()
 			
 			# Handle Fraction key - create mixed fraction (only for fraction-type questions, and NOT in locked mode)
-			if Input.is_action_just_pressed("Fraction") and QuestionManager.current_question and QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", "")):
+			var question_type = QuestionManager.current_question.get("type", "") if QuestionManager.current_question else ""
+			var is_fraction_type = QuestionManager.is_fraction_display_type(question_type) or QuestionManager.is_fraction_conversion_display_type(question_type)
+			if Input.is_action_just_pressed("Fraction") and QuestionManager.current_question and is_fraction_type:
 				# Disable in locked input mode
 				if DisplayManager.answer_fraction_node and DisplayManager.answer_fraction_node.is_locked_input_mode:
 					pass  # Do nothing in locked mode
@@ -152,7 +154,7 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 						DisplayManager.create_answer_mixed_fraction(user_answer)
 			
 			# Handle Divide key - convert to fraction input or transition to denominator (only for fraction-type questions, and NOT in locked mode)
-			if Input.is_action_just_pressed("Divide") and QuestionManager.current_question and QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", "")):
+			if Input.is_action_just_pressed("Divide") and QuestionManager.current_question and is_fraction_type:
 				# Disable in locked input mode
 				if DisplayManager.answer_fraction_node and DisplayManager.answer_fraction_node.is_locked_input_mode:
 					pass  # Do nothing in locked mode
@@ -324,7 +326,8 @@ func update_control_guide_visibility(user_answer: String, answer_submitted: bool
 		control_guide_enter2.visible = false
 		return
 	
-	var is_fraction_problem = QuestionManager.current_question and QuestionManager.is_fraction_display_type(QuestionManager.current_question.get("type", ""))
+	var frac_type = QuestionManager.current_question.get("type", "") if QuestionManager.current_question else ""
+	var is_fraction_problem = QuestionManager.current_question and (QuestionManager.is_fraction_display_type(frac_type) or QuestionManager.is_fraction_conversion_display_type(frac_type))
 	var has_valid_input = user_answer != "" and user_answer != "-"
 	
 	# Determine visibility for each control

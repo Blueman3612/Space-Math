@@ -44,6 +44,10 @@ func is_multiple_choice_display_type(question_type: String) -> bool:
 	"""Check if a question type should be displayed in multiple choice format"""
 	return GameConfig.PROBLEM_DISPLAY_FORMATS.get(question_type, "") == "multiple_choice"
 
+func is_fraction_conversion_display_type(question_type: String) -> bool:
+	"""Check if a question type should be displayed in fraction conversion format"""
+	return GameConfig.PROBLEM_DISPLAY_FORMATS.get(question_type, "") == "fraction_conversion"
+
 func get_multiple_choice_answers(question_data) -> Array:
 	"""Generate answer choices for multiple choice questions (dynamic number of choices)"""
 	var question_type = question_data.get("type", "")
@@ -330,18 +334,9 @@ func _generate_special_type_question(problem_type: String, config: Dictionary) -
 	var question_key: String
 	
 	while attempts < max_attempts:
-		match problem_type:
-			"decimal_comparison":
-				question_data = _generate_decimal_comparison_problem(config)
-			"decimal_add_sub":
-				question_data = _generate_decimal_add_sub_problem(config)
-			"fraction_comparison":
-				question_data = _generate_fraction_comparison_problem(config)
-			"mixed_numbers_like_denom":
-				question_data = _generate_mixed_numbers_like_denom_problem(config)
-			_:
-				print("Error: Unknown problem type: ", problem_type)
-				return {}
+		question_data = _generate_problem_by_type(problem_type, config)
+		if question_data.is_empty():
+			return {}
 		
 		question_key = _get_dynamic_question_key(question_data)
 		
@@ -355,19 +350,35 @@ func _generate_special_type_question(problem_type: String, config: Dictionary) -
 	print("[QuestionManager] Ran out of unique questions for type: ", problem_type)
 	used_questions_this_level.clear()
 	
-	match problem_type:
-		"decimal_comparison":
-			question_data = _generate_decimal_comparison_problem(config)
-		"decimal_add_sub":
-			question_data = _generate_decimal_add_sub_problem(config)
-		"fraction_comparison":
-			question_data = _generate_fraction_comparison_problem(config)
-		"mixed_numbers_like_denom":
-			question_data = _generate_mixed_numbers_like_denom_problem(config)
-	
+	question_data = _generate_problem_by_type(problem_type, config)
 	question_key = _get_dynamic_question_key(question_data)
 	used_questions_this_level[question_key] = true
 	return question_data
+
+func _generate_problem_by_type(problem_type: String, config: Dictionary) -> Dictionary:
+	"""Dispatch to the appropriate generation function based on problem type"""
+	match problem_type:
+		"decimal_comparison":
+			return _generate_decimal_comparison_problem(config)
+		"decimal_add_sub":
+			return _generate_decimal_add_sub_problem(config)
+		"decimal_multiply_divide":
+			return _generate_decimal_multiply_divide_problem(config)
+		"fraction_comparison":
+			return _generate_fraction_comparison_problem(config)
+		"mixed_numbers_like_denom":
+			return _generate_mixed_numbers_like_denom_problem(config)
+		"fractions_unlike_denom":
+			return _generate_fractions_unlike_denom_problem(config)
+		"mixed_to_improper":
+			return _generate_mixed_to_improper_problem(config)
+		"improper_to_mixed":
+			return _generate_improper_to_mixed_problem(config)
+		"multiply_divide_fractions":
+			return _generate_multiply_divide_fractions_problem(config)
+		_:
+			print("Error: Unknown problem type: ", problem_type)
+			return {}
 
 func _generate_question_for_operator(operator: String, config: Dictionary) -> Dictionary:
 	"""Generate a question for the given operator"""
@@ -397,9 +408,19 @@ func _get_dynamic_question_key(question_data: Dictionary) -> String:
 		var op1 = operands[0]
 		var op2 = operands[1]
 		return str(op1.whole) + "_" + str(op1.numerator) + "/" + str(op1.denominator) + "_" + operator + "_" + str(op2.whole) + "_" + str(op2.numerator) + "/" + str(op2.denominator)
-	elif question_type == "decimal_comparison" or question_type == "decimal_add_sub":
+	elif question_type == "decimal_comparison" or question_type == "decimal_add_sub" or question_type == "decimal_multiply_divide":
 		# Format decimals with enough precision
 		return str(snapped(operands[0], 0.01)) + "_" + operator + "_" + str(snapped(operands[1], 0.01))
+	elif question_type == "fractions_unlike_denom" or question_type == "multiply_divide_fractions":
+		var op1 = operands[0]
+		var op2 = operands[1]
+		return str(op1.numerator) + "/" + str(op1.denominator) + "_" + operator + "_" + str(op2.numerator) + "/" + str(op2.denominator)
+	elif question_type == "mixed_to_improper":
+		var op = operands[0]
+		return "mixed_to_improper_" + str(op.whole) + "_" + str(op.numerator) + "/" + str(op.denominator)
+	elif question_type == "improper_to_mixed":
+		var op = operands[0]
+		return "improper_to_mixed_" + str(op.numerator) + "/" + str(op.denominator)
 	
 	# Standard format for regular problems
 	return str(operands[0]) + "_" + operator + "_" + str(operands[1])
@@ -518,12 +539,16 @@ func _generate_multiplication_problem(config: Dictionary) -> Dictionary:
 	
 	if config.has("two_digit_by_two_digit"):
 		# 2-digit by 2-digit multiplication
-		var requires_regrouping = config.get("requires_regrouping", false)
 		var generated: Array
-		if requires_regrouping:
-			generated = _generate_2digit_by_2digit_multiplication_with_regrouping()
+		if config.has("requires_regrouping"):
+			# Explicit regrouping requirement
+			if config.requires_regrouping:
+				generated = _generate_2digit_by_2digit_multiplication_with_regrouping()
+			else:
+				generated = _generate_2digit_by_2digit_multiplication_without_regrouping()
 		else:
-			generated = _generate_2digit_by_2digit_multiplication_without_regrouping()
+			# No regrouping requirement - any 2-digit by 2-digit
+			generated = _generate_2digit_by_2digit_multiplication_any()
 		operand1 = generated[0]
 		operand2 = generated[1]
 		result = operand1 * operand2
@@ -864,6 +889,12 @@ func _generate_2digit_by_2digit_multiplication_with_regrouping() -> Array:
 	# Fallback: guaranteed to require regrouping
 	return [15, 15]
 
+func _generate_2digit_by_2digit_multiplication_any() -> Array:
+	"""Generate any 2-digit by 2-digit multiplication (no regrouping restrictions)"""
+	var operand1 = rng.randi_range(10, 99)
+	var operand2 = rng.randi_range(10, 99)
+	return [operand1, operand2]
+
 # ============================================
 # Decimal Problem Generation
 # ============================================
@@ -895,9 +926,9 @@ func _generate_decimal_comparison_problem(config: Dictionary) -> Dictionary:
 	var operand2 = best_operand2
 	var result = "<" if operand1 < operand2 else ">"
 	
-	# Format operands for display
-	var op1_display = _format_decimal_for_display(operand1)
-	var op2_display = _format_decimal_for_display(operand2)
+	# Format operands for display (no trailing zeros)
+	var op1_display = _format_decimal_clean(operand1)
+	var op2_display = _format_decimal_clean(operand2)
 	
 	return {
 		"operands": [operand1, operand2],
@@ -947,9 +978,10 @@ func _generate_decimal_add_sub_problem(config: Dictionary) -> Dictionary:
 	# Round result to 2 decimal places
 	result = snapped(result, 0.01)
 	
-	var op1_display = _format_decimal_for_display(operand1)
-	var op2_display = _format_decimal_for_display(operand2)
-	var result_display = _format_decimal_for_display(result)
+	# Format for display (no trailing zeros)
+	var op1_display = _format_decimal_clean(operand1)
+	var op2_display = _format_decimal_clean(operand2)
+	var result_display = _format_decimal_clean(result)
 	var question_text = op1_display + " " + operator + " " + op2_display
 	
 	return {
@@ -971,8 +1003,20 @@ func _generate_decimal_operand(min_val: float, max_val: float) -> float:
 	var value_hundredths = rng.randi_range(min_hundredths, max_hundredths)
 	return value_hundredths / 100.0
 
+func _generate_true_decimal_operand(min_val: float, max_val: float) -> float:
+	"""Generate a random decimal value that is never a whole number"""
+	var attempts = 0
+	while attempts < 100:
+		var value = _generate_decimal_operand(min_val, max_val)
+		# Check if it's NOT a whole number (has a fractional part)
+		if abs(value - round(value)) >= 0.001:
+			return value
+		attempts += 1
+	# Fallback: return a guaranteed decimal
+	return 0.01
+
 func _format_decimal_for_display(value: float) -> String:
-	"""Format a decimal value for display (e.g., 12.50 not 12.5)"""
+	"""Format a decimal value for display with trailing zeros (e.g., 12.50)"""
 	# Use snapped to ensure proper rounding
 	value = snapped(value, 0.01)
 	var str_val = str(value)
@@ -990,6 +1034,31 @@ func _format_decimal_for_display(value: float) -> String:
 		if parts[1].length() > 2:
 			parts[1] = parts[1].substr(0, 2)
 		return parts[0] + "." + parts[1]
+	
+	return str_val
+
+func _format_decimal_clean(value: float) -> String:
+	"""Format a decimal value without trailing zeros (e.g., 9.1 not 9.10, 9 not 9.00)"""
+	# Use snapped to ensure proper rounding
+	value = snapped(value, 0.01)
+	
+	# Check if it's effectively a whole number
+	if abs(value - round(value)) < 0.001:
+		return str(int(round(value)))
+	
+	# Check if it has only one decimal place
+	var hundredths = int(round(value * 100)) % 10
+	if hundredths == 0:
+		# Only one decimal place needed
+		return str(snapped(value, 0.1))
+	
+	# Need two decimal places
+	var str_val = str(value)
+	if "." in str_val:
+		var parts = str_val.split(".")
+		if parts.size() == 2 and parts[1].length() > 2:
+			parts[1] = parts[1].substr(0, 2)
+			return parts[0] + "." + parts[1]
 	
 	return str_val
 
@@ -1127,6 +1196,300 @@ func _generate_mixed_numbers_like_denom_problem(config: Dictionary) -> Dictionar
 		"grade": "",
 		"type": "mixed_numbers_like_denom"
 	}
+
+# ============================================
+# Grade 5 Problem Generation
+# ============================================
+
+func _generate_decimal_multiply_divide_problem(config: Dictionary) -> Dictionary:
+	"""Generate a decimal multiply/divide problem with one whole number operand (1-10)
+	The decimal operand is always a true decimal (never a whole number), answer terminates at hundredths or earlier, answer <= 10"""
+	var operators = config.get("operators", ["x", "/"])
+	var operator = operators[rng.randi() % operators.size()]
+	
+	var decimal_operand: float
+	var whole_operand: int
+	var result: float
+	var attempts = 0
+	
+	while attempts < 100:
+		whole_operand = rng.randi_range(1, 10)
+		
+		if operator == "x":
+			# For multiplication: decimal × whole
+			decimal_operand = _generate_true_decimal_operand(0.01, 10.0)
+			result = decimal_operand * whole_operand
+			
+			# Check if result <= 10 and terminates at hundredths
+			if result <= 10.0:
+				var result_hundredths = result * 100.0
+				if abs(result_hundredths - round(result_hundredths)) < 0.0001:
+					result = snapped(result, 0.01)
+					break
+		else:  # "/"
+			# For division: generate result and whole divisor, calculate dividend
+			result = _generate_decimal_operand(0.01, 10.0)
+			decimal_operand = result * whole_operand
+			
+			# Check if dividend is within range, terminates at hundredths, and is not a whole number
+			if decimal_operand >= 0.01 and decimal_operand <= 10.0:
+				var op_hundredths = decimal_operand * 100.0
+				if abs(op_hundredths - round(op_hundredths)) < 0.0001:
+					decimal_operand = snapped(decimal_operand, 0.01)
+					# Ensure decimal operand is not a whole number
+					if abs(decimal_operand - round(decimal_operand)) >= 0.001:
+						break
+		
+		attempts += 1
+	
+	# Format operands - decimal first, then whole number
+	var operand1: float = decimal_operand
+	var operand2: float = float(whole_operand)
+	
+	var op1_display = _format_decimal_clean(operand1)
+	var op2_display = str(int(operand2))  # Display whole number without decimals
+	var result_display = _format_decimal_clean(result)
+	var question_text = op1_display + " " + operator + " " + op2_display
+	
+	return {
+		"operands": [operand1, operand2],
+		"operator": operator,
+		"result": result,
+		"expression": question_text + " = " + result_display,
+		"question": question_text,
+		"title": config.get("name", "Decimal Multiply/Divide"),
+		"grade": "",
+		"type": "decimal_multiply_divide"
+	}
+
+func _generate_fractions_unlike_denom_problem(config: Dictionary) -> Dictionary:
+	"""Generate an add/subtract fractions problem with unlike denominators"""
+	var operators = config.get("operators", ["+", "-"])
+	var operator = operators[rng.randi() % operators.size()]
+	
+	var denom1: int
+	var numer1: int
+	var denom2: int
+	var numer2: int
+	var lcm_denom: int
+	var adj_numer1: int
+	var adj_numer2: int
+	var result_numer: int
+	var attempts = 0
+	
+	while attempts < 100:
+		# Generate first proper fraction
+		denom1 = FRACTION_DENOMINATORS[rng.randi() % FRACTION_DENOMINATORS.size()]
+		numer1 = rng.randi_range(1, denom1 - 1)
+		
+		# Generate second proper fraction with unlike denominator
+		denom2 = FRACTION_DENOMINATORS[rng.randi() % FRACTION_DENOMINATORS.size()]
+		while denom2 == denom1:
+			denom2 = FRACTION_DENOMINATORS[rng.randi() % FRACTION_DENOMINATORS.size()]
+		numer2 = rng.randi_range(1, denom2 - 1)
+		
+		# Calculate result using common denominator
+		lcm_denom = _lcm(denom1, denom2)
+		adj_numer1 = numer1 * (lcm_denom / denom1)
+		adj_numer2 = numer2 * (lcm_denom / denom2)
+		
+		if operator == "+":
+			result_numer = adj_numer1 + adj_numer2
+		else:  # "-"
+			result_numer = adj_numer1 - adj_numer2
+		
+		# For subtraction, ensure no negative result
+		if operator == "-" and result_numer < 0:
+			attempts += 1
+			continue
+		
+		# Valid result found
+		break
+	
+	var result_denom = lcm_denom
+	
+	# Simplify the result
+	var gcd_val = _gcd(abs(result_numer), result_denom)
+	var simplified_numer = result_numer / gcd_val
+	var simplified_denom = result_denom / gcd_val
+	
+	var result_str = str(simplified_numer) + "/" + str(simplified_denom)
+	if simplified_numer == 0:
+		result_str = "0"
+	
+	var op1_str = str(numer1) + "/" + str(denom1)
+	var op2_str = str(numer2) + "/" + str(denom2)
+	var question_text = op1_str + " " + operator + " " + op2_str
+	
+	return {
+		"operands": [
+			{"numerator": numer1, "denominator": denom1},
+			{"numerator": numer2, "denominator": denom2}
+		],
+		"operator": operator,
+		"result": result_str,
+		"result_numerator": simplified_numer,
+		"result_denominator": simplified_denom,
+		"expression": question_text + " = " + result_str,
+		"question": question_text,
+		"title": config.get("name", "Fractions Unlike Denominators"),
+		"grade": "",
+		"type": "fractions_unlike_denom"
+	}
+
+func _generate_mixed_to_improper_problem(config: Dictionary) -> Dictionary:
+	"""Generate a convert mixed number to improper fraction problem"""
+	# Generate mixed number: whole 1-9, fraction with proper numerator
+	var denom = FRACTION_DENOMINATORS[rng.randi() % FRACTION_DENOMINATORS.size()]
+	var numer = rng.randi_range(1, denom - 1)
+	var whole = rng.randi_range(1, 9)
+	
+	# Calculate improper fraction
+	var improper_numer = whole * denom + numer
+	var improper_denom = denom
+	
+	# The unsimplified answer
+	var result_str = str(improper_numer) + "/" + str(improper_denom)
+	
+	# Format mixed number for display
+	var mixed_str = str(whole) + " " + str(numer) + "/" + str(denom)
+	
+	return {
+		"operands": [
+			{"whole": whole, "numerator": numer, "denominator": denom}
+		],
+		"operator": "=",
+		"result": result_str,
+		"result_numerator": improper_numer,
+		"result_denominator": improper_denom,
+		"expression": mixed_str + " = " + result_str,
+		"question": mixed_str,
+		"title": config.get("name", "Mixed to Improper"),
+		"grade": "",
+		"type": "mixed_to_improper"
+	}
+
+func _generate_improper_to_mixed_problem(config: Dictionary) -> Dictionary:
+	"""Generate a convert improper fraction to mixed number problem"""
+	# Generate improper fraction: numerator > denominator, value > 1 and <= 10
+	var denom = FRACTION_DENOMINATORS[rng.randi() % FRACTION_DENOMINATORS.size()]
+	
+	# Numerator range: from (denom + 1) to (10 * denom) for value range (1, 10]
+	var min_numer = denom + 1
+	var max_numer = 10 * denom
+	var numer = rng.randi_range(min_numer, max_numer)
+	
+	# Calculate mixed number
+	var whole = numer / denom
+	var remainder = numer % denom
+	
+	# Format result
+	var result_str: String
+	if remainder == 0:
+		result_str = str(whole)  # Just a whole number
+	else:
+		result_str = str(whole) + " " + str(remainder) + "/" + str(denom)
+	
+	# Format improper fraction for display
+	var improper_str = str(numer) + "/" + str(denom)
+	
+	return {
+		"operands": [
+			{"numerator": numer, "denominator": denom}
+		],
+		"operator": "=",
+		"result": result_str,
+		"result_whole": whole,
+		"result_numerator": remainder,
+		"result_denominator": denom,
+		"expression": improper_str + " = " + result_str,
+		"question": improper_str,
+		"title": config.get("name", "Improper to Mixed"),
+		"grade": "",
+		"type": "improper_to_mixed"
+	}
+
+func _generate_multiply_divide_fractions_problem(config: Dictionary) -> Dictionary:
+	"""Generate a multiply/divide proper and improper fractions problem"""
+	var operators = config.get("operators", ["x", "/"])
+	var operator = operators[rng.randi() % operators.size()]
+	
+	# Generate two fractions between 1/10 and 10 (can be proper or improper)
+	var denom1 = FRACTION_DENOMINATORS[rng.randi() % FRACTION_DENOMINATORS.size()]
+	var denom2 = FRACTION_DENOMINATORS[rng.randi() % FRACTION_DENOMINATORS.size()]
+	
+	# Numerator range: min 1, max is 10 * denom (for value up to 10)
+	# But also ensure value >= 1/10, so numerator >= denom/10
+	var min_numer1 = max(1, denom1 / 10)
+	var max_numer1 = 10 * denom1
+	var numer1 = rng.randi_range(min_numer1, max_numer1)
+	
+	var min_numer2 = max(1, denom2 / 10)
+	var max_numer2 = 10 * denom2
+	var numer2 = rng.randi_range(min_numer2, max_numer2)
+	
+	# Calculate result
+	var result_numer: int
+	var result_denom: int
+	
+	if operator == "x":
+		result_numer = numer1 * numer2
+		result_denom = denom1 * denom2
+	else:  # "/"
+		# Division: flip second fraction and multiply
+		result_numer = numer1 * denom2
+		result_denom = denom1 * numer2
+	
+	# Simplify result
+	var gcd_val = _gcd(abs(result_numer), abs(result_denom))
+	result_numer = result_numer / gcd_val
+	result_denom = result_denom / gcd_val
+	
+	# Format result - convert to mixed number if improper
+	var result_str: String
+	if result_denom == 1:
+		result_str = str(result_numer)
+	elif abs(result_numer) >= result_denom:
+		var whole = result_numer / result_denom
+		var remainder = abs(result_numer) % result_denom
+		if remainder == 0:
+			result_str = str(whole)
+		else:
+			result_str = str(whole) + " " + str(remainder) + "/" + str(result_denom)
+	else:
+		result_str = str(result_numer) + "/" + str(result_denom)
+	
+	var op1_str = str(numer1) + "/" + str(denom1)
+	var op2_str = str(numer2) + "/" + str(denom2)
+	var question_text = op1_str + " " + operator + " " + op2_str
+	
+	return {
+		"operands": [
+			{"numerator": numer1, "denominator": denom1},
+			{"numerator": numer2, "denominator": denom2}
+		],
+		"operator": operator,
+		"result": result_str,
+		"result_numerator": result_numer,
+		"result_denominator": result_denom,
+		"expression": question_text + " = " + result_str,
+		"question": question_text,
+		"title": config.get("name", "Multiply/Divide Fractions"),
+		"grade": "",
+		"type": "multiply_divide_fractions"
+	}
+
+func _lcm(a: int, b: int) -> int:
+	"""Calculate the least common multiple of two numbers"""
+	return abs(a * b) / _gcd(a, b)
+
+func _gcd(a: int, b: int) -> int:
+	"""Calculate the greatest common divisor of two numbers"""
+	while b != 0:
+		var temp = b
+		b = a % b
+		a = temp
+	return a
 
 func get_question_key(question_data):
 	"""Generate a unique key for a question based on its operands and operator"""
