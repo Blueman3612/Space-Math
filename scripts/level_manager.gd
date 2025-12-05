@@ -893,11 +893,11 @@ func update_level_availability():
 				if current_stars > 0:
 					should_be_available = true
 				else:
-					# Check if previous level in this category has at least 1 star
+					# Check if previous level in this category has enough stars to unlock this level
 					var prev_level_id = category_prev_level.get(category_name, "")
 					if prev_level_id != "":
 						var prev_stars = SaveManager.get_grade_level_stars(prev_level_id)
-						should_be_available = prev_stars > 0
+						should_be_available = prev_stars >= GameConfig.stars_required_to_unlock_next_level
 					else:
 						should_be_available = false
 			

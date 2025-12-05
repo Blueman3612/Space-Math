@@ -71,6 +71,12 @@ func _on_save_data_loaded(success: bool):
 	print("[Main] Game initialization complete!")
 
 func _input(event):
+	# Hide cursor on keyboard input, show on mouse movement
+	if event is InputEventKey and event.pressed:
+		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	elif event is InputEventMouseMotion:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	
 	# Delegate input handling to InputManager
 	StateManager.user_answer = InputManager.handle_input_event(event, StateManager.user_answer, StateManager.answer_submitted, StateManager.current_state)
 	
