@@ -310,7 +310,7 @@ const GRADE_LEVELS = {
 			{
 				"name": "Add./Sub.",
 				"levels": [
-					{"id": "grade3_add_sub_sums_to_20", "name": "Sums to 20", "mastery_count": 33, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}},
+					{"id": "grade3_add_sub_sums_to_20", "name": "Sums to 20", "mastery_count": 33, "config": {"operators": ["+"], "sum_max": 20, "range_max": 20}},
 					{"id": "grade3_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 60, "config": {"operators": ["-"], "range_max": 9}},
 					{"id": "grade3_add_sub_0_9", "name": "Add/Subtract 0-9", "mastery_count": 60, "config": {"operators": ["+", "-"], "sum_max": 9, "range_max": 9}},
 					{"id": "grade3_add_sub_0_20", "name": "Add/Subtract 0-20", "mastery_count": 42, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}}
@@ -348,6 +348,12 @@ const GRADE_LEVELS = {
 				"name": "Mul./Div.",
 				"levels": [
 					{"id": "grade3_multiply_divide_0_9", "name": "Multiply/Divide 0-9", "mastery_count": 51, "config": {"operators": ["x", "/"], "factor_min": 1, "factor_max": 9, "divisor_min": 1, "divisor_max": 9}}
+				]
+			},
+			{
+				"name": "Fractions",
+				"levels": [
+					{"id": "grade3_number_line_fractions", "name": "Place Fractions on Number Line (den. 2, 4, 8)", "mastery_count": 20, "config": {"type": "number_line_fractions", "denominators": [2, 4, 8], "total_pips": 9, "lower_limit": 0, "upper_limit": 1}}
 				]
 			}
 		]
@@ -475,6 +481,8 @@ const PROBLEM_DISPLAY_FORMATS = {
 	"Multiply fraction by fraction": "fraction",
 	"Division with unit fractions": "fraction",
 	"Compare unlike denominators (4.NF.A)": "multiple_choice",
+	# Grade 3 number line type
+	"number_line_fractions": "number_line",
 	# Grade 4 types
 	"decimal_comparison": "multiple_choice",
 	"fraction_comparison": "multiple_choice",
@@ -487,6 +495,19 @@ const PROBLEM_DISPLAY_FORMATS = {
 	"improper_to_mixed": "fraction_conversion",
 	"multiply_divide_fractions": "fraction"
 }
+
+# ============================================
+# Number Line Question Configuration
+# ============================================
+var number_line_final_position = Vector2(960, 540)  # Final position of number line on screen
+var number_line_fraction_position = Vector2(960, 288)  # Position of fraction label above number line
+var number_line_pip_left_x = -856.0  # X position of leftmost pip (relative to number line)
+var number_line_pip_right_x = 856.0  # X position of rightmost pip (relative to number line)
+var number_line_pointer_move_duration = 0.25  # Duration for pointer movement animation
+var number_line_pointer_y = 128.0  # Y position of pointer relative to number line
+var number_line_feedback_delay = 0.25  # Delay before feedback pointer animates to correct position
+var number_line_left_right_hold_time = 0.15  # Time to hold Left/Right before it repeats
+var number_line_left_right_repeat_interval = 0.1  # Interval between repeats when holding Left/Right
 
 # ============================================
 # TimeBack / XP System Configuration

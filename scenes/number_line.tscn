@@ -1,12 +1,14 @@
-[gd_scene load_steps=5 format=3 uid="uid://rf452m4x8lvb"]
+[gd_scene load_steps=6 format=3 uid="uid://rf452m4x8lvb"]
 
 [ext_resource type="Texture2D" uid="uid://5c0y2aejk2wj" path="res://assets/sprites/Number Line.png" id="1_1kwv5"]
 [ext_resource type="LabelSettings" uid="uid://cbtne7xhouqs1" path="res://assets/label settings/GravityBold64.tres" id="2_1kwv5"]
 [ext_resource type="Texture2D" uid="uid://sa1b52bnafk" path="res://assets/sprites/NL Pointer.png" id="3_wqvif"]
 [ext_resource type="Texture2D" uid="uid://bwlmifnvnxasi" path="res://assets/sprites/Key Icons.png" id="4_w5ivl"]
+[ext_resource type="Script" uid="uid://c6j2njo7yqshl" path="res://scripts/number_line.gd" id="5_number_line"]
 
 [node name="NumberLine" type="Sprite2D"]
 texture = ExtResource("1_1kwv5")
+script = ExtResource("5_number_line")
 
 [node name="Shadow" type="Sprite2D" parent="."]
 self_modulate = Color(0, 0, 0, 0.5019608)
@@ -73,3 +75,15 @@ position = Vector2(1, 1)
 texture = ExtResource("4_w5ivl")
 hframes = 6
 frame = 4
+
+[node name="Feedback" type="Sprite2D" parent="Pointer"]
+visible = false
+self_modulate = Color(0, 0.5019608, 0, 1)
+show_behind_parent = true
+texture = ExtResource("3_wqvif")
+
+[node name="Shadow" type="Sprite2D" parent="Pointer/Feedback"]
+self_modulate = Color(0, 0, 0, 0.5019608)
+show_behind_parent = true
+position = Vector2(8, 8)
+texture = ExtResource("3_wqvif")

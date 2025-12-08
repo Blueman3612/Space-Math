@@ -12,6 +12,14 @@ var backspace_timer = 0.0  # Timer for backspace hold functionality
 var backspace_held = false  # Track if backspace is being held
 var backspace_just_pressed = false  # Track if backspace was just pressed this frame
 
+# Left/Right input state (for number line questions)
+var left_timer = 0.0  # Timer for left hold functionality
+var left_held = false  # Track if left is being held
+var left_just_pressed = false  # Track if left was just pressed this frame
+var right_timer = 0.0  # Timer for right hold functionality
+var right_held = false  # Track if right is being held
+var right_just_pressed = false  # Track if right was just pressed this frame
+
 # Control guide node references
 var control_guide_enter: Control  # Reference to the Enter control node
 var control_guide_tab: Control  # Reference to the Tab control node
@@ -34,12 +42,32 @@ func reset_for_new_question():
 	is_fraction_input = false
 	is_mixed_fraction_input = false
 	editing_numerator = true
+	
+	# Reset Left/Right state for number line questions
+	left_just_pressed = false
+	right_just_pressed = false
+	left_held = false
+	right_held = false
+	left_timer = 0.0
+	right_timer = 0.0
 
 func handle_input_event(event: InputEvent, user_answer: String, answer_submitted: bool, current_state: int) -> String:
 	"""Handle input events and return the modified user_answer"""
 	# Record input for TimeBack tracking
 	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY):
 		PlaycademyManager.record_player_input()
+	
+	# Handle number line input (Left/Right)
+	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY):
+		var is_number_line_question = QuestionManager.current_question and QuestionManager.is_number_line_display_type(QuestionManager.current_question.get("type", ""))
+		if is_number_line_question and not answer_submitted:
+			if event is InputEventKey and event.pressed and not event.echo:
+				if Input.is_action_just_pressed("Left"):
+					left_just_pressed = true
+				elif Input.is_action_just_pressed("Right"):
+					right_just_pressed = true
+			# Return early for number line - don't process other inputs (except Submit which is handled in main.gd)
+			return user_answer
 	
 	# Handle multiple choice input (AnswerOne through AnswerFive)
 	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY):
@@ -215,6 +243,68 @@ func process_backspace(delta: float, user_answer: String, answer_submitted: bool
 	
 	return user_answer
 
+func process_number_line_input(delta: float, answer_submitted: bool):
+	"""Process Left/Right input for number line questions"""
+	if answer_submitted or not DisplayManager.current_number_line:
+		# Reset state when not applicable
+		left_just_pressed = false
+		right_just_pressed = false
+		left_held = false
+		right_held = false
+		left_timer = 0.0
+		right_timer = 0.0
+		return
+	
+	# Handle Left input
+	if left_just_pressed:
+		# Immediate move on first press
+		DisplayManager.current_number_line.move_left()
+		left_just_pressed = false
+		left_timer = 0.0
+	
+	# Handle Left hold functionality
+	if Input.is_action_pressed("Left"):
+		if not left_held:
+			left_timer += delta
+			if left_timer >= GameConfig.number_line_left_right_hold_time:
+				left_held = true
+				left_timer = 0.0
+		else:
+			# Repeat while held
+			left_timer += delta
+			if left_timer >= GameConfig.number_line_left_right_repeat_interval:
+				left_timer = 0.0
+				DisplayManager.current_number_line.move_left()
+	else:
+		# Reset hold state when left is released
+		left_held = false
+		left_timer = 0.0
+	
+	# Handle Right input
+	if right_just_pressed:
+		# Immediate move on first press
+		DisplayManager.current_number_line.move_right()
+		right_just_pressed = false
+		right_timer = 0.0
+	
+	# Handle Right hold functionality
+	if Input.is_action_pressed("Right"):
+		if not right_held:
+			right_timer += delta
+			if right_timer >= GameConfig.number_line_left_right_hold_time:
+				right_held = true
+				right_timer = 0.0
+		else:
+			# Repeat while held
+			right_timer += delta
+			if right_timer >= GameConfig.number_line_left_right_repeat_interval:
+				right_timer = 0.0
+				DisplayManager.current_number_line.move_right()
+	else:
+		# Reset hold state when right is released
+		right_held = false
+		right_timer = 0.0
+
 func process_single_backspace(user_answer: String) -> String:
 	"""Process a single backspace press and return the modified user_answer"""
 	if user_answer.length() > 0:
@@ -326,6 +416,9 @@ func update_control_guide_visibility(user_answer: String, answer_submitted: bool
 		control_guide_enter2.visible = false
 		return
 	
+	# Check if this is a number line question (Tab/Divide won't be shown since they're only for fraction input)
+	var is_number_line_question = QuestionManager.current_question and QuestionManager.is_number_line_display_type(QuestionManager.current_question.get("type", ""))
+	
 	var frac_type = QuestionManager.current_question.get("type", "") if QuestionManager.current_question else ""
 	var is_fraction_problem = QuestionManager.current_question and (QuestionManager.is_fraction_display_type(frac_type) or QuestionManager.is_fraction_conversion_display_type(frac_type))
 	var has_valid_input = user_answer != "" and user_answer != "-"
@@ -345,7 +438,11 @@ func update_control_guide_visibility(user_answer: String, answer_submitted: bool
 		show_divide = false
 	else:
 		# Enter visibility: hide if answer is empty/invalid or already submitted
-		if user_answer == "" or user_answer == "-" or answer_submitted:
+		# Exception: number line questions always have a valid selection
+		if is_number_line_question:
+			# Number line questions always have a valid answer (selected pip)
+			show_enter = not answer_submitted
+		elif user_answer == "" or user_answer == "-" or answer_submitted:
 			show_enter = false
 		
 		# Check for locked input mode (equivalence problems)

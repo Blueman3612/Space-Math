@@ -120,6 +120,9 @@ func _process(delta):
 		# Handle backspace
 		StateManager.user_answer = InputManager.process_backspace(delta, StateManager.user_answer, StateManager.answer_submitted)
 		
+		# Handle number line input (Left/Right)
+		InputManager.process_number_line_input(delta, StateManager.answer_submitted)
+		
 		# Update problem display
 		DisplayManager.update_problem_display(StateManager.user_answer, StateManager.answer_submitted, InputManager.is_fraction_input, InputManager.is_mixed_fraction_input, InputManager.editing_numerator)
 		
@@ -148,6 +151,14 @@ func submit_answer():
 			DisplayManager.continue_after_multiple_choice_incorrect(false, timer_was_active, should_start_timer)
 		else:
 			continue_after_incorrect()
+		return
+	
+	# Handle number line questions differently - they always have a selection
+	var question_type = QuestionManager.current_question.get("type", "") if QuestionManager.current_question else ""
+	if QuestionManager.is_number_line_display_type(question_type):
+		if StateManager.answer_submitted:
+			return  # Already submitted
+		submit_number_line_answer()
 		return
 	
 	if StateManager.user_answer == "" or StateManager.user_answer == "-" or StateManager.answer_submitted:
@@ -192,7 +203,7 @@ func submit_answer():
 	var is_correct = false
 	var player_answer_value = null  # Can be int or string depending on question type
 	
-	var question_type = QuestionManager.current_question.get("type", "")
+	# question_type already declared earlier in function for number line check
 	if QuestionManager.is_fraction_display_type(question_type) or QuestionManager.is_fraction_conversion_display_type(question_type):
 		# For fraction questions (including conversion), compare both string equality and numeric equivalence
 		player_answer_value = StateManager.user_answer
@@ -264,6 +275,93 @@ func submit_answer():
 		
 		# Create animated label showing correct answer for incorrect responses
 		DisplayManager.create_incorrect_answer_label()
+		
+		# Pause TimeBack activity timer while showing correct answer (instructional moment)
+		PlaycademyManager.pause_timeback_activity()
+	
+	# Wait for the full transition delay (timer remains paused during this time)
+	if delay_to_use > 0.0:
+		await get_tree().create_timer(delay_to_use).timeout
+	
+	# Clear transition delay flag
+	StateManager.in_transition_delay = false
+	
+	# If incorrect and require_submit_after_incorrect is true, wait for player to press Submit to continue
+	if not is_correct and GameConfig.require_submit_after_incorrect:
+		StateManager.waiting_for_continue_after_incorrect = true
+		# Store timer state for later restoration
+		StateManager.set_meta("timer_was_active", timer_was_active)
+		StateManager.set_meta("should_start_timer", should_start_timer)
+		return  # Wait for player to press Submit to continue
+	
+	# Continue immediately if correct or if require_submit_after_incorrect is false
+	continue_after_incorrect_internal(is_correct, timer_was_active, should_start_timer)
+
+func submit_number_line_answer():
+	"""Handle answer submission for number line questions"""
+	if not DisplayManager.current_number_line:
+		return
+	
+	# Mark as submitted to prevent further input
+	StateManager.answer_submitted = true
+	
+	# Get the player's answer from the number line
+	var player_answer_value = DisplayManager.current_number_line.get_selected_fraction_string()
+	var is_correct = DisplayManager.current_number_line.is_correct()
+	
+	print("Submitting number line answer: ", player_answer_value)
+	
+	# Calculate time taken for this question
+	var question_time = 0.0
+	if ScoreManager.current_question_start_time > 0:
+		question_time = (Time.get_ticks_msec() / 1000.0) - ScoreManager.current_question_start_time
+	
+	# Save question data
+	if QuestionManager.current_question:
+		SaveManager.save_question_data(QuestionManager.current_question, player_answer_value, question_time)
+	
+	# Track correct answers and drill mode scoring
+	if StateManager.is_drill_mode:
+		ScoreManager.drill_total_answered += 1
+	
+	var points_earned = 0
+	if is_correct:
+		points_earned = ScoreManager.process_correct_answer(StateManager.is_drill_mode, QuestionManager.current_question)
+		if StateManager.is_drill_mode and points_earned > 0:
+			# Trigger score animations
+			UIManager.create_flying_score_label(points_earned)
+			UIManager.animate_drill_score_scale()
+	else:
+		ScoreManager.process_incorrect_answer(StateManager.is_drill_mode)
+	
+	# Pause timer during transition and store its previous state
+	var timer_was_active = ScoreManager.timer_active
+	var should_start_timer = false
+	
+	# Check if we're in grace period and should start timer after transition
+	if not ScoreManager.timer_started and ScoreManager.grace_period_timer >= GameConfig.timer_grace_period:
+		should_start_timer = true
+	
+	# Set transition delay flag and pause timer
+	StateManager.in_transition_delay = true
+	ScoreManager.timer_active = false
+	
+	# Determine which delay to use based on correctness
+	var delay_to_use = GameConfig.transition_delay  # Default delay for correct answers
+	if not is_correct:
+		delay_to_use = GameConfig.transition_delay_incorrect  # Longer delay for incorrect answers
+	
+	# Show feedback on number line and fraction label
+	if is_correct:
+		DisplayManager.show_number_line_correct_feedback()
+		AudioManager.play_correct()
+		UIManager.show_feedback_flash(Color(0, 1, 0))
+		print("✓ Correct! Answer was ", QuestionManager.current_question.result)
+	else:
+		DisplayManager.show_number_line_incorrect_feedback()
+		AudioManager.play_incorrect()
+		UIManager.show_feedback_flash(Color(1, 0, 0))
+		print("✗ Incorrect. Correct answer was ", QuestionManager.current_question.result, ", you selected ", player_answer_value)
 		
 		# Pause TimeBack activity timer while showing correct answer (instructional moment)
 		PlaycademyManager.pause_timeback_activity()
@@ -367,6 +465,8 @@ func animate_problem_off_screen(is_correct: bool):
 		DisplayManager.correct_answer_nodes.clear()
 		DisplayManager.current_problem_label = null
 		DisplayManager.answer_fraction_node = null
+		DisplayManager.current_number_line = null
+		DisplayManager.number_line_fraction_label = null
 		
 		# Animate all problem nodes off-screen
 		var tween = create_tween()

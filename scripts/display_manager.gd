@@ -19,6 +19,10 @@ var multiple_choice_buttons = []  # Array of button nodes for multiple choice an
 var multiple_choice_answered = false  # Track if a multiple choice question has been answered
 var multiple_choice_correct_index = -1  # Index of the correct answer button
 
+# Number line question nodes
+var current_number_line = null  # Reference to the current NumberLine node
+var number_line_fraction_label = null  # Reference to the fraction label above the number line
+
 # Blink state
 var blink_timer = 0.0
 var underscore_visible = true
@@ -128,6 +132,13 @@ func update_fraction_problem_display(user_answer: String, answer_submitted: bool
 
 func create_new_problem_label():
 	"""Create a new problem label for the current question"""
+	# Check if this is a number line problem
+	if QuestionManager.current_question and QuestionManager.is_number_line_display_type(QuestionManager.current_question.get("type", "")):
+		create_number_line_problem()
+		# Start timing this question immediately for number line problems
+		ScoreManager.start_question_timing()
+		return
+	
 	# Check if this is a multiple choice problem (includes 2-choice and 3-choice)
 	if QuestionManager.current_question and QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", "")):
 		create_multiple_choice_problem()
@@ -672,9 +683,99 @@ func create_fraction_conversion_problem():
 	
 	# Exit parallel mode before adding callback
 	tween.set_parallel(false)
-	
+
 	# Start timing this question when animation completes
 	tween.tween_callback(ScoreManager.start_question_timing)
+
+func create_number_line_problem():
+	"""Create a number line problem display with fraction label above"""
+	if not QuestionManager.current_question or not QuestionManager.is_number_line_display_type(QuestionManager.current_question.get("type", "")):
+		return
+	
+	# Clean up any existing problem nodes
+	cleanup_problem_labels()
+	
+	# Get question data
+	var operands = QuestionManager.current_question.get("operands", [])
+	if operands.size() < 1:
+		print("Error: Number line problem requires at least 1 operand")
+		return
+	
+	var operand = operands[0]
+	var numerator = operand.numerator
+	var denominator = operand.denominator
+	var correct_pip = QuestionManager.current_question.get("correct_pip", 0)
+	var total_pips = QuestionManager.current_question.get("total_pips", 9)
+	var lower_limit = QuestionManager.current_question.get("lower_limit", 0)
+	var upper_limit = QuestionManager.current_question.get("upper_limit", 1)
+	
+	# Calculate positions
+	var final_position = GameConfig.number_line_final_position
+	var fraction_position = GameConfig.number_line_fraction_position
+	var start_offset = 1080.0  # Start 1080 pixels above final position
+	
+	var number_line_start_y = final_position.y - start_offset
+	var fraction_start_y = fraction_position.y - start_offset
+	
+	# Load and instantiate the number line scene
+	var number_line_scene = load("res://scenes/number_line.tscn")
+	var number_line_instance = number_line_scene.instantiate()
+	
+	# Set initial position (off-screen above)
+	number_line_instance.position = Vector2(final_position.x, number_line_start_y)
+	number_line_instance.z_index = -1
+	
+	# Add to play node
+	play_node.add_child(number_line_instance)
+	
+	# Initialize the number line with configuration
+	number_line_instance.initialize({
+		"total_pips": total_pips,
+		"lower_limit": lower_limit,
+		"upper_limit": upper_limit
+	})
+	number_line_instance.set_correct_pip(correct_pip)
+	
+	# Store reference
+	current_number_line = number_line_instance
+	current_problem_nodes.append(number_line_instance)
+	
+	# Create fraction label above the number line
+	var fraction_node = create_fraction(Vector2(fraction_position.x, fraction_start_y), numerator, denominator, play_node)
+	fraction_node.z_index = -1
+	number_line_fraction_label = fraction_node
+	current_problem_nodes.append(fraction_node)
+	
+	# Animate both elements to their final positions
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.set_parallel(true)
+	
+	# Animate number line
+	tween.tween_property(number_line_instance, "position", final_position, GameConfig.animation_duration)
+	
+	# Animate fraction label
+	tween.tween_property(fraction_node, "position", fraction_position, GameConfig.animation_duration)
+	
+	tween.set_parallel(false)
+	
+	# Start timing when animation completes
+	tween.tween_callback(ScoreManager.start_question_timing)
+
+func show_number_line_correct_feedback():
+	"""Show correct feedback for number line question"""
+	if current_number_line:
+		current_number_line.show_correct_feedback()
+	if number_line_fraction_label:
+		number_line_fraction_label.modulate = GameConfig.color_correct
+
+func show_number_line_incorrect_feedback():
+	"""Show incorrect feedback for number line question"""
+	if current_number_line:
+		current_number_line.show_incorrect_feedback()
+	if number_line_fraction_label:
+		number_line_fraction_label.modulate = GameConfig.color_incorrect
 
 func create_multiple_choice_problem():
 	"""Create a multiple choice problem display (handles all comparison question types)"""
@@ -1610,25 +1711,29 @@ func cleanup_problem_labels():
 		if node:
 			node.queue_free()
 	current_problem_nodes.clear()
-	
+
 	# Clean up regular problem labels
 	if play_node:
 		for child in play_node.get_children():
 			# Only remove dynamically created labels, not the static UI elements
-			if (child is Label and 
-				child != UIManager.timer_label and 
-				child != UIManager.accuracy_label and 
-				child != UIManager.drill_timer_label and 
+			if (child is Label and
+				child != UIManager.timer_label and
+				child != UIManager.accuracy_label and
+				child != UIManager.drill_timer_label and
 				child != UIManager.drill_score_label):
 				child.queue_free()
-	
+
 	current_problem_label = null
 	answer_fraction_node = null
-	
+
 	# Reset multiple choice state
 	multiple_choice_buttons.clear()
 	multiple_choice_answered = false
 	multiple_choice_correct_index = -1
+	
+	# Reset number line state
+	current_number_line = null
+	number_line_fraction_label = null
 
 func color_problem_nodes(feedback_color: Color):
 	"""Color all problem nodes with the given feedback color"""

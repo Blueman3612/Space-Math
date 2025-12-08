@@ -48,6 +48,10 @@ func is_fraction_conversion_display_type(question_type: String) -> bool:
 	"""Check if a question type should be displayed in fraction conversion format"""
 	return GameConfig.PROBLEM_DISPLAY_FORMATS.get(question_type, "") == "fraction_conversion"
 
+func is_number_line_display_type(question_type: String) -> bool:
+	"""Check if a question type should be displayed in number line format"""
+	return GameConfig.PROBLEM_DISPLAY_FORMATS.get(question_type, "") == "number_line"
+
 func get_multiple_choice_answers(question_data) -> Array:
 	"""Generate answer choices for multiple choice questions (dynamic number of choices)"""
 	var question_type = question_data.get("type", "")
@@ -376,6 +380,8 @@ func _generate_problem_by_type(problem_type: String, config: Dictionary) -> Dict
 			return _generate_improper_to_mixed_problem(config)
 		"multiply_divide_fractions":
 			return _generate_multiply_divide_fractions_problem(config)
+		"number_line_fractions":
+			return _generate_number_line_fractions_problem(config)
 		_:
 			print("Error: Unknown problem type: ", problem_type)
 			return {}
@@ -421,6 +427,9 @@ func _get_dynamic_question_key(question_data: Dictionary) -> String:
 	elif question_type == "improper_to_mixed":
 		var op = operands[0]
 		return "improper_to_mixed_" + str(op.numerator) + "/" + str(op.denominator)
+	elif question_type == "number_line_fractions":
+		var op = operands[0]
+		return "number_line_" + str(op.numerator) + "/" + str(op.denominator)
 	
 	# Standard format for regular problems
 	return str(operands[0]) + "_" + operator + "_" + str(operands[1])
@@ -1490,6 +1499,47 @@ func _gcd(a: int, b: int) -> int:
 		b = a % b
 		a = temp
 	return a
+
+# ============================================
+# Number Line Problem Generation
+# ============================================
+
+func _generate_number_line_fractions_problem(config: Dictionary) -> Dictionary:
+	"""Generate a number line fractions problem (place fraction on number line)"""
+	var denominators = config.get("denominators", [2, 4, 8])
+	var total_pips = config.get("total_pips", 9)
+	var lower_limit = config.get("lower_limit", 0)
+	var upper_limit = config.get("upper_limit", 1)
+	
+	# Randomly select a denominator
+	var denominator = denominators[rng.randi() % denominators.size()]
+	
+	# Generate a numerator between 1 and (denominator - 1) inclusive
+	var numerator = rng.randi_range(1, denominator - 1)
+	
+	# Calculate the correct pip index
+	# For a fraction n/d with (total_pips - 1) intervals from 0 to 1:
+	# correct_pip = n * ((total_pips - 1) / d)
+	var intervals = total_pips - 1  # 8 intervals for 9 pips
+	var correct_pip = numerator * (intervals / denominator)
+	
+	# Build the fraction string for display and result
+	var fraction_str = str(numerator) + "/" + str(denominator)
+	
+	return {
+		"operands": [{"numerator": numerator, "denominator": denominator}],
+		"operator": "=",
+		"result": fraction_str,
+		"correct_pip": correct_pip,
+		"total_pips": total_pips,
+		"lower_limit": lower_limit,
+		"upper_limit": upper_limit,
+		"expression": fraction_str,
+		"question": fraction_str,
+		"title": config.get("name", "Number Line Fractions"),
+		"grade": "",
+		"type": "number_line_fractions"
+	}
 
 func get_question_key(question_data):
 	"""Generate a unique key for a question based on its operands and operator"""
