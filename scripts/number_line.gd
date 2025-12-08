@@ -190,7 +190,7 @@ func show_incorrect_feedback():
 	if pointer:
 		pointer.self_modulate = GameConfig.color_incorrect
 	
-	# Show the feedback pointer and animate it to the correct position
+	# Show the feedback pointer and animate it to the correct position immediately
 	if feedback:
 		feedback.visible = true
 		feedback.position = Vector2.ZERO  # Start at current pointer position (relative to Pointer)
@@ -201,9 +201,8 @@ func show_incorrect_feedback():
 		var relative_x = correct_x - current_x
 		var target_position = Vector2(relative_x, 0)
 		
-		# Animate to correct position after delay
+		# Animate to correct position immediately
 		var tween = create_tween()
-		tween.tween_interval(GameConfig.number_line_feedback_delay)
 		tween.set_ease(Tween.EASE_OUT)
 		tween.set_trans(Tween.TRANS_EXPO)
 		tween.tween_property(feedback, "position", target_position, GameConfig.number_line_pointer_move_duration)

@@ -499,7 +499,7 @@ const PROBLEM_DISPLAY_FORMATS = {
 # ============================================
 # Number Line Question Configuration
 # ============================================
-var number_line_final_position = Vector2(960, 540)  # Final position of number line on screen
+var number_line_final_position = Vector2(960, 640)  # Final position of number line on screen
 var number_line_fraction_position = Vector2(960, 288)  # Position of fraction label above number line
 var number_line_pip_left_x = -856.0  # X position of leftmost pip (relative to number line)
 var number_line_pip_right_x = 856.0  # X position of rightmost pip (relative to number line)
