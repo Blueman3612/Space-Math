@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bwlmifnvnxasi"
-path="res://.godot/imported/Key Icons.png-9b28380602750e879b80f73f55a5a920.ctex"
+uid="uid://5c0y2aejk2wj"
+path="res://.godot/imported/Number Line.png-20d40aa68c42f45b97a6068bb7949a51.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/Key Icons.png"
-dest_files=["res://.godot/imported/Key Icons.png-9b28380602750e879b80f73f55a5a920.ctex"]
+source_file="res://assets/sprites/Number Line.png"
+dest_files=["res://.godot/imported/Number Line.png-20d40aa68c42f45b97a6068bb7949a51.ctex"]
 
 [params]
 

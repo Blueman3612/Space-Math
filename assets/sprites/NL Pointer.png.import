@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bwlmifnvnxasi"
-path="res://.godot/imported/Key Icons.png-9b28380602750e879b80f73f55a5a920.ctex"
+uid="uid://sa1b52bnafk"
+path="res://.godot/imported/NL Pointer.png-5dec9c315477cc03b18e06bad9a9633d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/Key Icons.png"
-dest_files=["res://.godot/imported/Key Icons.png-9b28380602750e879b80f73f55a5a920.ctex"]
+source_file="res://assets/sprites/NL Pointer.png"
+dest_files=["res://.godot/imported/NL Pointer.png-5dec9c315477cc03b18e06bad9a9633d.ctex"]
 
 [params]
 
