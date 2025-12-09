@@ -324,6 +324,7 @@ offset_top = -8.0
 offset_right = 264.0
 offset_bottom = 8.0
 tooltip_text = "Sound Effects Volume"
+focus_mode = 0
 mouse_default_cursor_shape = 7
 theme = ExtResource("1_jyhfs")
 
@@ -340,6 +341,7 @@ offset_top = -8.0
 offset_right = 264.0
 offset_bottom = 8.0
 tooltip_text = "Music Volume"
+focus_mode = 0
 mouse_default_cursor_shape = 7
 theme = ExtResource("1_jyhfs")
 
