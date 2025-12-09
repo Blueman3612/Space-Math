@@ -52,6 +52,10 @@ func is_number_line_display_type(question_type: String) -> bool:
 	"""Check if a question type should be displayed in number line format"""
 	return GameConfig.PROBLEM_DISPLAY_FORMATS.get(question_type, "") == "number_line"
 
+func is_equivalence_display_type(question_type: String) -> bool:
+	"""Check if a question type should be displayed in equivalence format"""
+	return GameConfig.PROBLEM_DISPLAY_FORMATS.get(question_type, "") == "equivalence"
+
 func get_multiple_choice_answers(question_data) -> Array:
 	"""Generate answer choices for multiple choice questions (dynamic number of choices)"""
 	var question_type = question_data.get("type", "")
@@ -364,6 +368,8 @@ func _generate_problem_by_type(problem_type: String, config: Dictionary) -> Dict
 	match problem_type:
 		"expression_comparison_20":
 			return _generate_expression_comparison_problem(config)
+		"equivalence_associative":
+			return _generate_equivalence_associative_problem(config)
 		"decimal_comparison":
 			return _generate_decimal_comparison_problem(config)
 		"decimal_add_sub":
@@ -437,6 +443,11 @@ func _get_dynamic_question_key(question_data: Dictionary) -> String:
 		var expr1 = operands[0]
 		var expr2 = operands[1]
 		return str(expr1.a) + expr1.op + str(expr1.b) + "_vs_" + str(expr2.a) + expr2.op + str(expr2.b)
+	elif question_type == "equivalence_associative":
+		# Format: left_a op left_b = right_a op right_b op answer
+		var left = operands[0]
+		var right = operands[1]
+		return str(left.a) + left.op + str(left.b) + "_eq_" + str(right.a) + right.op1 + str(right.b) + right.op2 + str(question_data.get("result", 0))
 
 	# Standard format for regular problems
 	return str(operands[0]) + "_" + operator + "_" + str(operands[1])
@@ -1029,6 +1040,171 @@ func _generate_single_expression_comparison() -> Variant:
 		attempts += 1
 	
 	return null
+
+# ============================================
+# Equivalence Problem Generation
+# ============================================
+
+func _generate_equivalence_associative_problem(config: Dictionary) -> Dictionary:
+	"""Generate an equivalence problem using associative property.
+	Format: a OP b = c OP d OP ___
+	Where one operand is shared between sides, and the answer is always 1-4.
+	
+	Examples:
+	- 12 + 4 = 4 + 10 + 2 (share 4, deflate 12 to 10, add 2)
+	- 2 + 18 = 2 + 20 - 2 (share 2, inflate 18 to 20, subtract 2)
+	- 19 - 15 = 20 - 15 - 1 (share 15, inflate 19 to 20, subtract 1)
+	- 21 - 14 = 21 - 10 - 4 (share 21, deflate 14 to 10, subtract 4)
+	"""
+	
+	# Choose main operator (+ or -)
+	var main_op = "+" if rng.randi() % 2 == 0 else "-"
+	
+	# Generate the left side expression with result <= 20
+	var left_a: int
+	var left_b: int
+	var left_result: int
+	
+	# Generate adjustment value (1-4, weighted toward 1-2)
+	# Weights: 1 = 40%, 2 = 35%, 3 = 15%, 4 = 10%
+	var adj_roll = rng.randi() % 100
+	var adjustment: int
+	if adj_roll < 40:
+		adjustment = 1
+	elif adj_roll < 75:
+		adjustment = 2
+	elif adj_roll < 90:
+		adjustment = 3
+	else:
+		adjustment = 4
+	
+	# Decide whether to inflate or deflate the non-shared operand (50/50)
+	var inflate = rng.randi() % 2 == 0
+	
+	var attempts = 0
+	while attempts < 100:
+		if main_op == "+":
+			# Addition: a + b <= 20
+			left_a = rng.randi_range(0, 20)
+			left_b = rng.randi_range(0, 20 - left_a)
+			left_result = left_a + left_b
+		else:
+			# Subtraction: a - b >= 0, result <= 20
+			# For subtraction, left_a can be > 20 as long as result <= 20
+			left_result = rng.randi_range(0, 20)
+			left_b = rng.randi_range(0, 20)  # The subtracted amount
+			left_a = left_result + left_b  # So left_a - left_b = left_result
+		
+		# Ensure we have valid operands
+		if left_a < 0 or left_b < 0:
+			attempts += 1
+			continue
+		
+		# Decide which operand to share (50/50)
+		# share_first = true means we share left_a (first operand)
+		var share_first = rng.randi() % 2 == 0
+		var shared: int
+		var non_shared: int
+		
+		if share_first:
+			shared = left_a
+			non_shared = left_b
+		else:
+			shared = left_b
+			non_shared = left_a
+		
+		# Calculate the modified non-shared operand for the right side
+		var modified: int
+		if inflate:
+			modified = non_shared + adjustment
+		else:
+			modified = non_shared - adjustment
+		
+		# Ensure modified operand is valid (non-negative)
+		if modified < 0:
+			attempts += 1
+			continue
+		
+		# Determine the final operator before the answer
+		# This depends on whether we inflated or deflated:
+		# - Inflate: we made the modified operand bigger, so we need to subtract to compensate
+		# - Deflate: we made the modified operand smaller, so we need to add to compensate
+		# BUT for subtraction when sharing the second operand, the logic is different
+		var final_op: String
+		if main_op == "+":
+			# For addition: inflate -> subtract, deflate -> add
+			final_op = "-" if inflate else "+"
+		else:
+			# For subtraction:
+			# If sharing first (a): a - b = a - modified ± answer
+			#   - If we deflate b (make modified smaller), we subtracted less, so subtract more: final_op = "-"
+			#   - If we inflate b (make modified bigger), we subtracted more, so add back: final_op = "+"
+			# If sharing second (b): a - b = modified - b ± answer
+			#   - If we deflate a (make modified smaller), result is smaller, so add: final_op = "+"
+			#   - If we inflate a (make modified bigger), result is bigger, so subtract: final_op = "-"
+			if share_first:
+				# Sharing first operand (a), modifying b
+				final_op = "+" if inflate else "-"
+			else:
+				# Sharing second operand (b), modifying a
+				final_op = "-" if inflate else "+"
+		
+		# Build the right side
+		# For addition: shared always comes first (commutative, so order can swap)
+		# For subtraction: shared operand maintains its position
+		var right_a: int
+		var right_b: int
+		var right_op1 = main_op
+		var right_op2 = final_op
+		
+		if main_op == "+":
+			# Addition is commutative, shared comes first
+			right_a = shared
+			right_b = modified
+		else:
+			# Subtraction: maintain position
+			if share_first:
+				# Shared was first (left_a), stays first
+				right_a = shared
+				right_b = modified
+			else:
+				# Shared was second (left_b), stays second
+				right_a = modified
+				right_b = shared
+		
+		# Build display strings
+		var left_display = str(left_a) + " " + main_op + " " + str(left_b)
+		var right_display = str(right_a) + " " + right_op1 + " " + str(right_b) + " " + right_op2 + " "
+		var question_text = left_display + " = " + right_display
+		
+		return {
+			"operands": [
+				{"a": left_a, "b": left_b, "op": main_op, "result": left_result},
+				{"a": right_a, "b": right_b, "op1": right_op1, "op2": right_op2}
+			],
+			"operator": "=",
+			"result": adjustment,
+			"expression": question_text + str(adjustment),
+			"question": question_text,
+			"title": config.get("name", "Equivalence - Associative Property"),
+			"grade": "",
+			"type": "equivalence_associative"
+		}
+	
+	# Fallback (should rarely happen)
+	return {
+		"operands": [
+			{"a": 5, "b": 3, "op": "+", "result": 8},
+			{"a": 3, "b": 6, "op1": "+", "op2": "-"}
+		],
+		"operator": "=",
+		"result": 1,
+		"expression": "5 + 3 = 3 + 6 - 1",
+		"question": "5 + 3 = 3 + 6 - ",
+		"title": config.get("name", "Equivalence - Associative Property"),
+		"grade": "",
+		"type": "equivalence_associative"
+	}
 
 # ============================================
 # Decimal Problem Generation

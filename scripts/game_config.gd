@@ -222,6 +222,7 @@ const CATEGORY_COLORS = {
 	"Addition": Color(0, 0.5, 1),
 	"Subtraction": Color(1, 0.25, 0.25),
 	"Add./Sub.": Color(0, 0.75, 0.5),
+	"Equivalence": Color(0.6, 0.4, 0.8),
 	"2-Digit Numbers": Color(1, 0.5, 0),
 	"3-Digit Numbers": Color(0.75, 0.25, 0.75),
 	"Multiplication": Color(1, 0.75, 0.25),
@@ -295,6 +296,12 @@ const GRADE_LEVELS = {
 					{"id": "grade2_2digit_sub_no_regroup", "name": "Subtract 2-Digit without Regrouping", "mastery_count": 20, "config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": false, "max_answer": 100}},
 					{"id": "grade2_2digit_add_regroup", "name": "Add 2-Digit with Regrouping", "mastery_count": 10, "config": {"operators": ["+"], "digit_count": 2, "requires_regrouping": true, "max_answer": 100}},
 					{"id": "grade2_2digit_sub_regroup", "name": "Subtract 2-Digit with Regrouping", "mastery_count": 10, "config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": true, "max_answer": 100}}
+				]
+			},
+			{
+				"name": "Equivalence",
+				"levels": [
+					{"id": "grade2_equivalence_associative", "name": "Create Equivalent Add & Sub Problems, Associative Property", "mastery_count": 40, "config": {"type": "equivalence_associative"}}
 				]
 			},
 			{
@@ -486,6 +493,7 @@ const PROBLEM_DISPLAY_FORMATS = {
 	"number_line_fractions": "number_line",
 	# Grade 2 types
 	"expression_comparison_20": "multiple_choice",
+	"equivalence_associative": "equivalence",
 	# Grade 4 types
 	"decimal_comparison": "multiple_choice",
 	"fraction_comparison": "multiple_choice",

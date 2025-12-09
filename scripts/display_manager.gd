@@ -46,13 +46,19 @@ func update_problem_display(user_answer: String, answer_submitted: bool, is_frac
 	if QuestionManager.current_question and (QuestionManager.is_fraction_display_type(q_type) or QuestionManager.is_fraction_conversion_display_type(q_type)):
 		update_fraction_problem_display(user_answer, answer_submitted, is_fraction_input, is_mixed_fraction_input, editing_numerator)
 	elif current_problem_label and QuestionManager.current_question:
-		var base_text = QuestionManager.current_question.question + " = "
+		# For equivalence problems, the question already includes "=" and the partial right side
+		# For standard problems, we append " = "
+		var base_text: String
+		if QuestionManager.is_equivalence_display_type(q_type):
+			base_text = QuestionManager.current_question.question
+		else:
+			base_text = QuestionManager.current_question.question + " = "
 		var display_text = base_text + user_answer
-		
+
 		# Add blinking underscore only if not submitted
 		if not answer_submitted and underscore_visible:
 			display_text += "_"
-		
+
 		current_problem_label.text = display_text
 
 func update_fraction_problem_display(user_answer: String, answer_submitted: bool, is_fraction_input: bool, is_mixed_fraction_input: bool, editing_numerator: bool):
@@ -203,9 +209,15 @@ func calculate_centered_problem_x(label: Label) -> float:
 		return GameConfig.primary_position.x
 	
 	# Build the full expression: "question = answer"
+	# For equivalence problems, question already includes "=" and partial right side
 	var question_text = QuestionManager.current_question.question
 	var answer_text = str(QuestionManager.current_question.result)
-	var full_expression = question_text + " = " + answer_text
+	var q_type = QuestionManager.current_question.get("type", "")
+	var full_expression: String
+	if QuestionManager.is_equivalence_display_type(q_type):
+		full_expression = question_text + answer_text
+	else:
+		full_expression = question_text + " = " + answer_text
 	
 	# Temporarily set the label text to measure width
 	var original_text = label.text
