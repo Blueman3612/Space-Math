@@ -281,14 +281,15 @@ const GRADE_LEVELS = {
 					{"id": "grade2_subtraction_0_20", "name": "Subtraction 0-20", "mastery_count": 33, "config": {"operators": ["-"], "range_max": 20}}
 				]
 			},
-			{
-				"name": "Add./Sub.",
-				"levels": [
-					{"id": "grade2_fact_families_0_20", "name": "Add/Subtract 0-20", "mastery_count": 33, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}}
-				]
-			},
-			{
-				"name": "2-Digit Numbers",
+		{
+			"name": "Add./Sub.",
+			"levels": [
+				{"id": "grade2_expression_comparison_20", "name": "Compare Sums and Differences to 20", "mastery_count": 13, "config": {"type": "expression_comparison_20"}},
+				{"id": "grade2_fact_families_0_20", "name": "Add/Subtract 0-20", "mastery_count": 33, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}}
+			]
+		},
+		{
+			"name": "2-Digit Numbers",
 				"levels": [
 					{"id": "grade2_2digit_add_no_regroup", "name": "Add 2-Digit without Regrouping", "mastery_count": 16, "config": {"operators": ["+"], "digit_count": 2, "requires_regrouping": false, "max_answer": 100}},
 					{"id": "grade2_2digit_sub_no_regroup", "name": "Subtract 2-Digit without Regrouping", "mastery_count": 20, "config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": false, "max_answer": 100}},
@@ -483,6 +484,8 @@ const PROBLEM_DISPLAY_FORMATS = {
 	"Compare unlike denominators (4.NF.A)": "multiple_choice",
 	# Grade 3 number line type
 	"number_line_fractions": "number_line",
+	# Grade 2 types
+	"expression_comparison_20": "multiple_choice",
 	# Grade 4 types
 	"decimal_comparison": "multiple_choice",
 	"fraction_comparison": "multiple_choice",

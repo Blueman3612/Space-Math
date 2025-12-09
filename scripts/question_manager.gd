@@ -60,8 +60,8 @@ func get_multiple_choice_answers(question_data) -> Array:
 	if question_type == "Compare unlike denominators (4.NF.A)":
 		return ["<", "=", ">"]
 	
-	# For 2-choice comparison questions (decimal and fraction comparison)
-	if question_type == "decimal_comparison" or question_type == "fraction_comparison":
+	# For 2-choice comparison questions (decimal, fraction, and expression comparison)
+	if question_type == "decimal_comparison" or question_type == "fraction_comparison" or question_type == "expression_comparison_20":
 		return ["<", ">"]
 	
 	# Default fallback (shouldn't be reached for now)
@@ -362,6 +362,8 @@ func _generate_special_type_question(problem_type: String, config: Dictionary) -
 func _generate_problem_by_type(problem_type: String, config: Dictionary) -> Dictionary:
 	"""Dispatch to the appropriate generation function based on problem type"""
 	match problem_type:
+		"expression_comparison_20":
+			return _generate_expression_comparison_problem(config)
 		"decimal_comparison":
 			return _generate_decimal_comparison_problem(config)
 		"decimal_add_sub":
@@ -430,7 +432,12 @@ func _get_dynamic_question_key(question_data: Dictionary) -> String:
 	elif question_type == "number_line_fractions":
 		var op = operands[0]
 		return "number_line_" + str(op.numerator) + "/" + str(op.denominator)
-	
+	elif question_type == "expression_comparison_20":
+		# Format: expr1_op1_expr1_op2 vs expr2_op1_expr2_op2
+		var expr1 = operands[0]
+		var expr2 = operands[1]
+		return str(expr1.a) + expr1.op + str(expr1.b) + "_vs_" + str(expr2.a) + expr2.op + str(expr2.b)
+
 	# Standard format for regular problems
 	return str(operands[0]) + "_" + operator + "_" + str(operands[1])
 
@@ -903,6 +910,125 @@ func _generate_2digit_by_2digit_multiplication_any() -> Array:
 	var operand1 = rng.randi_range(10, 99)
 	var operand2 = rng.randi_range(10, 99)
 	return [operand1, operand2]
+
+# ============================================
+# Expression Comparison Problem Generation
+# ============================================
+
+func _generate_expression_comparison_problem(config: Dictionary) -> Dictionary:
+	"""Generate an expression comparison problem (comparing two addition/subtraction expressions with results <= 20)"""
+	# First, randomly decide which answer we want (ensures 50/50 split)
+	var target_answer = "<" if rng.randi() % 2 == 0 else ">"
+	
+	# Generate 10 candidates that match the target answer, pick the one with the smallest difference
+	var best_candidate = null
+	var min_diff = 999999
+	
+	for _i in range(10):
+		var candidate = _generate_single_expression_comparison()
+		if candidate == null:
+			continue
+		
+		# Check if this candidate matches our target answer
+		var candidate_answer = "<" if candidate.expr1_result < candidate.expr2_result else ">"
+		if candidate_answer != target_answer:
+			continue
+		
+		var diff = abs(candidate.expr1_result - candidate.expr2_result)
+		if diff < min_diff:
+			min_diff = diff
+			best_candidate = candidate
+	
+	# Fallback if no candidates matched target (generate until we get one)
+	while best_candidate == null:
+		var candidate = _generate_single_expression_comparison()
+		if candidate == null:
+			continue
+		var candidate_answer = "<" if candidate.expr1_result < candidate.expr2_result else ">"
+		if candidate_answer == target_answer:
+			best_candidate = candidate
+	
+	var expr1_a = best_candidate.expr1_a
+	var expr1_b = best_candidate.expr1_b
+	var op1 = best_candidate.op1
+	var expr1_result = best_candidate.expr1_result
+	var expr2_a = best_candidate.expr2_a
+	var expr2_b = best_candidate.expr2_b
+	var op2 = best_candidate.op2
+	var expr2_result = best_candidate.expr2_result
+	
+	var result = "<" if expr1_result < expr2_result else ">"
+	
+	# Format for display
+	var expr1_display = str(expr1_a) + " " + op1 + " " + str(expr1_b)
+	var expr2_display = str(expr2_a) + " " + op2 + " " + str(expr2_b)
+	var question_text = expr1_display + " ? " + expr2_display
+	
+	return {
+		"operands": [
+			{"a": expr1_a, "b": expr1_b, "op": op1, "result": expr1_result},
+			{"a": expr2_a, "b": expr2_b, "op": op2, "result": expr2_result}
+		],
+		"operator": "?",
+		"result": result,
+		"expression": question_text + " = " + result,
+		"question": question_text,
+		"title": config.get("name", "Compare Sums and Differences to 20"),
+		"grade": "",
+		"type": "expression_comparison_20"
+	}
+
+func _generate_single_expression_comparison() -> Variant:
+	"""Generate a single expression comparison candidate"""
+	# Operator combinations: +/+, -/-, +/-, -/+
+	var op_combos = [["+", "+"], ["-", "-"], ["+", "-"], ["-", "+"]]
+	var chosen_combo = op_combos[rng.randi() % op_combos.size()]
+	var op1 = chosen_combo[0]
+	var op2 = chosen_combo[1]
+	
+	var expr1_a: int
+	var expr1_b: int
+	var expr1_result: int
+	var expr2_a: int
+	var expr2_b: int
+	var expr2_result: int
+	
+	var attempts = 0
+	while attempts < 100:
+		# Generate first expression
+		if op1 == "+":
+			# Addition: a + b <= 20
+			expr1_a = rng.randi_range(0, 20)
+			expr1_b = rng.randi_range(0, 20 - expr1_a)
+			expr1_result = expr1_a + expr1_b
+		else:
+			# Subtraction: a - b >= 0, a <= 20
+			expr1_a = rng.randi_range(0, 20)
+			expr1_b = rng.randi_range(0, expr1_a)
+			expr1_result = expr1_a - expr1_b
+		
+		# Generate second expression
+		if op2 == "+":
+			# Addition: a + b <= 20
+			expr2_a = rng.randi_range(0, 20)
+			expr2_b = rng.randi_range(0, 20 - expr2_a)
+			expr2_result = expr2_a + expr2_b
+		else:
+			# Subtraction: a - b >= 0, a <= 20
+			expr2_a = rng.randi_range(0, 20)
+			expr2_b = rng.randi_range(0, expr2_a)
+			expr2_result = expr2_a - expr2_b
+		
+		# Ensure results are not equal
+		if expr1_result != expr2_result:
+			return {
+				"expr1_a": expr1_a, "expr1_b": expr1_b, "op1": op1, "expr1_result": expr1_result,
+				"expr2_a": expr2_a, "expr2_b": expr2_b, "op2": op2, "expr2_result": expr2_result
+			}
+		
+		attempts += 1
+	
+	return null
 
 # ============================================
 # Decimal Problem Generation

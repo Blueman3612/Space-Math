@@ -821,7 +821,35 @@ func create_multiple_choice_problem():
 	var is_fraction_display = false  # Whether left/right are fraction nodes
 	
 	# Check what type of operand display we need
-	if question_type == "decimal_comparison":
+	if question_type == "expression_comparison_20":
+		# Expression comparison - use labels with expression text (e.g., "19 + 1")
+		var operands = QuestionManager.current_question.get("operands", [])
+		if operands.size() < 2:
+			print("Error: Expression comparison requires 2 operands")
+			return
+		
+		var expr1 = operands[0]
+		var expr2 = operands[1]
+		
+		left_node = Label.new()
+		left_node.label_settings = label_settings_resource
+		left_node.text = str(expr1.a) + " " + expr1.op + " " + str(expr1.b)
+		left_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		left_node.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		play_node.add_child(left_node)
+		left_node.reset_size()
+		left_width = left_node.get_minimum_size().x
+		
+		right_node = Label.new()
+		right_node.label_settings = label_settings_resource
+		right_node.text = str(expr2.a) + " " + expr2.op + " " + str(expr2.b)
+		right_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		right_node.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		play_node.add_child(right_node)
+		right_node.reset_size()
+		right_width = right_node.get_minimum_size().x
+		
+	elif question_type == "decimal_comparison":
 		# Decimal comparison - use labels with decimal operands
 		var operands = QuestionManager.current_question.get("operands", [])
 		if operands.size() < 2:
