@@ -370,6 +370,8 @@ func _generate_problem_by_type(problem_type: String, config: Dictionary) -> Dict
 			return _generate_expression_comparison_problem(config)
 		"equivalence_associative":
 			return _generate_equivalence_associative_problem(config)
+		"equivalence_place_value":
+			return _generate_equivalence_place_value_problem(config)
 		"decimal_comparison":
 			return _generate_decimal_comparison_problem(config)
 		"decimal_add_sub":
@@ -448,6 +450,11 @@ func _get_dynamic_question_key(question_data: Dictionary) -> String:
 		var left = operands[0]
 		var right = operands[1]
 		return str(left.a) + left.op + str(left.b) + "_eq_" + str(right.a) + right.op1 + str(right.b) + right.op2 + str(question_data.get("result", 0))
+	elif question_type == "equivalence_place_value":
+		# Format: a op b = a op 10 op answer
+		var left = operands[0]
+		var right = operands[1]
+		return str(left.a) + left.op + str(left.b) + "_pv_" + str(right.a) + right.op1 + "10" + right.op2 + str(question_data.get("result", 0))
 
 	# Standard format for regular problems
 	return str(operands[0]) + "_" + operator + "_" + str(operands[1])
@@ -1204,6 +1211,51 @@ func _generate_equivalence_associative_problem(config: Dictionary) -> Dictionary
 		"title": config.get("name", "Equivalence - Associative Property"),
 		"grade": "",
 		"type": "equivalence_associative"
+	}
+
+func _generate_equivalence_place_value_problem(config: Dictionary) -> Dictionary:
+	"""Generate an equivalence problem using place value decomposition.
+	Format: a +/- b = a +/- 10 +/- c
+	Where a is 30-79, b is 11-19, and c = b - 10 (always 1-9).
+	
+	Examples:
+	- 42 + 18 = 42 + 10 + 8
+	- 70 - 16 = 70 - 10 - 6
+	"""
+	
+	# Choose main operator (+ or -)
+	var main_op = "+" if rng.randi() % 2 == 0 else "-"
+	
+	# Generate operands
+	var a = rng.randi_range(30, 79)  # First operand: 2-digit number 30-79
+	var b = rng.randi_range(11, 19)  # Second operand: teen number 11-19
+	var c = b - 10  # Answer: ones digit of b (1-9)
+	
+	# Calculate left side result for verification
+	var left_result: int
+	if main_op == "+":
+		left_result = a + b
+	else:
+		left_result = a - b
+	
+	# Build display strings
+	# Format: a +/- b = a +/- 10 +/- c
+	var left_display = str(a) + " " + main_op + " " + str(b)
+	var right_display = str(a) + " " + main_op + " 10 " + main_op + " "
+	var question_text = left_display + " = " + right_display
+	
+	return {
+		"operands": [
+			{"a": a, "b": b, "op": main_op, "result": left_result},
+			{"a": a, "b": 10, "op1": main_op, "op2": main_op}
+		],
+		"operator": "=",
+		"result": c,
+		"expression": question_text + str(c),
+		"question": question_text,
+		"title": config.get("name", "Equivalence - Place Value"),
+		"grade": "",
+		"type": "equivalence_place_value"
 	}
 
 # ============================================

@@ -310,12 +310,13 @@ const GRADE_LEVELS = {
 					{"id": "grade2_2digit_sub_regroup", "name": "Subtract 2-Digit with Regrouping", "mastery_count": 10, "config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": true, "max_answer": 100}}
 				]
 			},
-			{
-				"name": "Equivalence",
-				"levels": [
-					{"id": "grade2_equivalence_associative", "name": "Create Equivalent Add & Sub Problems, Associative Property", "mastery_count": 40, "config": {"type": "equivalence_associative"}}
-				]
-			},
+		{
+			"name": "Equivalence",
+			"levels": [
+				{"id": "grade2_equivalence_associative", "name": "Create Equivalent Add & Sub Problems, Associative Property", "mastery_count": 40, "config": {"type": "equivalence_associative"}},
+				{"id": "grade2_equivalence_place_value", "name": "Create Equivalent Add & Sub Problems, Place Value", "mastery_count": 40, "config": {"type": "equivalence_place_value"}}
+			]
+		},
 			{
 				"name": "3-Digit Numbers",
 				"levels": [
@@ -506,6 +507,7 @@ const PROBLEM_DISPLAY_FORMATS = {
 	# Grade 2 types
 	"expression_comparison_20": "multiple_choice",
 	"equivalence_associative": "equivalence",
+	"equivalence_place_value": "equivalence",
 	# Grade 4 types
 	"decimal_comparison": "multiple_choice",
 	"fraction_comparison": "multiple_choice",
