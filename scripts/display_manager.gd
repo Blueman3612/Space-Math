@@ -5,7 +5,9 @@ extends Node
 # Node references
 var play_node: Control  # Reference to the Play node
 var current_problem_label: Label
-var label_settings_resource: LabelSettings
+var label_settings_resource: LabelSettings  # Default/current label settings (GravityBold128)
+var label_settings_array: Array = []  # Array of loaded LabelSettings in order of preference (largest to smallest)
+var current_problem_label_settings: LabelSettings  # Label settings selected for the current problem
 
 # Current problem display nodes
 var current_problem_nodes = []  # Array of nodes (fractions, labels) for the current problem display
@@ -31,6 +33,19 @@ func initialize(main_node: Control):
 	"""Initialize display manager with references to needed nodes"""
 	play_node = main_node.get_node("Play")
 	label_settings_resource = load("res://assets/label settings/GravityBold128.tres")
+	
+	# Load all label settings in order of preference (largest to smallest)
+	label_settings_array.clear()
+	for path in GameConfig.problem_label_settings_order:
+		var settings = load(path)
+		if settings:
+			label_settings_array.append(settings)
+	
+	# Default current problem label settings to the first (largest)
+	if label_settings_array.size() > 0:
+		current_problem_label_settings = label_settings_array[0]
+	else:
+		current_problem_label_settings = label_settings_resource
 
 func update_blink_timer(delta: float):
 	"""Update the underscore blink timer"""
@@ -172,8 +187,11 @@ func create_new_problem_label():
 		return
 	
 	# Create new label for normal (non-fraction) problems
+	# First, select the best label settings based on problem width
+	current_problem_label_settings = select_label_settings_for_problem()
+	
 	var new_label = Label.new()
-	new_label.label_settings = label_settings_resource
+	new_label.label_settings = current_problem_label_settings
 	new_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	new_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	new_label.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -202,6 +220,51 @@ func create_new_problem_label():
 	
 	# Start timing this question when animation completes
 	tween.tween_callback(ScoreManager.start_question_timing)
+
+func select_label_settings_for_problem() -> LabelSettings:
+	"""Select the best label settings for the current problem based on width constraints.
+	Tries each size from largest to smallest until one fits within screen bounds."""
+	if not QuestionManager.current_question or label_settings_array.size() == 0:
+		return label_settings_resource
+	
+	# Build the maximum width string: question + max possible answer
+	# Use "0" repeated max_answer_chars times as the worst-case answer width
+	var max_answer = ""
+	for _i in range(GameConfig.max_answer_chars):
+		max_answer += "0"
+	
+	var question_text = QuestionManager.current_question.question
+	var q_type = QuestionManager.current_question.get("type", "")
+	var full_expression: String
+	if QuestionManager.is_equivalence_display_type(q_type):
+		full_expression = question_text + max_answer
+	else:
+		full_expression = question_text + " = " + max_answer
+	
+	# Calculate maximum allowed width (screen width minus padding on both sides)
+	var max_width = 1920.0 - (GameConfig.problem_edge_padding * 2)
+	
+	# Create a temporary label for measuring
+	var temp_label = Label.new()
+	add_child(temp_label)  # Must be in tree to measure
+	
+	var selected_settings = label_settings_array[label_settings_array.size() - 1]  # Default to smallest
+	
+	# Try each label settings in order (largest to smallest)
+	for settings in label_settings_array:
+		temp_label.label_settings = settings
+		temp_label.text = full_expression
+		temp_label.reset_size()
+		var width = temp_label.get_minimum_size().x
+		
+		if width <= max_width:
+			selected_settings = settings
+			break
+	
+	# Clean up temp label
+	temp_label.queue_free()
+	
+	return selected_settings
 
 func calculate_centered_problem_x(label: Label) -> float:
 	"""Calculate the X position to center a problem based on its full expression width (including answer)"""
@@ -1373,7 +1436,7 @@ func create_incorrect_answer_label():
 	
 	# Create new label as child of current problem label
 	var incorrect_label = Label.new()
-	incorrect_label.label_settings = label_settings_resource  # Uses GravityBold128
+	incorrect_label.label_settings = current_problem_label_settings  # Use same size as the problem
 	incorrect_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	incorrect_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	incorrect_label.position = Vector2(0, 0)  # Start at (0, 0) relative to parent

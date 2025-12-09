@@ -29,6 +29,18 @@ var page_width = 1920.0  # Width offset between pages
 # Input
 # ============================================
 var max_answer_chars = 4  # Maximum characters for answer input
+
+# ============================================
+# Problem Display Sizing
+# ============================================
+var problem_edge_padding = 32.0  # Minimum padding on each side of the screen for problems
+var problem_label_settings_order = [
+	"res://assets/label settings/GravityBold128.tres",
+	"res://assets/label settings/GravityBold96.tres",
+	"res://assets/label settings/GravityBold64.tres",
+	"res://assets/label settings/GravityBold48.tres",
+	"res://assets/label settings/GravityBold32.tres"
+]
 var require_submit_after_incorrect = true  # Whether player must press Submit to continue after incorrect answer delay
 
 # ============================================
