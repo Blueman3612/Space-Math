@@ -1,5 +1,0 @@
-*.zip
-db
-kv
-*.lock
-package.json
