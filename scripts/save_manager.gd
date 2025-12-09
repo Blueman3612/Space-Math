@@ -433,7 +433,7 @@ func unlock_all_levels():
 				# Set each level to have 3 stars with mastery performance
 				save_data.grade_levels[level_id] = {
 					"highest_stars": 3,
-					"best_correct": mastery_count,
+					"best_accuracy": mastery_count,
 					"best_time": GameConfig.level_timer_duration,  # Full time
 					"best_cqpm": ScoreManager.calculate_cqpm(mastery_count, GameConfig.level_timer_duration)
 				}
