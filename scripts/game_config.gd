@@ -546,6 +546,11 @@ var timeback_star1_bonus = 0.25  # +0.25 XP for earning first star
 var timeback_star2_bonus = 0.25  # +0.25 XP for earning second star
 var timeback_star3_bonus = 0.5   # +0.5 XP for earning third star
 
+# Minimum XP guarantee for mastery (3 stars)
+# If a player masters a level and their cumulative XP for that level is still below this,
+# they will receive a top-up to reach this minimum
+var timeback_mastery_min_xp = 2.0
+
 # XP multiplier based on previously earned stars (discourages farming)
 # Applied to (base_time_xp + new_star_bonus)
 var timeback_previous_star_multipliers = {

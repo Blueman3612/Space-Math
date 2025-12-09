@@ -351,6 +351,35 @@ func get_grade_level_data(level_id: String) -> Dictionary:
 		return {}
 	return save_data.grade_levels[level_id]
 
+func get_grade_level_xp_earned(level_id: String) -> float:
+	"""Get the cumulative XP earned for a grade-based level"""
+	if not save_data.has("grade_levels"):
+		return 0.0
+	if not save_data.grade_levels.has(level_id):
+		return 0.0
+	return save_data.grade_levels[level_id].get("xp_earned", 0.0)
+
+func add_grade_level_xp_earned(level_id: String, xp_amount: float):
+	"""Add XP to the cumulative total for a grade-based level"""
+	# Ensure grade_levels dict exists
+	if not save_data.has("grade_levels"):
+		save_data.grade_levels = {}
+	
+	# Ensure level exists with default values
+	if not save_data.grade_levels.has(level_id):
+		save_data.grade_levels[level_id] = {
+			"highest_stars": 0,
+			"best_accuracy": 0,
+			"best_time": 999999.0,
+			"best_cqpm": 0.0,
+			"xp_earned": 0.0
+		}
+	
+	# Add to cumulative XP (no maximum cap)
+	var current_xp = save_data.grade_levels[level_id].get("xp_earned", 0.0)
+	save_data.grade_levels[level_id].xp_earned = current_xp + xp_amount
+	has_unsaved_changes = true
+
 func update_grade_level_data(level_id: String, accuracy: int, time_taken: float, stars_earned: int):
 	"""Update the saved data for a grade-based level"""
 	# Ensure grade_levels dict exists
@@ -363,7 +392,8 @@ func update_grade_level_data(level_id: String, accuracy: int, time_taken: float,
 			"highest_stars": 0,
 			"best_accuracy": 0,
 			"best_time": 999999.0,
-			"best_cqpm": 0.0
+			"best_cqpm": 0.0,
+			"xp_earned": 0.0
 		}
 	
 	var level_data = save_data.grade_levels[level_id]

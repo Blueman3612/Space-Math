@@ -260,8 +260,21 @@ func end_grade_level_session_and_award_xp(level_data: Dictionary, previous_stars
 	# Calculate final XP: (base + bonus) × multiplier
 	# NO XP if player didn't earn at least 1 star this playthrough
 	var final_xp = 0.0
+	var calculated_xp = 0.0
+	var xp_top_up = 0.0
 	if new_stars >= 1:
-		final_xp = snapped((base_time_xp + new_star_bonus) * previous_star_multiplier, 0.01)
+		calculated_xp = snapped((base_time_xp + new_star_bonus) * previous_star_multiplier, 0.01)
+		final_xp = calculated_xp
+	
+	# Apply minimum XP guarantee for mastery (3 stars)
+	# If player masters the level and their cumulative XP would still be below minimum, top up to reach it
+	var previous_xp_earned = SaveManager.get_grade_level_xp_earned(level_data.id)
+	var mastery_min_xp = GameConfig.timeback_mastery_min_xp
+	if new_stars >= 3:
+		var projected_total = previous_xp_earned + calculated_xp
+		if projected_total < mastery_min_xp:
+			xp_top_up = mastery_min_xp - projected_total
+			final_xp = calculated_xp + xp_top_up
 	
 	# Build detailed breakdown
 	var details = {
@@ -278,6 +291,10 @@ func end_grade_level_session_and_award_xp(level_data: Dictionary, previous_stars
 		"previous_stars": previous_stars,
 		"new_stars": new_stars,
 		"previous_star_multiplier": previous_star_multiplier,
+		"calculated_xp": calculated_xp,
+		"previous_xp_earned": previous_xp_earned,
+		"mastery_min_xp": mastery_min_xp,
+		"xp_top_up": xp_top_up,
 		"final_xp": final_xp,
 		"level_id": level_data.id,
 		"level_name": level_data.name
@@ -305,14 +322,30 @@ func end_grade_level_session_and_award_xp(level_data: Dictionary, previous_stars
 	print("  New star bonus: +%.2f" % new_star_bonus)
 	print("  Previous star multiplier (%d stars): %.2fx" % [previous_stars, previous_star_multiplier])
 	if new_stars >= 1:
-		print("  Final XP ((%.2f + %.2f) × %.2fx) = %.2f XP" % [base_time_xp, new_star_bonus, previous_star_multiplier, final_xp])
+		print("  Calculated XP ((%.2f + %.2f) × %.2fx) = %.2f XP" % [base_time_xp, new_star_bonus, previous_star_multiplier, calculated_xp])
 	else:
-		print("  Final XP: 0 (no stars earned this playthrough)")
+		print("  Calculated XP: 0 (no stars earned this playthrough)")
+	print("")
+	print("MASTERY XP GUARANTEE (min %.1f XP):" % mastery_min_xp)
+	print("  Previous XP earned for this level: %.2f" % previous_xp_earned)
+	if new_stars >= 3:
+		var projected_total = previous_xp_earned + calculated_xp
+		print("  Projected total (%.2f + %.2f) = %.2f" % [previous_xp_earned, calculated_xp, projected_total])
+		if xp_top_up > 0:
+			print("  Top-up to reach minimum %.1f XP: +%.2f" % [mastery_min_xp, xp_top_up])
+		else:
+			print("  Already at or above %.1f XP minimum, no top-up needed" % mastery_min_xp)
+	else:
+		print("  Mastery (3 stars) not achieved, minimum XP guarantee does not apply")
+	print("  Final XP awarded this session: %.2f" % final_xp)
+	print("  New cumulative XP for level: %.2f" % (previous_xp_earned + final_xp))
 	print("=".repeat(60) + "\n")
 	
 	# Only award if session meets minimum duration and player earned at least 1 star
 	if total_duration >= GameConfig.timeback_min_session_duration and new_stars >= 1:
 		award_grade_level_timeback_xp(int(round(final_xp)), details, level_data.mastery_count)
+		# Update cumulative XP earned for this level in KV storage
+		SaveManager.add_grade_level_xp_earned(level_data.id, final_xp)
 	elif new_stars < 1:
 		print("[TimeBack] ⚠ No stars earned this playthrough, no XP awarded")
 	else:

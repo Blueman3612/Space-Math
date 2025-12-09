@@ -12,20 +12,20 @@
                 {
                     "subject": "FastMath",
                     "grade": 1,
-                    "totalXp": null,
-                    "masterableUnits": null
+                    "totalXp": 22,
+                    "masterableUnits": 33
                 },
                 {
                     "subject": "FastMath",
                     "grade": 2,
-                    "totalXp": null,
-                    "masterableUnits": null
+                    "totalXp": 30,
+                    "masterableUnits": 45
                 },
                 {
                     "subject": "FastMath",
                     "grade": 3,
-                    "totalXp": null,
-                    "masterableUnits": null
+                    "totalXp": 38,
+                    "masterableUnits": 57
                 },
                 {
                     "subject": "FastMath",
