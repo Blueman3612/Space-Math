@@ -359,12 +359,23 @@ func award_grade_level_timeback_xp(xp: int, details: Dictionary, _mastery_count:
 		print("[TimeBack] SDK not ready, cannot award XP")
 		return
 	
-	# Prepare score data with manual XP override - only the 3 required fields
+	# Calculate newly earned stars (additive mastery units)
+	# e.g., if player got 3 stars but already had 2, masteredUnits = 1
+	var previous_stars = details.get("previous_stars", 0)
+	var new_stars = details.get("new_stars", 0)
+	var mastered_units = max(0, new_stars - previous_stars)
+	
+	# Prepare score data with manual XP override
 	var score_data = {
 		"correctQuestions": details.correct_answers,
 		"totalQuestions": details.total_answers,
 		"xpAwarded": xp
 	}
+	
+	# Only include masteredUnits if new stars were earned
+	if mastered_units > 0:
+		score_data["masteredUnits"] = mastered_units
+		print("[TimeBack] New stars earned: %d (was %d, now %d)" % [mastered_units, previous_stars, new_stars])
 	
 	PlaycademySdk.timeback.end_activity(score_data)
 
@@ -490,7 +501,7 @@ func calculate_multiplier_from_scale(scale: Array, cqpm: float) -> float:
 			return entry[1]
 	return 1.0  # Fallback
 
-func award_timeback_xp(xp: int, details: Dictionary, _pack_name: String, _pack_level_index: int, _current_track, _stars_earned: int):
+func award_timeback_xp(xp: int, details: Dictionary, _pack_name: String, _pack_level_index: int, _current_track, previous_stars: int):
 	"""Award XP through Playcademy TimeBack API using the new end_activity method"""
 	if not PlaycademySdk or not PlaycademySdk.is_ready() or not PlaycademySdk.timeback:
 		print("[TimeBack] SDK not ready, cannot award XP")
@@ -501,12 +512,23 @@ func award_timeback_xp(xp: int, details: Dictionary, _pack_name: String, _pack_l
 	var level_config = GameConfig.level_configs.get(level_number, GameConfig.level_configs[1])
 	var total_questions = level_config.problems
 	
-	# Prepare score data with manual XP override - only the 3 required fields
+	# Calculate newly earned stars (additive mastery units)
+	# The previous_stars parameter is the stars BEFORE this session
+	# We need to calculate the stars earned THIS session
+	var new_stars = ScoreManager.evaluate_stars(level_number).size()
+	var mastered_units = max(0, new_stars - previous_stars)
+	
+	# Prepare score data with manual XP override
 	var score_data = {
 		"correctQuestions": details.correct_answers,
 		"totalQuestions": total_questions,
 		"xpAwarded": xp
 	}
+	
+	# Only include masteredUnits if new stars were earned
+	if mastered_units > 0:
+		score_data["masteredUnits"] = mastered_units
+		print("[TimeBack] New stars earned: %d (was %d, now %d)" % [mastered_units, previous_stars, new_stars])
 	
 	PlaycademySdk.timeback.end_activity(score_data)
 
