@@ -71,7 +71,7 @@ func attempt_playcademy_auto_submit():
 # ============================================
 
 func start_session_tracking(pack_name: String, level_index: int):
-	"""Start tracking a new session"""
+	"""Start tracking a new session (legacy pack-based levels)"""
 	session_start_timestamp = Time.get_unix_time_from_system()
 	last_input_timestamp = session_start_timestamp
 	total_idle_time = 0.0
@@ -85,7 +85,28 @@ func start_session_tracking(pack_name: String, level_index: int):
 		var activity_name = pack_name + " - Level " + str(level_index + 1) if pack_name != "Drill Mode" else "Drill Mode"
 		var activity_metadata = {
 			"activityId": activity_id,
-			"activityName": activity_name
+			"activityName": activity_name,
+			"grade": GameConfig.current_grade if GameConfig.current_grade > 0 else 3,
+			"subject": "FastMath"
+		}
+		PlaycademySdk.timeback.start_activity(activity_metadata)
+
+func start_grade_level_session_tracking(level_data: Dictionary):
+	"""Start tracking a new session for grade-based levels"""
+	session_start_timestamp = Time.get_unix_time_from_system()
+	last_input_timestamp = session_start_timestamp
+	total_idle_time = 0.0
+	is_session_active = true
+	current_session_pack = "Grade" + str(GameConfig.current_grade)
+	current_session_level = 0
+	
+	# Start TimeBack activity tracking with proper level info
+	if PlaycademySdk and PlaycademySdk.is_ready() and PlaycademySdk.timeback:
+		var activity_metadata = {
+			"activityId": level_data.id,
+			"activityName": level_data.name,
+			"grade": GameConfig.current_grade,
+			"subject": "FastMath"
 		}
 		PlaycademySdk.timeback.start_activity(activity_metadata)
 

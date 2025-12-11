@@ -84,6 +84,13 @@ var enrollments: Array:
 		return result
 
 # Start tracking an activity
+# metadata should contain:
+#   - activityId: String (required) - unique identifier for the activity
+#   - grade: int (required) - grade level for multi-grade course routing
+#   - subject: String (required) - subject area (e.g., "math", "reading")
+#   - activityName: String (optional) - display name for the activity
+#   - courseId: String (optional) - course identifier
+#   - courseName: String (optional) - course display name
 func start_activity(metadata: Dictionary):
 	if _main_client == null:
 		printerr("[TimebackAPI] Main client not set. Cannot call start_activity().")
@@ -95,9 +102,32 @@ func start_activity(metadata: Dictionary):
 		printerr("[TimebackAPI] client.timeback.startActivity() path not found.")
 		return
 	
+	# Validate required fields
+	if not metadata.has("activityId"):
+		printerr("[TimebackAPI] start_activity() requires 'activityId' in metadata.")
+		return
+	if not metadata.has("grade"):
+		printerr("[TimebackAPI] start_activity() requires 'grade' in metadata.")
+		return
+	if not metadata.has("subject"):
+		printerr("[TimebackAPI] start_activity() requires 'subject' in metadata.")
+		return
+	
 	# Build metadata object for JavaScript
 	var js_metadata = JavaScriptBridge.create_object("Object")
-	js_metadata["activityId"] = metadata.get("activityId", "unknown")
+	
+	# Required fields
+	js_metadata["activityId"] = metadata.get("activityId")
+	js_metadata["grade"] = metadata.get("grade")
+	js_metadata["subject"] = metadata.get("subject")
+	
+	# Optional fields - only set if provided
+	if metadata.has("activityName"):
+		js_metadata["activityName"] = metadata.get("activityName")
+	if metadata.has("courseId"):
+		js_metadata["courseId"] = metadata.get("courseId")
+	if metadata.has("courseName"):
+		js_metadata["courseName"] = metadata.get("courseName")
 	
 	# Call JavaScript SDK's startActivity
 	_main_client.timeback.startActivity(js_metadata)
@@ -105,7 +135,7 @@ func start_activity(metadata: Dictionary):
 	_activity_start_time = Time.get_ticks_msec()
 	_activity_metadata = metadata.duplicate()
 	_activity_in_progress = true
-	print("[TimebackAPI] Started activity: ", _activity_metadata.get("activityId", "unknown"))
+	print("[TimebackAPI] Started activity: ", _activity_metadata.get("activityId", "unknown"), " (Grade ", metadata.get("grade"), ", ", metadata.get("subject"), ")")
 
 # Pause the current activity timer
 # Paused time is not counted toward the activity duration
@@ -156,7 +186,7 @@ func resume_activity():
 
 # End the current activity and submit results
 # XP is calculated server-side with attempt-aware multipliers
-# score_data should contain: { correctQuestions: int, totalQuestions: int, xpAwarded: int (optional) }
+# score_data should contain: { correctQuestions: int, totalQuestions: int, xpAwarded: int (optional), masteredUnits: int (optional) }
 func end_activity(score_data: Dictionary):
 	if not _activity_in_progress:
 		printerr("[TimebackAPI] No activity in progress. Call start_activity() first.")
@@ -180,15 +210,16 @@ func end_activity(score_data: Dictionary):
 	var correct_questions = score_data.get("correctQuestions", 0)
 	var total_questions = score_data.get("totalQuestions", 1)
 	var xp_awarded = score_data.get("xpAwarded", null)
+	var mastered_units = score_data.get("masteredUnits", null)
 	
 	var score_percentage = (float(correct_questions) / float(total_questions) * 100.0) if total_questions > 0 else 0.0
 	
-	print("[TimebackAPI] Ending activity: %.1f%% (%d/%d)%s" % [
-		score_percentage, 
-		correct_questions, 
-		total_questions,
-		(" - XP Override: %d" % xp_awarded) if xp_awarded != null else ""
-	])
+	var log_parts = ["[TimebackAPI] Ending activity: %.1f%% (%d/%d)" % [score_percentage, correct_questions, total_questions]]
+	if xp_awarded != null:
+		log_parts.append(" - XP Override: %d" % xp_awarded)
+	if mastered_units != null:
+		log_parts.append(" - Mastered Units: %d" % mastered_units)
+	print("".join(log_parts))
 	
 	# Build score data object for JavaScript (matching browser SDK API)
 	var js_score_data = JavaScriptBridge.create_object("Object")
@@ -198,6 +229,10 @@ func end_activity(score_data: Dictionary):
 	# Add optional XP override
 	if xp_awarded != null:
 		js_score_data["xpAwarded"] = xp_awarded
+	
+	# Add optional mastered units
+	if mastered_units != null:
+		js_score_data["masteredUnits"] = mastered_units
 	
 	var promise = _main_client.timeback.endActivity(js_score_data)
 

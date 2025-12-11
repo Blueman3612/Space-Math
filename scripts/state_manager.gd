@@ -345,8 +345,8 @@ func start_grade_level_play_state(level_data: Dictionary):
 	UIManager.initialize_timer_line()
 	UIManager.initialize_accuracy_line()
 	
-	# Start TimeBack session tracking
-	PlaycademyManager.start_session_tracking("Grade" + str(GameConfig.current_grade), 0)
+	# Start TimeBack session tracking with level data
+	PlaycademyManager.start_grade_level_session_tracking(level_data)
 	
 	# Generate question first, then create the problem display
 	QuestionManager.generate_new_question()

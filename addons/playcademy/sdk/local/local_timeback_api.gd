@@ -98,13 +98,31 @@ func _on_user_context_completed(result: int, response_code: int, headers: Packed
 	emit_signal("user_context_received", {"role": _role, "enrollments": _enrollments})
 
 # Start tracking an activity
+# metadata should contain:
+#   - activityId: String (required) - unique identifier for the activity
+#   - grade: int (required) - grade level for multi-grade course routing
+#   - subject: String (required) - subject area (e.g., "math", "reading")
+#   - activityName: String (optional) - display name for the activity
+#   - courseId: String (optional) - course identifier
+#   - courseName: String (optional) - course display name
 func start_activity(metadata: Dictionary):
+	# Validate required fields
+	if not metadata.has("activityId"):
+		printerr("[LocalTimebackAPI] start_activity() requires 'activityId' in metadata.")
+		return
+	if not metadata.has("grade"):
+		printerr("[LocalTimebackAPI] start_activity() requires 'grade' in metadata.")
+		return
+	if not metadata.has("subject"):
+		printerr("[LocalTimebackAPI] start_activity() requires 'subject' in metadata.")
+		return
+	
 	_activity_start_time = Time.get_ticks_msec()
 	_activity_metadata = metadata.duplicate()
 	_activity_in_progress = true
 	_paused_time = 0
 	_pause_start_time = 0
-	print("[LocalTimebackAPI] Started activity: ", _activity_metadata.get("activityId", "unknown"))
+	print("[LocalTimebackAPI] Started activity: ", _activity_metadata.get("activityId", "unknown"), " (Grade ", metadata.get("grade"), ", ", metadata.get("subject"), ")")
 
 # Pause the current activity timer
 # Paused time is not counted toward the activity duration
@@ -137,7 +155,7 @@ func resume_activity():
 
 # End the current activity and submit results
 # XP is calculated server-side with attempt-aware multipliers
-# score_data should contain: { correctQuestions: int, totalQuestions: int, xpAwarded: int (optional) }
+# score_data should contain: { correctQuestions: int, totalQuestions: int, xpAwarded: int (optional), masteredUnits: int (optional) }
 func end_activity(score_data: Dictionary):
 	if not _activity_in_progress:
 		printerr("[LocalTimebackAPI] No activity in progress. Call start_activity() first.")
@@ -159,16 +177,16 @@ func end_activity(score_data: Dictionary):
 	var correct_questions = score_data.get("correctQuestions", 0)
 	var total_questions = score_data.get("totalQuestions", 1)
 	var xp_awarded = score_data.get("xpAwarded", null)
+	var mastered_units = score_data.get("masteredUnits", null)
 	
 	var score_percentage = (float(correct_questions) / float(total_questions) * 100.0) if total_questions > 0 else 0.0
 	
-	print("[LocalTimebackAPI] Ending activity: %ds, %.1f%% (%d/%d)%s" % [
-		duration_seconds,
-		score_percentage, 
-		correct_questions, 
-		total_questions,
-		(" - XP Override: %d" % xp_awarded) if xp_awarded != null else ""
-	])
+	var log_parts = ["[LocalTimebackAPI] Ending activity: %ds, %.1f%% (%d/%d)" % [duration_seconds, score_percentage, correct_questions, total_questions]]
+	if xp_awarded != null:
+		log_parts.append(" - XP Override: %d" % xp_awarded)
+	if mastered_units != null:
+		log_parts.append(" - Mastered Units: %d" % mastered_units)
+	print("".join(log_parts))
 	
 	var http := HTTPRequest.new()
 	add_child(http)
@@ -186,6 +204,10 @@ func end_activity(score_data: Dictionary):
 	if xp_awarded != null:
 		score_data_dict["xpAwarded"] = xp_awarded
 	
+	# Add optional mastered units
+	if mastered_units != null:
+		score_data_dict["masteredUnits"] = mastered_units
+	
 	var request_body = {
 		"activityData": _activity_metadata,
 		"scoreData": score_data_dict,
@@ -193,6 +215,10 @@ func end_activity(score_data: Dictionary):
 			"durationSeconds": int(duration_seconds)
 		}
 	}
+	
+	# Add optional mastered units to request body
+	if mastered_units != null:
+		request_body["masteredUnits"] = mastered_units
 	
 	var json_string = JSON.stringify(request_body)
 	var err := http.request(url, headers, HTTPClient.METHOD_POST, json_string)
