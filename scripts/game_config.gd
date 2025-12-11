@@ -374,7 +374,7 @@ const GRADE_LEVELS = {
 			{
 				"name": "Fractions",
 				"levels": [
-					{"id": "grade3_number_line_fractions", "name": "Place Fractions on Number Line (den. 2, 4, 8)", "mastery_count": 20, "config": {"type": "number_line_fractions", "denominators": [2, 4, 8], "total_pips": 9, "lower_limit": 0, "upper_limit": 1}}
+					{"id": "grade3_number_line_fractions", "name": "Place Fractions on Number Line (den. 2, 4, 8)", "mastery_count": 20, "config": {"type": "number_line_fractions", "denominators": [2, 4, 8], "total_pips": 9, "frame": 0, "control_mode": "pip_to_pip", "lower_limit": 0, "upper_limit": 1}}
 				]
 			}
 		]
@@ -424,16 +424,17 @@ const GRADE_LEVELS = {
 					{"id": "grade4_decimal_add_sub", "name": "Add and Subtract Decimals to the Hundredths", "mastery_count": 15, "config": {"type": "decimal_add_sub", "operators": ["+", "-"]}}
 				]
 			},
-			{
-				"name": "Fractions",
-				"levels": [
-					{"id": "grade4_fraction_comparison", "name": "Quantity Comparison of Fractions with Unlike Denominators", "mastery_count": 20, "config": {"type": "fraction_comparison"}},
-					{"id": "grade4_mixed_numbers", "name": "Add/Subtract Mixed Numbers with Like Denominators", "mastery_count": 19, "config": {"type": "mixed_numbers_like_denom", "operators": ["+", "-"]}}
-				]
-			}
-		]
-	},
-	5: {
+		{
+			"name": "Fractions",
+			"levels": [
+				{"id": "grade4_number_line_fractions", "name": "Place Fractions on Number Line (den. 2, 3, 4, 5, 6, 8, 10)", "mastery_count": 20, "config": {"type": "number_line_fractions_extended", "denominators": [2, 3, 4, 5, 6, 8, 10], "total_pips": 13, "frame": 1, "control_mode": "continuous", "lower_limit": 0, "upper_limit": 3}},
+				{"id": "grade4_fraction_comparison", "name": "Quantity Comparison of Fractions with Unlike Denominators", "mastery_count": 20, "config": {"type": "fraction_comparison"}},
+				{"id": "grade4_mixed_numbers", "name": "Add/Subtract Mixed Numbers with Like Denominators", "mastery_count": 19, "config": {"type": "mixed_numbers_like_denom", "operators": ["+", "-"]}}
+			]
+		}
+	]
+},
+5: {
 		"categories": [
 			{
 				"name": "Addition",
@@ -502,8 +503,9 @@ const PROBLEM_DISPLAY_FORMATS = {
 	"Multiply fraction by fraction": "fraction",
 	"Division with unit fractions": "fraction",
 	"Compare unlike denominators (4.NF.A)": "multiple_choice",
-	# Grade 3 number line type
+	# Number line types
 	"number_line_fractions": "number_line",
+	"number_line_fractions_extended": "number_line",
 	# Grade 2 types
 	"expression_comparison_20": "multiple_choice",
 	"equivalence_associative": "equivalence",
@@ -533,6 +535,12 @@ var number_line_pointer_y = 128.0  # Y position of pointer relative to number li
 var number_line_feedback_delay = 0.25  # Delay before feedback pointer animates to correct position
 var number_line_left_right_hold_time = 0.15  # Time to hold Left/Right before it repeats
 var number_line_left_right_repeat_interval = 0.1  # Interval between repeats when holding Left/Right
+
+# Continuous movement mode configuration (for extended number line questions)
+var number_line_continuous_speed = 320.0  # Base movement speed in pixels per second
+var number_line_continuous_max_speed = 1200.0  # Maximum movement speed after acceleration
+var number_line_continuous_acceleration = 2400.0  # Acceleration in pixels per second squared
+var number_line_answer_tolerance = 80.0  # Pixel tolerance for correct answer in continuous mode
 
 # ============================================
 # TimeBack / XP System Configuration

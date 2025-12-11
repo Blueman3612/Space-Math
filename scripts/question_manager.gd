@@ -392,6 +392,8 @@ func _generate_problem_by_type(problem_type: String, config: Dictionary) -> Dict
 			return _generate_multiply_divide_fractions_problem(config)
 		"number_line_fractions":
 			return _generate_number_line_fractions_problem(config)
+		"number_line_fractions_extended":
+			return _generate_number_line_fractions_extended_problem(config)
 		_:
 			print("Error: Unknown problem type: ", problem_type)
 			return {}
@@ -440,6 +442,13 @@ func _get_dynamic_question_key(question_data: Dictionary) -> String:
 	elif question_type == "number_line_fractions":
 		var op = operands[0]
 		return "number_line_" + str(op.numerator) + "/" + str(op.denominator)
+	elif question_type == "number_line_fractions_extended":
+		var op = operands[0]
+		var whole = op.get("whole", 0)
+		if whole > 0:
+			return "number_line_ext_" + str(whole) + "_" + str(op.numerator) + "/" + str(op.denominator)
+		else:
+			return "number_line_ext_" + str(op.numerator) + "/" + str(op.denominator)
 	elif question_type == "expression_comparison_20":
 		# Format: expr1_op1_expr1_op2 vs expr2_op1_expr2_op2
 		var expr1 = operands[0]
@@ -1888,11 +1897,72 @@ func _generate_number_line_fractions_problem(config: Dictionary) -> Dictionary:
 		"total_pips": total_pips,
 		"lower_limit": lower_limit,
 		"upper_limit": upper_limit,
+		"frame": config.get("frame", 0),
+		"control_mode": config.get("control_mode", "pip_to_pip"),
 		"expression": fraction_str,
 		"question": fraction_str,
 		"title": config.get("name", "Number Line Fractions"),
 		"grade": "",
 		"type": "number_line_fractions"
+	}
+
+func _generate_number_line_fractions_extended_problem(config: Dictionary) -> Dictionary:
+	"""Generate an extended number line fractions problem (0-3 range, mixed numbers and proper fractions)"""
+	var denominators = config.get("denominators", [2, 3, 4, 5, 6, 8, 10])
+	var total_pips = config.get("total_pips", 13)
+	var lower_limit = config.get("lower_limit", 0)
+	var upper_limit = config.get("upper_limit", 3)
+	var frame_idx = config.get("frame", 1)
+	var control_mode = config.get("control_mode", "continuous")
+	
+	# Build a pool of all valid fractions for even distribution
+	# Valid fractions: proper fractions (< 1) and mixed numbers (1 <= x < 3, not integers)
+	var fraction_pool = []
+	
+	for denom in denominators:
+		# Proper fractions: 1/d, 2/d, ..., (d-1)/d
+		for numer in range(1, denom):
+			fraction_pool.append({"whole": 0, "numerator": numer, "denominator": denom})
+		
+		# Mixed numbers with whole part 1: 1 1/d, 1 2/d, ..., 1 (d-1)/d
+		for numer in range(1, denom):
+			fraction_pool.append({"whole": 1, "numerator": numer, "denominator": denom})
+		
+		# Mixed numbers with whole part 2: 2 1/d, 2 2/d, ..., 2 (d-1)/d
+		for numer in range(1, denom):
+			fraction_pool.append({"whole": 2, "numerator": numer, "denominator": denom})
+	
+	# Randomly select a fraction from the pool
+	var selected = fraction_pool[rng.randi() % fraction_pool.size()]
+	var whole = selected.whole
+	var numerator = selected.numerator
+	var denominator = selected.denominator
+	
+	# Calculate the decimal value for correct answer position
+	var decimal_value = float(whole) + float(numerator) / float(denominator)
+	
+	# Build the fraction string for display and result
+	var fraction_str: String
+	if whole > 0:
+		fraction_str = str(whole) + " " + str(numerator) + "/" + str(denominator)
+	else:
+		fraction_str = str(numerator) + "/" + str(denominator)
+	
+	return {
+		"operands": [{"whole": whole, "numerator": numerator, "denominator": denominator}],
+		"operator": "=",
+		"result": fraction_str,
+		"correct_value": decimal_value,
+		"total_pips": total_pips,
+		"lower_limit": lower_limit,
+		"upper_limit": upper_limit,
+		"frame": frame_idx,
+		"control_mode": control_mode,
+		"expression": fraction_str,
+		"question": fraction_str,
+		"title": config.get("name", "Number Line Fractions Extended"),
+		"grade": "",
+		"type": "number_line_fractions_extended"
 	}
 
 func get_question_key(question_data):

@@ -255,55 +255,106 @@ func process_number_line_input(delta: float, answer_submitted: bool):
 		right_timer = 0.0
 		return
 	
-	# Handle Left input
-	if left_just_pressed:
-		# Immediate move on first press
-		DisplayManager.current_number_line.move_left()
-		left_just_pressed = false
-		left_timer = 0.0
+	var number_line = DisplayManager.current_number_line
+	var control_mode = number_line.control_mode
 	
-	# Handle Left hold functionality
-	if Input.is_action_pressed("Left"):
-		if not left_held:
-			left_timer += delta
-			if left_timer >= GameConfig.number_line_left_right_hold_time:
-				left_held = true
-				left_timer = 0.0
+	# Check if Shift is held (for continuous mode pip snapping)
+	var shift_held = Input.is_key_pressed(KEY_SHIFT)
+	
+	if control_mode == "continuous":
+		# Continuous movement mode
+		var left_pressed = Input.is_action_pressed("Left")
+		var right_pressed = Input.is_action_pressed("Right")
+		
+		if shift_held:
+			# Shift held: snap to pip mode (one-shot on press)
+			if left_just_pressed:
+				# Move to previous pip
+				var current_pip = number_line.get_nearest_pip_index(number_line.pointer_x)
+				if current_pip > 0:
+					number_line.pointer_x = number_line.get_pip_x_position(current_pip - 1)
+					number_line._update_pointer_position_immediate()
+					number_line._update_control_visibility()
+					AudioManager.play_tick()
+				left_just_pressed = false
+			
+			if right_just_pressed:
+				# Move to next pip
+				var current_pip = number_line.get_nearest_pip_index(number_line.pointer_x)
+				if current_pip < number_line.total_pips - 1:
+					number_line.pointer_x = number_line.get_pip_x_position(current_pip + 1)
+					number_line._update_pointer_position_immediate()
+					number_line._update_control_visibility()
+					AudioManager.play_tick()
+				right_just_pressed = false
+			
+			# Stop continuous movement when shift is held
+			number_line.stop_continuous_movement()
 		else:
-			# Repeat while held
-			left_timer += delta
-			if left_timer >= GameConfig.number_line_left_right_repeat_interval:
-				left_timer = 0.0
-				DisplayManager.current_number_line.move_left()
+			# No shift: smooth continuous movement
+			left_just_pressed = false
+			right_just_pressed = false
+			
+			if left_pressed and not right_pressed:
+				number_line.move_continuous(-1, delta)
+				number_line._update_control_visibility()
+			elif right_pressed and not left_pressed:
+				number_line.move_continuous(1, delta)
+				number_line._update_control_visibility()
+			else:
+				# Neither held or both held - stop movement
+				number_line.stop_continuous_movement()
 	else:
-		# Reset hold state when left is released
-		left_held = false
-		left_timer = 0.0
-	
-	# Handle Right input
-	if right_just_pressed:
-		# Immediate move on first press
-		DisplayManager.current_number_line.move_right()
-		right_just_pressed = false
-		right_timer = 0.0
-	
-	# Handle Right hold functionality
-	if Input.is_action_pressed("Right"):
-		if not right_held:
-			right_timer += delta
-			if right_timer >= GameConfig.number_line_left_right_hold_time:
-				right_held = true
-				right_timer = 0.0
+		# Pip-to-pip mode (original behavior)
+		# Handle Left input
+		if left_just_pressed:
+			# Immediate move on first press
+			number_line.move_left()
+			left_just_pressed = false
+			left_timer = 0.0
+		
+		# Handle Left hold functionality
+		if Input.is_action_pressed("Left"):
+			if not left_held:
+				left_timer += delta
+				if left_timer >= GameConfig.number_line_left_right_hold_time:
+					left_held = true
+					left_timer = 0.0
+			else:
+				# Repeat while held
+				left_timer += delta
+				if left_timer >= GameConfig.number_line_left_right_repeat_interval:
+					left_timer = 0.0
+					number_line.move_left()
 		else:
-			# Repeat while held
-			right_timer += delta
-			if right_timer >= GameConfig.number_line_left_right_repeat_interval:
-				right_timer = 0.0
-				DisplayManager.current_number_line.move_right()
-	else:
-		# Reset hold state when right is released
-		right_held = false
-		right_timer = 0.0
+			# Reset hold state when left is released
+			left_held = false
+			left_timer = 0.0
+		
+		# Handle Right input
+		if right_just_pressed:
+			# Immediate move on first press
+			number_line.move_right()
+			right_just_pressed = false
+			right_timer = 0.0
+		
+		# Handle Right hold functionality
+		if Input.is_action_pressed("Right"):
+			if not right_held:
+				right_timer += delta
+				if right_timer >= GameConfig.number_line_left_right_hold_time:
+					right_held = true
+					right_timer = 0.0
+			else:
+				# Repeat while held
+				right_timer += delta
+				if right_timer >= GameConfig.number_line_left_right_repeat_interval:
+					right_timer = 0.0
+					number_line.move_right()
+		else:
+			# Reset hold state when right is released
+			right_held = false
+			right_timer = 0.0
 
 func process_single_backspace(user_answer: String) -> String:
 	"""Process a single backspace press and return the modified user_answer"""

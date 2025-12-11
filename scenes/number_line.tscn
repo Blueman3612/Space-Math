@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://rf452m4x8lvb"]
 
-[ext_resource type="Texture2D" uid="uid://5c0y2aejk2wj" path="res://assets/sprites/Number Line.png" id="1_1kwv5"]
+[ext_resource type="Texture2D" uid="uid://c05o6ef3d0h0b" path="res://assets/sprites/Number Line.png" id="1_1kwv5"]
 [ext_resource type="LabelSettings" uid="uid://cbtne7xhouqs1" path="res://assets/label settings/GravityBold64.tres" id="2_1kwv5"]
 [ext_resource type="Texture2D" uid="uid://sa1b52bnafk" path="res://assets/sprites/NL Pointer.png" id="3_wqvif"]
 [ext_resource type="Texture2D" uid="uid://bwlmifnvnxasi" path="res://assets/sprites/Key Icons.png" id="4_w5ivl"]
@@ -8,6 +8,7 @@
 
 [node name="NumberLine" type="Sprite2D"]
 texture = ExtResource("1_1kwv5")
+vframes = 2
 script = ExtResource("5_number_line")
 
 [node name="Shadow" type="Sprite2D" parent="."]
@@ -15,6 +16,7 @@ self_modulate = Color(0, 0, 0, 0.5019608)
 show_behind_parent = true
 position = Vector2(8, 8)
 texture = ExtResource("1_1kwv5")
+vframes = 2
 
 [node name="LowerLimit" type="Label" parent="."]
 offset_left = -916.0
@@ -26,12 +28,34 @@ label_settings = ExtResource("2_1kwv5")
 horizontal_alignment = 1
 vertical_alignment = 2
 
+[node name="MidLimit1" type="Label" parent="."]
+visible = false
+offset_left = -346.0
+offset_top = -160.0
+offset_right = -218.0
+offset_bottom = -96.0
+text = "1"
+label_settings = ExtResource("2_1kwv5")
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="MidLimit2" type="Label" parent="."]
+visible = false
+offset_left = 225.0
+offset_top = -160.0
+offset_right = 353.0
+offset_bottom = -96.0
+text = "2"
+label_settings = ExtResource("2_1kwv5")
+horizontal_alignment = 1
+vertical_alignment = 2
+
 [node name="UpperLimit" type="Label" parent="."]
 offset_left = 796.0
 offset_top = -160.0
 offset_right = 924.0
 offset_bottom = -96.0
-text = "1"
+text = "3"
 label_settings = ExtResource("2_1kwv5")
 horizontal_alignment = 1
 vertical_alignment = 2

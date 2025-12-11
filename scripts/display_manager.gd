@@ -779,10 +779,14 @@ func create_number_line_problem():
 	var operand = operands[0]
 	var numerator = operand.numerator
 	var denominator = operand.denominator
+	var whole_number = operand.get("whole", 0)  # For mixed numbers
 	var correct_pip = QuestionManager.current_question.get("correct_pip", 0)
+	var correct_value = QuestionManager.current_question.get("correct_value", 0.0)
 	var total_pips = QuestionManager.current_question.get("total_pips", 9)
 	var lower_limit = QuestionManager.current_question.get("lower_limit", 0)
 	var upper_limit = QuestionManager.current_question.get("upper_limit", 1)
+	var frame_idx = QuestionManager.current_question.get("frame", 0)
+	var control_mode = QuestionManager.current_question.get("control_mode", "pip_to_pip")
 	
 	# Calculate positions
 	var final_position = GameConfig.number_line_final_position
@@ -807,9 +811,16 @@ func create_number_line_problem():
 	number_line_instance.initialize({
 		"total_pips": total_pips,
 		"lower_limit": lower_limit,
-		"upper_limit": upper_limit
+		"upper_limit": upper_limit,
+		"frame": frame_idx,
+		"control_mode": control_mode
 	})
-	number_line_instance.set_correct_pip(correct_pip)
+	
+	# Set correct answer based on control mode
+	if control_mode == "continuous":
+		number_line_instance.set_correct_value(correct_value)
+	else:
+		number_line_instance.set_correct_pip(correct_pip)
 	
 	# Store reference
 	current_number_line = number_line_instance
@@ -817,6 +828,11 @@ func create_number_line_problem():
 	
 	# Create fraction label above the number line
 	var fraction_node = create_fraction(Vector2(fraction_position.x, fraction_start_y), numerator, denominator, play_node)
+	
+	# Set as mixed fraction if there's a whole number component
+	if whole_number > 0:
+		fraction_node.set_mixed_fraction(whole_number, numerator, denominator)
+	
 	fraction_node.z_index = -1
 	number_line_fraction_label = fraction_node
 	current_problem_nodes.append(fraction_node)
