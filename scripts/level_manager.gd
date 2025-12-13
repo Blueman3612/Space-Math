@@ -279,6 +279,7 @@ func load_page(global_page_index: int) -> Control:
 	var current_x = GameConfig.level_button_start_position.x
 	var current_y = GameConfig.level_button_start_position.y
 	var current_row_start_x = current_x
+	var categories_labeled_on_page = {}  # Track which categories have already shown their label on this page
 	
 	# Iterate through each category segment on this page
 	for segment in page_data:
@@ -310,7 +311,9 @@ func load_page(global_page_index: int) -> Control:
 			
 			if needs_wrap:
 				if category_buttons_in_row.size() > 0:
-					create_pack_outline_in_container(page_container, category_name, category_buttons_in_row, outline_start_x, current_row_outlines, theme_color)
+					var show_label = not categories_labeled_on_page.has(category_name)
+					create_pack_outline_in_container(page_container, category_name, category_buttons_in_row, outline_start_x, current_row_outlines, theme_color, show_label)
+					categories_labeled_on_page[category_name] = true
 					category_buttons_in_row.clear()
 				
 				finalize_and_center_row(current_row_buttons, current_row_outlines, current_row_start_x)
@@ -342,7 +345,9 @@ func load_page(global_page_index: int) -> Control:
 			category_first_button_in_row = false
 		
 		if category_buttons_in_row.size() > 0:
-			create_pack_outline_in_container(page_container, category_name, category_buttons_in_row, outline_start_x, current_row_outlines, theme_color)
+			var show_label = not categories_labeled_on_page.has(category_name)
+			create_pack_outline_in_container(page_container, category_name, category_buttons_in_row, outline_start_x, current_row_outlines, theme_color, show_label)
+			categories_labeled_on_page[category_name] = true
 			category_buttons_in_row.clear()
 	
 	if current_row_buttons.size() > 0:
@@ -596,8 +601,9 @@ func create_grade_level_button_in_container(container: Control, global_number: i
 	
 	return button
 
-func create_pack_outline_in_container(container: Control, pack_name: String, pack_buttons: Array, start_x: float, row_outlines: Array, theme_color: Color):
-	"""Create a level pack outline inside a page container"""
+func create_pack_outline_in_container(container: Control, pack_name: String, pack_buttons: Array, start_x: float, row_outlines: Array, theme_color: Color, show_label_text: bool = true):
+	"""Create a level pack outline inside a page container.
+	If show_label_text is false, the label text will be hidden (for duplicate pack labels on same page)."""
 	if pack_buttons.size() == 0:
 		return
 	
@@ -657,7 +663,7 @@ func create_pack_outline_in_container(container: Control, pack_name: String, pac
 	label.name = "Label"
 	label.position = Vector2(4, 4)
 	label.size = Vector2(outline_width - 8, GameConfig.pack_outline_height - 8)
-	label.text = pack_name
+	label.text = pack_name if show_label_text else ""  # Hide label text for duplicate pack on same page
 	label.label_settings = label_settings_24
 	outline_container.add_child(label)
 	
