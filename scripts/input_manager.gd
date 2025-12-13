@@ -7,6 +7,11 @@ var is_fraction_input = false  # Whether the user's answer is currently in fract
 var is_mixed_fraction_input = false  # Whether the user's answer is a mixed fraction
 var editing_numerator = true  # For mixed fractions: whether we're editing numerator (true) or denominator (false)
 
+# Multi-input state variables (for problems with multiple answer slots)
+var is_multi_input = false  # Whether this is a multi-input problem
+var current_input_slot = 0  # Which input slot is currently active (0 or 1)
+var multi_input_values = ["", ""]  # Values for each input slot
+
 # Backspace state
 var backspace_timer = 0.0  # Timer for backspace hold functionality
 var backspace_held = false  # Track if backspace is being held
@@ -42,6 +47,11 @@ func reset_for_new_question():
 	is_fraction_input = false
 	is_mixed_fraction_input = false
 	editing_numerator = true
+	
+	# Reset multi-input state
+	is_multi_input = false
+	current_input_slot = 0
+	multi_input_values = ["", ""]
 	
 	# Reset Left/Right state for number line questions
 	left_just_pressed = false
@@ -83,6 +93,33 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 						break
 				# Return early for multiple choice - don't process other inputs
 				return user_answer
+	
+	# Handle multi-input problems (e.g., equivalence_mult_factoring)
+	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY):
+		var is_multi_input_question = QuestionManager.current_question and QuestionManager.is_multi_input_display_type(QuestionManager.current_question.get("type", ""))
+		if is_multi_input_question and not answer_submitted:
+			# Initialize multi-input mode if not already
+			if not is_multi_input:
+				is_multi_input = true
+				current_input_slot = 0
+				multi_input_values = ["", ""]
+			
+			if event is InputEventKey and event.pressed and not event.echo:
+				# Check each digit input action
+				var digit_actions = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
+				for digit_idx in range(digit_actions.size()):
+					if Input.is_action_just_pressed(digit_actions[digit_idx]):
+						var digit = str(digit_idx)
+						
+						# Add digit to current slot if within limit
+						if multi_input_values[current_input_slot].length() < GameConfig.max_answer_chars:
+							multi_input_values[current_input_slot] += digit
+							AudioManager.play_tick()
+						break
+			
+			# Return the combined answer string for display purposes
+			# Format: "slot0|slot1" with current slot marker
+			return _get_multi_input_display_string()
 	
 	# Handle number input and negative sign (only during PLAY or DRILL_PLAY state and if not submitted)
 	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY) and not answer_submitted:
@@ -216,6 +253,33 @@ func handle_backspace_just_pressed(current_state: int) -> bool:
 
 func process_backspace(delta: float, user_answer: String, answer_submitted: bool) -> String:
 	"""Process backspace logic and return the modified user_answer"""
+	# Handle multi-input backspace separately
+	if is_multi_input:
+		if backspace_just_pressed and not answer_submitted:
+			handle_multi_input_backspace()
+			backspace_just_pressed = false
+			backspace_timer = 0.0
+		
+		# Handle backspace hold functionality for multi-input
+		if Input.is_action_pressed("Backspace") and not answer_submitted:
+			if not backspace_held:
+				backspace_timer += delta
+				if backspace_timer >= GameConfig.backspace_hold_time:
+					backspace_held = true
+					backspace_timer = 0.0
+			else:
+				# Repeat backspace every 0.05 seconds while held
+				backspace_timer += delta
+				if backspace_timer >= 0.05:
+					backspace_timer = 0.0
+					handle_multi_input_backspace()
+		else:
+			# Reset hold state when backspace is released
+			backspace_held = false
+			backspace_timer = 0.0
+		
+		return _get_multi_input_display_string()
+	
 	# Handle backspace - immediate response for single press, hold for repeat
 	if backspace_just_pressed and not answer_submitted:
 		# Immediate backspace on first press
@@ -430,6 +494,76 @@ func process_single_backspace(user_answer: String) -> String:
 	
 	return user_answer
 
+func _get_multi_input_display_string() -> String:
+	"""Get the display string for multi-input problems.
+	Format: 'value0|value1|slot_index' where slot_index indicates current active slot"""
+	return multi_input_values[0] + "|" + multi_input_values[1] + "|" + str(current_input_slot)
+
+func handle_multi_input_submit() -> bool:
+	"""Handle Submit action for multi-input problems.
+	Returns true if final answer should be submitted, false if just moving to next slot."""
+	if not is_multi_input:
+		return true  # Not a multi-input problem, proceed normally
+	
+	if current_input_slot == 0:
+		# In first slot - check if it has input
+		if multi_input_values[0] != "":
+			# Move to second slot
+			current_input_slot = 1
+			AudioManager.play_tick()
+			return false  # Don't submit yet
+		else:
+			# First slot empty - ignore submit
+			return false
+	else:
+		# In second slot - check if both slots have input
+		if multi_input_values[0] != "" and multi_input_values[1] != "":
+			return true  # Submit the final answer
+		else:
+			# Second slot empty - ignore submit
+			return false
+
+func handle_multi_input_backspace() -> bool:
+	"""Handle Backspace action for multi-input problems.
+	Returns true if backspace was handled, false otherwise."""
+	if not is_multi_input:
+		return false  # Not a multi-input problem
+	
+	if current_input_slot == 1:
+		# In second slot
+		if multi_input_values[1] == "":
+			# Second slot is empty - go back to first slot
+			current_input_slot = 0
+			AudioManager.play_tick()
+			return true
+		else:
+			# Remove last character from second slot
+			multi_input_values[1] = multi_input_values[1].substr(0, multi_input_values[1].length() - 1)
+			AudioManager.play_tick()
+			return true
+	else:
+		# In first slot
+		if multi_input_values[0] != "":
+			# Remove last character from first slot
+			multi_input_values[0] = multi_input_values[0].substr(0, multi_input_values[0].length() - 1)
+			AudioManager.play_tick()
+			return true
+		# First slot already empty - do nothing
+		return true
+
+func get_multi_input_answers() -> Array:
+	"""Get the two input values as integers for validation"""
+	if not is_multi_input:
+		return []
+	
+	var answers = []
+	for i in range(2):
+		if multi_input_values[i] != "":
+			answers.append(int(multi_input_values[i]))
+		else:
+			answers.append(0)
+	return answers
+
 func update_control_guide_visibility(user_answer: String, answer_submitted: bool):
 	"""Update visibility and positions of control guide nodes based on game state"""
 	if not control_guide_enter or not control_guide_tab or not control_guide_divide or not control_guide_enter2:
@@ -456,6 +590,39 @@ func update_control_guide_visibility(user_answer: String, answer_submitted: bool
 			tween.set_ease(Tween.EASE_OUT)
 			tween.set_trans(Tween.TRANS_EXPO)
 			tween.tween_property(control_guide_enter2, "position", target_position, GameConfig.control_guide_animation_duration)
+		return
+	
+	# Handle multi-input question controls
+	var is_multi_input_question = QuestionManager.current_question and QuestionManager.is_multi_input_display_type(QuestionManager.current_question.get("type", ""))
+	if is_multi_input_question:
+		control_guide_tab.visible = false
+		control_guide_divide.visible = false
+		control_guide_enter2.visible = false
+		
+		# Show Enter when:
+		# - In slot 0 with input (to move to slot 1)
+		# - In slot 1 with both slots having input (to submit)
+		var show_enter_multi = false
+		if not answer_submitted:
+			if current_input_slot == 0 and multi_input_values[0] != "":
+				show_enter_multi = true
+			elif current_input_slot == 1 and multi_input_values[0] != "" and multi_input_values[1] != "":
+				show_enter_multi = true
+		
+		control_guide_enter.visible = show_enter_multi
+		
+		# Position Enter control if visible
+		if show_enter_multi:
+			current_x = GameConfig.control_guide_max_x
+			var control_width_enter = control_guide_enter.size.x
+			var target_x_enter = current_x - control_width_enter
+			var target_position_enter = Vector2(target_x_enter, control_guide_enter.position.y)
+			
+			if control_guide_enter.position.distance_to(target_position_enter) > 0.1:
+				var tween = control_guide_enter.create_tween()
+				tween.set_ease(Tween.EASE_OUT)
+				tween.set_trans(Tween.TRANS_EXPO)
+				tween.tween_property(control_guide_enter, "position", target_position_enter, GameConfig.control_guide_animation_duration)
 		return
 	
 	# Hide all controls for multiple choice questions (when not waiting for continue)

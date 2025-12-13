@@ -401,7 +401,8 @@ const GRADE_LEVELS = {
 					{"id": "grade4_multiply_0_12", "name": "Multiplication 0-12", "mastery_count": 46, "config": {"operators": ["x"], "factor_min": 0, "factor_max": 12}},
 					{"id": "grade4_multiply_1digit_by_multidigit", "name": "1-Digit Multiply by 2-3 Digit", "mastery_count": 25, "config": {"operators": ["x"], "multi_digit": true}},
 					{"id": "grade4_multiply_2digit_no_regroup", "name": "2-Digit Multiply by 2-Digit without Regrouping", "mastery_count": 11, "config": {"operators": ["x"], "two_digit_by_two_digit": true, "requires_regrouping": false}},
-					{"id": "grade4_multiply_2digit_regroup", "name": "2-Digit Multiply by 2-Digit with Regrouping", "mastery_count": 9, "config": {"operators": ["x"], "two_digit_by_two_digit": true, "requires_regrouping": true}}
+					{"id": "grade4_multiply_2digit_regroup", "name": "2-Digit Multiply by 2-Digit with Regrouping", "mastery_count": 9, "config": {"operators": ["x"], "two_digit_by_two_digit": true, "requires_regrouping": true}},
+					{"id": "grade4_equivalence_mult_factoring", "name": "Create Equivalent Multiplication Problems by Factoring", "mastery_count": 22, "config": {"type": "equivalence_mult_factoring"}}
 				]
 			},
 			{
@@ -520,7 +521,9 @@ const PROBLEM_DISPLAY_FORMATS = {
 	"fractions_unlike_denom": "fraction",
 	"mixed_to_improper": "fraction_conversion",
 	"improper_to_mixed": "fraction_conversion",
-	"multiply_divide_fractions": "fraction"
+	"multiply_divide_fractions": "fraction",
+	# Multi-input types
+	"equivalence_mult_factoring": "multi_input"
 }
 
 # ============================================

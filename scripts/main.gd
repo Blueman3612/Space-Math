@@ -161,6 +161,17 @@ func submit_answer():
 		submit_number_line_answer()
 		return
 	
+	# Handle multi-input questions (e.g., equivalence_mult_factoring)
+	if QuestionManager.is_multi_input_display_type(question_type):
+		if StateManager.answer_submitted:
+			return  # Already submitted
+		# Check if we should submit or just move to next slot
+		if not InputManager.handle_multi_input_submit():
+			return  # Moved to next slot, don't submit yet
+		# Both slots filled - proceed with submission
+		submit_multi_input_answer()
+		return
+	
 	if StateManager.user_answer == "" or StateManager.user_answer == "-" or StateManager.answer_submitted:
 		return  # Don't submit empty answers, just minus sign, or already submitted
 	
@@ -275,6 +286,109 @@ func submit_answer():
 		
 		# Create animated label showing correct answer for incorrect responses
 		DisplayManager.create_incorrect_answer_label()
+		
+		# Pause TimeBack activity timer while showing correct answer (instructional moment)
+		PlaycademyManager.pause_timeback_activity()
+	
+	# Wait for the full transition delay (timer remains paused during this time)
+	if delay_to_use > 0.0:
+		await get_tree().create_timer(delay_to_use).timeout
+	
+	# Clear transition delay flag
+	StateManager.in_transition_delay = false
+	
+	# If incorrect and require_submit_after_incorrect is true, wait for player to press Submit to continue
+	if not is_correct and GameConfig.require_submit_after_incorrect:
+		StateManager.waiting_for_continue_after_incorrect = true
+		# Store timer state for later restoration
+		StateManager.set_meta("timer_was_active", timer_was_active)
+		StateManager.set_meta("should_start_timer", should_start_timer)
+		return  # Wait for player to press Submit to continue
+	
+	# Continue immediately if correct or if require_submit_after_incorrect is false
+	continue_after_incorrect_internal(is_correct, timer_was_active, should_start_timer)
+
+func submit_multi_input_answer():
+	"""Handle answer submission for multi-input questions (e.g., equivalence_mult_factoring)"""
+	# Mark as submitted to prevent further input
+	StateManager.answer_submitted = true
+	
+	# Get the player's answers
+	var answers = InputManager.get_multi_input_answers()
+	var answer1 = answers[0]
+	var answer2 = answers[1]
+	
+	# Get question data for validation
+	var operands = QuestionManager.current_question.get("operands", [0, 0])
+	var given_factor = QuestionManager.current_question.get("given_factor", 0)
+	var expected_product = operands[0] * operands[1]  # a × b
+	
+	# Validate: c × ans1 × ans2 should equal a × b
+	var player_product = given_factor * answer1 * answer2
+	var is_correct = (player_product == expected_product)
+	
+	var player_answer_str = str(answer1) + ", " + str(answer2)
+	print("Submitting multi-input answer: ", player_answer_str)
+	
+	# Calculate time taken for this question
+	var question_time = 0.0
+	if ScoreManager.current_question_start_time > 0:
+		question_time = (Time.get_ticks_msec() / 1000.0) - ScoreManager.current_question_start_time
+	
+	# Save question data
+	if QuestionManager.current_question:
+		SaveManager.save_question_data(QuestionManager.current_question, player_answer_str, question_time)
+	
+	# Track correct answers and drill mode scoring
+	if StateManager.is_drill_mode:
+		ScoreManager.drill_total_answered += 1
+	
+	var points_earned = 0
+	if is_correct:
+		points_earned = ScoreManager.process_correct_answer(StateManager.is_drill_mode, QuestionManager.current_question)
+		if StateManager.is_drill_mode and points_earned > 0:
+			# Trigger score animations
+			UIManager.create_flying_score_label(points_earned)
+			UIManager.animate_drill_score_scale()
+	else:
+		ScoreManager.process_incorrect_answer(StateManager.is_drill_mode)
+	
+	# Pause timer during transition and store its previous state
+	var timer_was_active = ScoreManager.timer_active
+	var should_start_timer = false
+	
+	# Check if we're in grace period and should start timer after transition
+	if not ScoreManager.timer_started and ScoreManager.grace_period_timer >= GameConfig.timer_grace_period:
+		should_start_timer = true
+	
+	# Set transition delay flag and pause timer
+	StateManager.in_transition_delay = true
+	ScoreManager.timer_active = false
+	
+	# Determine which delay to use based on correctness
+	var delay_to_use = GameConfig.transition_delay  # Default delay for correct answers
+	if not is_correct:
+		delay_to_use = GameConfig.transition_delay_incorrect  # Longer delay for incorrect answers
+	
+	# Set color based on correctness
+	var feedback_color = Color(0, 1, 0) if is_correct else Color(1, 0, 0)
+	
+	# Color all problem nodes
+	DisplayManager.color_problem_nodes(feedback_color)
+	
+	# Play sounds and show feedback
+	if is_correct:
+		AudioManager.play_correct()
+		UIManager.show_feedback_flash(Color(0, 1, 0))
+		print("✓ Correct! Player answered: ", player_answer_str)
+	else:
+		AudioManager.play_incorrect()
+		UIManager.show_feedback_flash(Color(1, 0, 0))
+		var expected = QuestionManager.current_question.get("expected_answers", [0, 0])
+		print("✗ Incorrect. Expected: ", expected[0], " and ", expected[1], ", you entered: ", player_answer_str)
+		
+		# Create animated label showing correct answer
+		DisplayManager.create_incorrect_multi_input_label()
 		
 		# Pause TimeBack activity timer while showing correct answer (instructional moment)
 		PlaycademyManager.pause_timeback_activity()

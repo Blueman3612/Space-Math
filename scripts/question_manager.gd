@@ -56,6 +56,10 @@ func is_equivalence_display_type(question_type: String) -> bool:
 	"""Check if a question type should be displayed in equivalence format"""
 	return GameConfig.PROBLEM_DISPLAY_FORMATS.get(question_type, "") == "equivalence"
 
+func is_multi_input_display_type(question_type: String) -> bool:
+	"""Check if a question type should be displayed in multi-input format"""
+	return GameConfig.PROBLEM_DISPLAY_FORMATS.get(question_type, "") == "multi_input"
+
 func get_multiple_choice_answers(question_data) -> Array:
 	"""Generate answer choices for multiple choice questions (dynamic number of choices)"""
 	var question_type = question_data.get("type", "")
@@ -394,6 +398,8 @@ func _generate_problem_by_type(problem_type: String, config: Dictionary) -> Dict
 			return _generate_number_line_fractions_problem(config)
 		"number_line_fractions_extended":
 			return _generate_number_line_fractions_extended_problem(config)
+		"equivalence_mult_factoring":
+			return _generate_equivalence_mult_factoring_problem(config)
 		_:
 			print("Error: Unknown problem type: ", problem_type)
 			return {}
@@ -464,6 +470,10 @@ func _get_dynamic_question_key(question_data: Dictionary) -> String:
 		var left = operands[0]
 		var right = operands[1]
 		return str(left.a) + left.op + str(left.b) + "_pv_" + str(right.a) + right.op1 + "10" + right.op2 + str(question_data.get("result", 0))
+	elif question_type == "equivalence_mult_factoring":
+		# Format: a_x_b_factor_c
+		var given_factor = question_data.get("given_factor", 0)
+		return str(operands[0]) + "_x_" + str(operands[1]) + "_factor_" + str(given_factor)
 
 	# Standard format for regular problems
 	return str(operands[0]) + "_" + operator + "_" + str(operands[1])
@@ -1963,6 +1973,95 @@ func _generate_number_line_fractions_extended_problem(config: Dictionary) -> Dic
 		"title": config.get("name", "Number Line Fractions Extended"),
 		"grade": "",
 		"type": "number_line_fractions_extended"
+	}
+
+# ============================================
+# Equivalence Multiplication Factoring Problem Generation
+# ============================================
+
+func _generate_equivalence_mult_factoring_problem(config: Dictionary) -> Dictionary:
+	"""Generate an equivalence multiplication problem using factoring.
+	Format: a × b = c × ___ × ___
+	Where c divides exactly one of a or b, quotient is 2-10, and all numbers ≤99.
+	
+	Examples:
+	- 17 × 24 = 4 × 6 × 17 (24/4 = 6)
+	- 28 × 13 = 7 × 4 × 13 (28/7 = 4)
+	- 7 × 70 = 10 × 7 × 7 (70/10 = 7)
+	"""
+	
+	var attempts = 0
+	var max_attempts = 100
+	
+	while attempts < max_attempts:
+		# Pick a factor c from {3, 4, 5, 6, 7, 8, 9, 10}
+		var c = rng.randi_range(3, 10)
+		
+		# Generate quotient q (2-10, must not be 1)
+		var q = rng.randi_range(2, 10)
+		
+		# The divisible operand = c × q
+		var divisible = c * q
+		
+		# Ensure divisible operand is ≤99
+		if divisible > 99:
+			attempts += 1
+			continue
+		
+		# Generate the other operand (2-99, must NOT be divisible by c)
+		var other = rng.randi_range(2, 99)
+		
+		# Ensure other is not divisible by c
+		if other % c == 0:
+			attempts += 1
+			continue
+		
+		# Now we have: divisible × other = c × q × other
+		# Randomly decide which operand is a and which is b (50/50)
+		var a: int
+		var b: int
+		if rng.randi() % 2 == 0:
+			a = divisible
+			b = other
+		else:
+			a = other
+			b = divisible
+		
+		# Build the question and answer data
+		# The expected answers are q and other (order doesn't matter)
+		# We store the product for validation: c × ans1 × ans2 should equal a × b
+		var product = a * b
+		
+		# Format: "a x b = c x _ x"
+		var question_text = str(a) + " x " + str(b) + " = " + str(c) + " x _ x"
+		var expression = str(a) + " x " + str(b) + " = " + str(c) + " x " + str(q) + " x " + str(other)
+		
+		return {
+			"operands": [a, b],
+			"operator": "x",
+			"result": product,  # Store product for validation
+			"given_factor": c,  # The factor given in the problem
+			"expected_answers": [q, other],  # For reference (order-independent)
+			"expression": expression,
+			"question": question_text,
+			"title": config.get("name", "Equivalence Multiplication Factoring"),
+			"grade": "",
+			"type": "equivalence_mult_factoring"
+		}
+	
+	# Fallback if we couldn't generate a valid problem
+	# Use a guaranteed valid example: 17 × 24 = 4 × 6 × 17
+	return {
+		"operands": [17, 24],
+		"operator": "x",
+		"result": 408,
+		"given_factor": 4,
+		"expected_answers": [6, 17],
+		"expression": "17 x 24 = 4 x 6 x 17",
+		"question": "17 x 24 = 4 x _ x",
+		"title": config.get("name", "Equivalence Multiplication Factoring"),
+		"grade": "",
+		"type": "equivalence_mult_factoring"
 	}
 
 func get_question_key(question_data):

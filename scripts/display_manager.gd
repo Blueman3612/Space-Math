@@ -56,8 +56,13 @@ func update_blink_timer(delta: float):
 
 func update_problem_display(user_answer: String, answer_submitted: bool, is_fraction_input: bool, is_mixed_fraction_input: bool, editing_numerator: bool):
 	"""Update the problem display based on current question type"""
-	# Handle fraction-type problems (including conversions) differently
+	# Handle multi-input problems differently
 	var q_type = QuestionManager.current_question.get("type", "") if QuestionManager.current_question else ""
+	if QuestionManager.current_question and QuestionManager.is_multi_input_display_type(q_type):
+		update_multi_input_display(answer_submitted)
+		return
+	
+	# Handle fraction-type problems (including conversions) differently
 	if QuestionManager.current_question and (QuestionManager.is_fraction_display_type(q_type) or QuestionManager.is_fraction_conversion_display_type(q_type)):
 		update_fraction_problem_display(user_answer, answer_submitted, is_fraction_input, is_mixed_fraction_input, editing_numerator)
 	elif current_problem_label and QuestionManager.current_question:
@@ -164,6 +169,13 @@ func create_new_problem_label():
 	if QuestionManager.current_question and QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", "")):
 		create_multiple_choice_problem()
 		# Start timing this question immediately for multiple choice problems
+		ScoreManager.start_question_timing()
+		return
+	
+	# Check if this is a multi-input problem (e.g., equivalence_mult_factoring)
+	if QuestionManager.current_question and QuestionManager.is_multi_input_display_type(QuestionManager.current_question.get("type", "")):
+		create_multi_input_problem()
+		# Start timing this question immediately for multi-input problems
 		ScoreManager.start_question_timing()
 		return
 	
@@ -344,6 +356,163 @@ func parse_mixed_fraction_from_string(frac_str: String) -> Array:
 	
 	# Default fallback
 	return [0, 0, 1]
+
+func create_multi_input_problem():
+	"""Create a multi-input problem display (e.g., a × b = c × ___ × ___)"""
+	if not QuestionManager.current_question or not QuestionManager.is_multi_input_display_type(QuestionManager.current_question.get("type", "")):
+		return
+	
+	# Clean up any existing problem nodes
+	cleanup_problem_labels()
+	
+	# Select the best label settings for this problem
+	current_problem_label_settings = select_label_settings_for_multi_input_problem()
+	
+	# Create new label for the problem
+	var new_label = Label.new()
+	new_label.label_settings = current_problem_label_settings
+	new_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	new_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	new_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	new_label.self_modulate = Color(1, 1, 1)  # Reset to white color
+	new_label.z_index = -1  # Render behind UI elements
+	
+	# Set initial text immediately so underscore is visible from the start
+	var operands = QuestionManager.current_question.get("operands", [0, 0])
+	var given_factor = QuestionManager.current_question.get("given_factor", 0)
+	new_label.text = str(operands[0]) + " x " + str(operands[1]) + " = " + str(given_factor) + " x _ x _"
+	
+	# Calculate the centered X position based on full expression width
+	var target_x = calculate_centered_multi_input_x(new_label)
+	var target_y = GameConfig.primary_position.y
+	var target_position = Vector2(target_x, target_y)
+	
+	# Set initial position off-screen at bottom, with the same X as target
+	new_label.position = Vector2(target_x, GameConfig.off_screen_bottom.y)
+	
+	# Add to Play node so it renders behind Play UI elements
+	play_node.add_child(new_label)
+	
+	# Set as current problem label IMMEDIATELY
+	current_problem_label = new_label
+	current_problem_nodes.append(new_label)
+	
+	# Animate to center position (fire and forget)
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(new_label, "position", target_position, GameConfig.animation_duration)
+	
+	# Start timing this question when animation completes
+	tween.tween_callback(ScoreManager.start_question_timing)
+
+func select_label_settings_for_multi_input_problem() -> LabelSettings:
+	"""Select the best label settings for multi-input problems based on width constraints."""
+	if not QuestionManager.current_question or label_settings_array.size() == 0:
+		return label_settings_resource
+	
+	# Build the maximum width string: use the full expression with max_answer_chars for each slot
+	var max_answer = ""
+	for _i in range(GameConfig.max_answer_chars):
+		max_answer += "0"
+	
+	# Get the expression and replace the blanks with max_answer
+	var operands = QuestionManager.current_question.get("operands", [0, 0])
+	var given_factor = QuestionManager.current_question.get("given_factor", 0)
+	var full_expression = str(operands[0]) + " x " + str(operands[1]) + " = " + str(given_factor) + " x " + max_answer + " x " + max_answer
+	
+	# Calculate maximum allowed width (screen width minus padding on both sides)
+	var max_width = 1920.0 - (GameConfig.problem_edge_padding * 2)
+	
+	# Create a temporary label for measuring
+	var temp_label = Label.new()
+	add_child(temp_label)  # Must be in tree to measure
+	
+	var selected_settings = label_settings_array[label_settings_array.size() - 1]  # Default to smallest
+	
+	# Try each label settings in order (largest to smallest)
+	for settings in label_settings_array:
+		temp_label.label_settings = settings
+		temp_label.text = full_expression
+		temp_label.reset_size()
+		var width = temp_label.get_minimum_size().x
+		
+		if width <= max_width:
+			selected_settings = settings
+			break
+	
+	# Clean up temp label
+	temp_label.queue_free()
+	
+	return selected_settings
+
+func calculate_centered_multi_input_x(label: Label) -> float:
+	"""Calculate the X position to center a multi-input problem based on its full expression width"""
+	if not QuestionManager.current_question:
+		return GameConfig.primary_position.x
+	
+	# Build the full expression with the expected answers
+	var operands = QuestionManager.current_question.get("operands", [0, 0])
+	var given_factor = QuestionManager.current_question.get("given_factor", 0)
+	var expected_answers = QuestionManager.current_question.get("expected_answers", [0, 0])
+	var full_expression = str(operands[0]) + " x " + str(operands[1]) + " = " + str(given_factor) + " x " + str(expected_answers[0]) + " x " + str(expected_answers[1])
+	
+	# Temporarily set the label text to measure width
+	var original_text = label.text
+	label.text = full_expression
+	label.reset_size()
+	var full_width = label.get_minimum_size().x
+	label.text = original_text
+	
+	# Calculate X position to center the full expression horizontally
+	# Screen center is 960 (1920 / 2)
+	var screen_center_x = 960.0
+	var centered_x = screen_center_x - (full_width / 2.0)
+	
+	return centered_x
+
+func update_multi_input_display(answer_submitted: bool):
+	"""Update the display for multi-input problems"""
+	if not current_problem_label or not QuestionManager.current_question:
+		return
+	
+	var operands = QuestionManager.current_question.get("operands", [0, 0])
+	var given_factor = QuestionManager.current_question.get("given_factor", 0)
+	
+	# Get the current input values from InputManager
+	var slot0_value = InputManager.multi_input_values[0]
+	var slot1_value = InputManager.multi_input_values[1]
+	var current_slot = InputManager.current_input_slot
+	
+	# Build the display string
+	# Format: "a x b = c x [slot0] x [slot1]"
+	var display_text = str(operands[0]) + " x " + str(operands[1]) + " = " + str(given_factor) + " x "
+	
+	# First slot - always maintain consistent width to prevent layout shifting
+	display_text += slot0_value
+	if current_slot == 0 and not answer_submitted:
+		# Active slot: show blinking underscore or space to maintain width
+		if underscore_visible:
+			display_text += "_"
+		else:
+			display_text += " "
+	elif slot0_value == "":
+		display_text += "_"  # Static underscore placeholder when empty and not active
+	
+	display_text += " x "
+	
+	# Second slot - always maintain consistent width to prevent layout shifting
+	display_text += slot1_value
+	if current_slot == 1 and not answer_submitted:
+		# Active slot: show blinking underscore or space to maintain width
+		if underscore_visible:
+			display_text += "_"
+		else:
+			display_text += " "
+	elif slot1_value == "":
+		display_text += "_"  # Static underscore placeholder when empty and not active
+	
+	current_problem_label.text = display_text
 
 func create_fraction_problem():
 	"""Create a fraction-type problem display with fractions, operator, equals sign, and answer area"""
@@ -1823,24 +1992,48 @@ func create_incorrect_equivalence_answer():
 			var target_pos = node.position - Vector2(0, GameConfig.incorrect_label_move_distance_fractions)
 			incorrect_tween.tween_property(node, "position", target_pos, GameConfig.incorrect_label_animation_time)
 
+func create_incorrect_multi_input_label():
+	"""Create and animate a label showing the correct answer for multi-input problems"""
+	if not QuestionManager.current_question or not current_problem_label:
+		return
+	
+	# Get the correct answer data
+	var operands = QuestionManager.current_question.get("operands", [0, 0])
+	var given_factor = QuestionManager.current_question.get("given_factor", 0)
+	var expected_answers = QuestionManager.current_question.get("expected_answers", [0, 0])
+	
+	# Build the full correct expression
+	var correct_text = str(operands[0]) + " x " + str(operands[1]) + " = " + str(given_factor) + " x " + str(expected_answers[0]) + " x " + str(expected_answers[1])
+	
+	# Create new label as child of current problem label
+	var incorrect_label = Label.new()
+	incorrect_label.label_settings = current_problem_label_settings  # Use same size as the problem
+	incorrect_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	incorrect_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	incorrect_label.position = Vector2(0, 0)  # Start at (0, 0) relative to parent
+	incorrect_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	incorrect_label.text = correct_text
+	incorrect_label.self_modulate = Color(0, 0.5, 0)  # Dark green color
+	incorrect_label.z_index = -1  # Render behind UI elements
+	
+	# Add as child to current problem label
+	current_problem_label.add_child(incorrect_label)
+	
+	# Animate the label moving down over incorrect_label_animation_time
+	var tween = create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(incorrect_label, "position", Vector2(0, GameConfig.incorrect_label_move_distance), GameConfig.incorrect_label_animation_time)
+	
+	# The label will be cleaned up when the parent problem label is removed
+
 func cleanup_problem_labels():
 	"""Remove any remaining problem labels from the Play node"""
-	# Clean up fraction problem nodes
-	for node in current_problem_nodes:
-		if node:
-			node.queue_free()
+	# Clean up nodes tracked in current_problem_nodes
+	# Note: We don't iterate and queue_free here because nodes being animated
+	# off-screen are handled by the animation callback in animate_problem_off_screen.
+	# We just clear our tracking arrays so new nodes can be added.
 	current_problem_nodes.clear()
-
-	# Clean up regular problem labels
-	if play_node:
-		for child in play_node.get_children():
-			# Only remove dynamically created labels, not the static UI elements
-			if (child is Label and
-				child != UIManager.timer_label and
-				child != UIManager.accuracy_label and
-				child != UIManager.drill_timer_label and
-				child != UIManager.drill_score_label):
-				child.queue_free()
 
 	current_problem_label = null
 	answer_fraction_node = null

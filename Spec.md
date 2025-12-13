@@ -1,5 +1,3 @@
-# New Game Proposal
-
 ---
 
 **Game Name**: Astro Math
@@ -44,7 +42,9 @@ List all activity types (e.g., "spell words from audio", "solve equations under 
 
 1. Solve fast math problems
 2. Master Springmath standards at 85% accuracy
-3. 
+(~98%)
+3. UI interaction
+(~2%)
 
 **Roughly what % of time in each activity?**
 
@@ -54,13 +54,7 @@ List all activity types (e.g., "spell words from audio", "solve equations under 
 
 ## 3. Testing Strategy
 
-**Pre-test (placement/baseline test)**:
-
-**Post-test (mastery test)**:
-
-**Success Criteria** (what score = mastery?):
-
-**Are these tests served inside the app or outside of it?**
+**Success Criteria** (what score = mastery?): 85% accuracy with Springmath's given CQPM standard for the specific skill.
 
 ---
 
@@ -140,15 +134,15 @@ List all activity types (e.g., "spell words from audio", "solve equations under 
 
 ## 8. Pilot/MVP
 
-**What is the minimal product that can be tested with students?**
+**What is the minimal product that can be tested with students?** FasttMath Clone
 
-**Number of students**:
+**Number of students**: Any
 
-**Duration**:
+**Duration**: Any
 
-**Measurable outcome**:
+**Measurable outcome**: CQPM and mastery of standards measured via star-based mastery and Timeback integration.
 
-**Success looks like**:
+**Success looks like**: Improvement in these CQPM and mastery standards before and after Astro Math
 
 ---
 
@@ -156,13 +150,13 @@ List all activity types (e.g., "spell words from audio", "solve equations under 
 
 **How do you prevent students from:**
 
-- **Skipping content**:
+- **Skipping content**: Must wait and then confirm incorrect answer feedback
 
-- **Rushing/clicking through**:
+- **Rushing/clicking through**: Impossible
 
-- **Guessing randomly**:
+- **Guessing randomly**: Only 1 correct answer, ~95% non multiple-choice
 
-- **Idle time**:
+- **Idle time**: Fast-paced gameplay and idle time doesn't give xp
 
 ---
 
@@ -171,31 +165,30 @@ List all activity types (e.g., "spell words from audio", "solve equations under 
 **Where does content come from?**
 
 - [ ] AI-generated (describe QC process):
-- [ ] Expert-created
-- [ ] Question banks (which ones):
+- [x] Expert-created
+- [x] Question banks (which ones):
 - [ ] Licensed content
 - [ ] Other:
 
-**Who reviews for correctness?**
+Directly from Springmath; dynamically generated questions based on ranges and formulas from Springmath worksheets.
 
-**How do you catch errors before students see them?**
+**Who reviews for correctness?** Both I and an LLM review trends + ranges + formulas present in Springmath worksheets and construct question generation based on them.
+
+**How do you catch errors before students see them?** Thoroughly testing every single level.
 
 ---
 
 ## 11. Stakeholders & Research
 
-**Academic team contacts** (who you're working with):
+**Academic team contacts** (who you're working with): Andy Montgomery
 
-**External collaborators** (BRI, content partners, etc):
+**External collaborators** (BRI, content partners, etc): Springmath content
 
-**Target students/guides** (who will use this):
+**Target students/guides** (who will use this): Students grades 1-5
 
 **Research sources** (which brain lifts/documents informed this):
 
-- [ ] Brain lift: **\_** (link: `docs/academics/_____`)
-- [ ] Workflow: **\_** (link: `_____`)
-- [ ] Stakeholder interview: **\_** (with whom, when)
-- [ ] Existing game analysis: **\_**
+- [x] Brain lift: **Playcademy** https://workflowy.com/s/playcademy-project-b/bN3lbLv0Hw7yUGW1#/49c3ac1b5660
 
 ---
 
@@ -205,7 +198,7 @@ List all activity types (e.g., "spell words from audio", "solve equations under 
 
 _Andy cares about production vs recognition. Students must speak/write/draw, not just click._
 
-Your answer:
+Your answer: Minimal multiple choice, students have to type exact answer.
 
 ---
 
@@ -213,7 +206,7 @@ Your answer:
 
 _Andy needs diagnostic efficiency. If a student already knows it, how many minutes do they waste proving that?_
 
-Your answer:
+Your answer: Students can easily be placed in their grade level, pending backend functionality
 
 ---
 
@@ -221,18 +214,6 @@ Your answer:
 
 _Andy hates artificial time/session limits. Natural limits from content availability are fine, arbitrary caps are not._
 
-Your answer:
+Your answer: There are absolutely no daily caps. Students can play grades 1-5 in a single session, if they want.
 
 ---
-
----
-
-## Pre-Build Checklist
-
-- [ ] I've read relevant brain lifts in academics root
-- [ ] I've chosen a relevant curriculum standard to align with
-- [ ] I've identified the specific test to prove student improvement
-- [ ] I've chose an appropriate learning engine
-- [ ] I've calculated theoretical time to mastery
-- [ ] I know what existing solution I'm competing with
-- [ ] I can answer all of Andy's questions above
