@@ -21,6 +21,13 @@ var drill_timer_remaining = 0.0  # Time remaining in drill mode
 var drill_score_display_value = 0.0  # Current displayed score value for smooth animation
 var drill_score_target_value = 0  # Target score value for smooth animation
 
+# Assessment mode variables
+var assessment_current_standard_index = 0  # Index into ASSESSMENT_STANDARDS array
+var assessment_current_standard_correct = 0  # Correct answers for current standard
+var assessment_current_standard_total = 0  # Total answers for current standard
+var assessment_current_standard_times = []  # Time for each question in current standard (excluding transition delay)
+var assessment_all_results = {}  # Dictionary mapping standard_id to {average_time, accuracy, cqpm}
+
 func initialize():
 	"""Initialize the score manager"""
 	pass
@@ -238,3 +245,133 @@ func update_grace_period(delta: float):
 				return true
 	return false
 
+# ============================================
+# Assessment Mode Functions
+# ============================================
+
+func reset_for_assessment():
+	"""Reset score tracking for assessment mode"""
+	reset_for_new_level()
+	assessment_current_standard_index = 0
+	assessment_current_standard_correct = 0
+	assessment_current_standard_total = 0
+	assessment_current_standard_times = []
+	assessment_all_results = {}
+
+func reset_for_assessment_standard():
+	"""Reset tracking for a new standard within assessment"""
+	assessment_current_standard_correct = 0
+	assessment_current_standard_total = 0
+	assessment_current_standard_times = []
+	current_question_start_time = 0.0
+
+func get_current_assessment_standard() -> Dictionary:
+	"""Get the current assessment standard data"""
+	if assessment_current_standard_index >= GameConfig.ASSESSMENT_STANDARDS.size():
+		return {}
+	return GameConfig.ASSESSMENT_STANDARDS[assessment_current_standard_index]
+
+func process_assessment_answer(is_correct: bool, time_taken: float):
+	"""Process an answer in assessment mode
+	time_taken should already have transition_delay subtracted
+	Returns a dictionary with {should_advance: bool, assessment_complete: bool}
+	"""
+	assessment_current_standard_total += 1
+	if is_correct:
+		assessment_current_standard_correct += 1
+	assessment_current_standard_times.append(time_taken)
+	
+	var standard = get_current_assessment_standard()
+	if standard.is_empty():
+		return {"should_advance": false, "assessment_complete": true}
+	
+	var max_questions = GameConfig.assessment_questions_per_standard
+	var early_exit_correct = GameConfig.assessment_early_exit_correct_count
+	var is_multiple_choice = standard.get("is_multiple_choice", false)
+	
+	# Multiple choice: always do all questions
+	if is_multiple_choice:
+		if assessment_current_standard_total >= max_questions:
+			return {"should_advance": true, "assessment_complete": false}
+		return {"should_advance": false, "assessment_complete": false}
+	
+	# Non-multiple choice: check for early exit conditions
+	# Early exit if: 3+ correct AND CQPM > threshold
+	if assessment_current_standard_correct >= early_exit_correct:
+		var avg_time = _calculate_average_time()
+		var cqpm = _calculate_cqpm_from_avg_time(avg_time, assessment_current_standard_correct)
+		var target_cqpm = standard.get("target_cqpm", 20.0)
+		
+		if cqpm > target_cqpm:
+			print("[Assessment] Early exit for '%s': CQPM %.1f > target %.1f" % [standard.name, cqpm, target_cqpm])
+			return {"should_advance": true, "assessment_complete": false}
+	
+	# Max questions reached
+	if assessment_current_standard_total >= max_questions:
+		return {"should_advance": true, "assessment_complete": false}
+	
+	return {"should_advance": false, "assessment_complete": false}
+
+func finalize_current_standard():
+	"""Finalize results for the current standard before moving to next"""
+	var standard = get_current_assessment_standard()
+	if standard.is_empty():
+		return
+	
+	var avg_time = _calculate_average_time()
+	var accuracy = 0.0
+	if assessment_current_standard_total > 0:
+		accuracy = float(assessment_current_standard_correct) / float(assessment_current_standard_total)
+	var cqpm = _calculate_cqpm_from_avg_time(avg_time, assessment_current_standard_correct)
+	
+	assessment_all_results[standard.id] = {
+		"average_time": avg_time,
+		"accuracy": accuracy,
+		"cqpm": cqpm,
+		"correct": assessment_current_standard_correct,
+		"total": assessment_current_standard_total
+	}
+	
+	print("[Assessment] Standard '%s' complete: %.1f CQPM, %.0f%% accuracy (%d/%d)" % [
+		standard.name, cqpm, accuracy * 100, assessment_current_standard_correct, assessment_current_standard_total
+	])
+
+func advance_to_next_standard() -> bool:
+	"""Move to the next assessment standard. Returns true if there are more standards, false if complete."""
+	finalize_current_standard()
+	assessment_current_standard_index += 1
+	
+	if assessment_current_standard_index >= GameConfig.ASSESSMENT_STANDARDS.size():
+		print("[Assessment] All standards complete!")
+		return false
+	
+	reset_for_assessment_standard()
+	return true
+
+func is_assessment_complete() -> bool:
+	"""Check if all assessment standards have been completed"""
+	return assessment_current_standard_index >= GameConfig.ASSESSMENT_STANDARDS.size()
+
+func get_assessment_final_results() -> Dictionary:
+	"""Get the final results dictionary for saving"""
+	return {
+		"timestamp": Time.get_unix_time_from_system(),
+		"standards": assessment_all_results.duplicate(true)
+	}
+
+func _calculate_average_time() -> float:
+	"""Calculate average time per question for current standard"""
+	if assessment_current_standard_times.is_empty():
+		return 0.0
+	var total = 0.0
+	for t in assessment_current_standard_times:
+		total += t
+	return total / assessment_current_standard_times.size()
+
+func _calculate_cqpm_from_avg_time(avg_time: float, num_correct: int) -> float:
+	"""Calculate CQPM from average time per question"""
+	if avg_time <= 0.0 or num_correct <= 0:
+		return 0.0
+	# CQPM = 60 / avg_time_per_question (for 100% accuracy)
+	# Since we're tracking per-question time, CQPM = 60 / avg_time
+	return 60.0 / avg_time

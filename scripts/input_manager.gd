@@ -63,12 +63,15 @@ func reset_for_new_question():
 
 func handle_input_event(event: InputEvent, user_answer: String, answer_submitted: bool, current_state: int) -> String:
 	"""Handle input events and return the modified user_answer"""
+	# Helper to check if we're in any play state
+	var is_play_state = (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY or current_state == GameConfig.GameState.ASSESSMENT_PLAY)
+	
 	# Record input for TimeBack tracking
-	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY):
+	if is_play_state:
 		PlaycademyManager.record_player_input()
 	
 	# Handle number line input (Left/Right)
-	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY):
+	if is_play_state:
 		var is_number_line_question = QuestionManager.current_question and QuestionManager.is_number_line_display_type(QuestionManager.current_question.get("type", ""))
 		if is_number_line_question and not answer_submitted:
 			if event is InputEventKey and event.pressed and not event.echo:
@@ -80,7 +83,7 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 			return user_answer
 	
 	# Handle multiple choice input (AnswerOne through AnswerFive)
-	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY):
+	if is_play_state:
 		var is_choice_question = QuestionManager.current_question and QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", ""))
 		if is_choice_question:
 			if event is InputEventKey and event.pressed and not event.echo:
@@ -95,7 +98,7 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 				return user_answer
 	
 	# Handle multi-input problems (e.g., equivalence_mult_factoring)
-	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY):
+	if is_play_state:
 		var is_multi_input_question = QuestionManager.current_question and QuestionManager.is_multi_input_display_type(QuestionManager.current_question.get("type", ""))
 		if is_multi_input_question and not answer_submitted:
 			# Initialize multi-input mode if not already
@@ -121,8 +124,8 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 			# Format: "slot0|slot1" with current slot marker
 			return _get_multi_input_display_string()
 	
-	# Handle number input and negative sign (only during PLAY or DRILL_PLAY state and if not submitted)
-	if (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY) and not answer_submitted:
+	# Handle number input and negative sign (only during play states and if not submitted)
+	if is_play_state and not answer_submitted:
 		# Only process key events
 		if event is InputEventKey and event.pressed and not event.echo:
 			# Check each digit input action
@@ -246,7 +249,7 @@ func handle_input_event(event: InputEvent, user_answer: String, answer_submitted
 
 func handle_backspace_just_pressed(current_state: int) -> bool:
 	"""Check if backspace was just pressed. Returns true if backspace should be processed."""
-	if Input.is_action_just_pressed("Backspace") and (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY):
+	if Input.is_action_just_pressed("Backspace") and (current_state == GameConfig.GameState.PLAY or current_state == GameConfig.GameState.DRILL_PLAY or current_state == GameConfig.GameState.ASSESSMENT_PLAY):
 		backspace_just_pressed = true
 		return true
 	return false

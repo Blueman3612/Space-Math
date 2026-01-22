@@ -45,6 +45,9 @@ func _on_save_data_loaded(success: bool):
 	# Now that save data is loaded, start music with correct volumes
 	AudioManager.start_music()
 	
+	# Initialize with assessment check (sets starting grade based on completion)
+	LevelManager.initialize_with_assessment_check()
+	
 	# Create dynamic level buttons
 	LevelManager.create_level_buttons()
 	
@@ -83,22 +86,22 @@ func _input(event):
 	# Handle immediate backspace press detection
 	InputManager.handle_backspace_just_pressed(StateManager.current_state)
 	
-	# Handle submit (only during PLAY or DRILL_PLAY state)
-	if Input.is_action_just_pressed("Submit") and (StateManager.current_state == GameConfig.GameState.PLAY or StateManager.current_state == GameConfig.GameState.DRILL_PLAY):
+	# Handle submit (during PLAY, DRILL_PLAY, or ASSESSMENT_PLAY state)
+	if Input.is_action_just_pressed("Submit") and (StateManager.current_state == GameConfig.GameState.PLAY or StateManager.current_state == GameConfig.GameState.DRILL_PLAY or StateManager.current_state == GameConfig.GameState.ASSESSMENT_PLAY):
 		submit_answer()
 
 func _process(delta):
 	# Process UI animations
 	UIManager.process_animations(delta, StateManager.current_state, StateManager.is_drill_mode)
 	
-	# Only process game logic during PLAY or DRILL_PLAY state
-	if StateManager.current_state == GameConfig.GameState.PLAY or StateManager.current_state == GameConfig.GameState.DRILL_PLAY:
-		# Handle timer logic with grace period (but not during transition delays)
-		if not ScoreManager.timer_started and not StateManager.in_transition_delay:
+	# Only process game logic during PLAY, DRILL_PLAY, or ASSESSMENT_PLAY state
+	if StateManager.current_state == GameConfig.GameState.PLAY or StateManager.current_state == GameConfig.GameState.DRILL_PLAY or StateManager.current_state == GameConfig.GameState.ASSESSMENT_PLAY:
+		# Handle timer logic with grace period (but not during transition delays or assessment mode)
+		if not ScoreManager.timer_started and not StateManager.in_transition_delay and not StateManager.is_assessment_mode:
 			ScoreManager.update_grace_period(delta)
 		
-		# Update timer based on mode
-		if ScoreManager.timer_active:
+		# Update timer based on mode (skip for assessment mode - no timer)
+		if ScoreManager.timer_active and not StateManager.is_assessment_mode:
 			if StateManager.is_drill_mode:
 				var time_ran_out = ScoreManager.update_drill_timer(delta)
 				if time_ran_out:
@@ -297,6 +300,10 @@ func submit_answer():
 	# Clear transition delay flag
 	StateManager.in_transition_delay = false
 	
+	# Store question time for assessment processing (before branching)
+	StateManager.set_meta("last_question_time", question_time)
+	StateManager.set_meta("last_answer_correct", is_correct)
+	
 	# If incorrect and require_submit_after_incorrect is true, wait for player to press Submit to continue
 	if not is_correct and GameConfig.require_submit_after_incorrect:
 		StateManager.waiting_for_continue_after_incorrect = true
@@ -400,6 +407,10 @@ func submit_multi_input_answer():
 	# Clear transition delay flag
 	StateManager.in_transition_delay = false
 	
+	# Store question time for assessment processing (before branching)
+	StateManager.set_meta("last_question_time", question_time)
+	StateManager.set_meta("last_answer_correct", is_correct)
+	
 	# If incorrect and require_submit_after_incorrect is true, wait for player to press Submit to continue
 	if not is_correct and GameConfig.require_submit_after_incorrect:
 		StateManager.waiting_for_continue_after_incorrect = true
@@ -487,6 +498,10 @@ func submit_number_line_answer():
 	# Clear transition delay flag
 	StateManager.in_transition_delay = false
 	
+	# Store question time for assessment processing (before branching)
+	StateManager.set_meta("last_question_time", question_time)
+	StateManager.set_meta("last_answer_correct", is_correct)
+	
 	# If incorrect and require_submit_after_incorrect is true, wait for player to press Submit to continue
 	if not is_correct and GameConfig.require_submit_after_incorrect:
 		StateManager.waiting_for_continue_after_incorrect = true
@@ -528,14 +543,43 @@ func continue_after_incorrect_internal(is_correct: bool, timer_was_active: bool,
 	if not StateManager.is_drill_mode:
 		animate_progress_line()
 	
-	# Check level completion for grade-based levels
+	# Check level completion for grade-based levels or assessment mode
 	var level_complete = false
-	if StateManager.is_grade_level and StateManager.current_level_config:
+	if StateManager.is_assessment_mode:
+		# Assessment mode: process answer and check if we should move to next standard or finish
+		# Get stored question time (with transition_delay already subtracted in process_assessment_answer)
+		var last_question_time = StateManager.get_meta("last_question_time", 0.0)
+		var last_answer_correct = StateManager.get_meta("last_answer_correct", false)
+		# Subtract transition delay from time (time only counts after animation)
+		var adjusted_time = max(0.0, last_question_time - GameConfig.transition_delay)
+		var result = ScoreManager.process_assessment_answer(last_answer_correct, adjusted_time)
+		
+		if result.should_advance:
+			# Check if assessment is complete or moving to next standard
+			var has_more = ScoreManager.advance_to_next_standard()
+			if not has_more:
+				# Assessment complete!
+				UIManager.hide_play_ui_for_level_complete()
+				await get_tree().create_timer(GameConfig.animation_duration).timeout
+				StateManager.complete_assessment()
+				return
+			
+			# Moving to next standard - clear used questions
+			QuestionManager.used_questions_this_level.clear()
+		
+		# Continue playing - generate next question (either same or new standard)
+		StateManager.user_answer = ""
+		StateManager.answer_submitted = false
+		InputManager.reset_for_new_question()
+		StateManager._generate_next_assessment_question()
+		DisplayManager.create_new_problem_label()
+		return
+	elif StateManager.is_grade_level and StateManager.current_level_config:
 		var mastery_count = StateManager.current_level_config.mastery_count
 		# Check if player has achieved mastery (correct answers >= mastery_count with >= 85% accuracy)
 		level_complete = ScoreManager.check_mastery_complete(mastery_count)
 	
-	if level_complete:
+	if level_complete and not StateManager.is_assessment_mode:
 		# Hide all play UI elements when level completes
 		UIManager.hide_play_ui_for_level_complete()
 		

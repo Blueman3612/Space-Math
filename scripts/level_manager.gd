@@ -22,6 +22,11 @@ var level_pack_outlines = []  # Points to current page's outlines
 var label_settings_64: LabelSettings  # Label settings for button numbers
 var star_icon_texture: Texture2D  # Texture for star icons
 
+# Assessment mode
+var assessment_page_container: Control = null  # Container for assessment button
+var assessment_button: Button = null  # The assessment button
+const ASSESSMENT_GRADE_INDEX = 0  # Assessment is displayed as "grade 0" (before Grade 1)
+
 func initialize(main_node: Control):
 	"""Initialize level manager with references to needed nodes"""
 	main_menu_node = main_node.get_node("MainMenu")
@@ -142,15 +147,19 @@ func get_current_grade_total_pages() -> int:
 # ============================================
 
 func get_total_global_pages() -> int:
-	"""Get total number of pages across all grades"""
-	var total = 0
+	"""Get total number of pages across all grades (including Assessment)"""
+	var total = 1  # +1 for Assessment page
 	for grade in GameConfig.GRADES:
 		total += get_total_pages_for_grade(grade)
 	return total
 
 func get_global_page_index(grade: int, page: int) -> int:
-	"""Convert grade + page to global page index (0-indexed)"""
-	var global_index = 0
+	"""Convert grade + page to global page index (0-indexed)
+	grade=0 is the Assessment page, grades 1-5 are regular grade pages"""
+	if grade == ASSESSMENT_GRADE_INDEX:
+		return 0  # Assessment is always page 0
+	
+	var global_index = 1  # Start at 1 (Assessment is 0)
 	for g in GameConfig.GRADES:
 		if g == grade:
 			return global_index + page - 1  # page is 1-indexed
@@ -158,8 +167,12 @@ func get_global_page_index(grade: int, page: int) -> int:
 	return 0
 
 func get_grade_and_page_from_global_index(global_index: int) -> Dictionary:
-	"""Convert global page index to grade + page"""
-	var running_index = 0
+	"""Convert global page index to grade + page
+	Index 0 is the Assessment page (grade=0)"""
+	if global_index == 0:
+		return {"grade": ASSESSMENT_GRADE_INDEX, "page": 1}
+	
+	var running_index = 1  # Start at 1 (Assessment is 0)
 	for grade in GameConfig.GRADES:
 		var pages_in_grade = get_total_pages_for_grade(grade)
 		if global_index < running_index + pages_in_grade:
@@ -238,6 +251,10 @@ func load_page(global_page_index: int) -> Control:
 	var grade_page = get_grade_and_page_from_global_index(global_page_index)
 	var grade = grade_page.grade
 	var page = grade_page.page
+	
+	# Special handling for Assessment page
+	if grade == ASSESSMENT_GRADE_INDEX:
+		return load_assessment_page(global_page_index)
 	
 	# Create page container - must have same size/anchors as parent for button positioning to work
 	var page_container = Control.new()
@@ -404,21 +421,36 @@ func clear_level_buttons():
 func update_grade_display():
 	"""Update the grade label and navigation button states"""
 	if grade_label:
-		var total_pages = get_current_grade_total_pages()
-		if total_pages > 1:
-			# Show page number for multi-page grades
-			grade_label.text = "Grade " + str(GameConfig.current_grade) + " (" + str(GameConfig.current_grade_page) + "/" + str(total_pages) + ")"
+		if GameConfig.current_grade == ASSESSMENT_GRADE_INDEX:
+			# Assessment page
+			grade_label.text = "Assessment"
 		else:
-			grade_label.text = "Grade " + str(GameConfig.current_grade)
+			var total_pages = get_current_grade_total_pages()
+			if total_pages > 1:
+				# Show page number for multi-page grades
+				grade_label.text = "Grade " + str(GameConfig.current_grade) + " (" + str(GameConfig.current_grade_page) + "/" + str(total_pages) + ")"
+			else:
+				grade_label.text = "Grade " + str(GameConfig.current_grade)
+	
+	# Check if assessment is completed for navigation restrictions
+	var assessment_completed = SaveManager.is_assessment_completed()
 	
 	if left_button:
-		left_button.disabled = not has_previous_screen()
+		var can_go_left = has_previous_screen()
+		# If on first grade and assessment not completed, can't go left
+		if GameConfig.current_grade == 1 and not assessment_completed:
+			can_go_left = false
+		left_button.disabled = not can_go_left
 		var left_icon = left_button.get_node_or_null("Icon")
 		if left_icon:
 			left_icon.modulate.a = 0.5 if left_button.disabled else 1.0
 	
 	if right_button:
-		right_button.disabled = not has_next_screen()
+		var can_go_right = has_next_screen()
+		# If on assessment page and assessment not completed, can't go right
+		if GameConfig.current_grade == ASSESSMENT_GRADE_INDEX and not assessment_completed:
+			can_go_right = false
+		right_button.disabled = not can_go_right
 		var right_icon = right_button.get_node_or_null("Icon")
 		if right_icon:
 			right_icon.modulate.a = 0.5 if right_button.disabled else 1.0
@@ -982,3 +1014,128 @@ func get_global_level_number(pack_name: String, pack_level_index: int) -> int:
 		else:
 			global_num += pack_config.levels.size()
 	return 1  # Fallback
+
+# ============================================
+# Assessment Mode Functions
+# ============================================
+
+func load_assessment_page(global_page_index: int) -> Control:
+	"""Load the assessment page with a single centered 'A' button"""
+	# Create page container
+	var page_container = Control.new()
+	page_container.name = "PageContainer_Assessment"
+	page_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	page_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main_menu_node.add_child(page_container)
+	
+	# Store container
+	loaded_pages[global_page_index] = page_container
+	all_level_buttons[global_page_index] = []
+	assessment_page_container = page_container
+	
+	# Create centered assessment button
+	assessment_button = create_assessment_button(page_container)
+	
+	return page_container
+
+func create_assessment_button(container: Control) -> Button:
+	"""Create the single assessment button with 'A' label"""
+	var button = Button.new()
+	button.name = "AssessmentButton"
+	button.custom_minimum_size = GameConfig.level_button_size
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.self_modulate = GameConfig.assessment_theme_color
+	
+	# Center the button on screen
+	button.anchor_left = 0.5
+	button.anchor_top = 0.5
+	button.anchor_right = 0.5
+	button.anchor_bottom = 0.5
+	# Center horizontally and vertically
+	var center_x = -GameConfig.level_button_size.x / 2.0
+	var center_y = -GameConfig.level_button_size.y / 2.0
+	button.offset_left = center_x
+	button.offset_top = center_y
+	button.offset_right = center_x + GameConfig.level_button_size.x
+	button.offset_bottom = center_y + GameConfig.level_button_size.y
+	button.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	button.grow_vertical = Control.GROW_DIRECTION_BOTH
+	
+	# Set tooltip
+	button.tooltip_text = "Assessment - Test your skills across all standards"
+	
+	# Create Contents control
+	var contents = Control.new()
+	contents.name = "Contents"
+	contents.set_anchors_preset(Control.PRESET_FULL_RECT)
+	contents.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(contents)
+	
+	# Create 'A' label (instead of number)
+	var number_label = Label.new()
+	number_label.name = "Number"
+	number_label.text = "A"
+	number_label.label_settings = label_settings_64
+	number_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	number_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	number_label.position = Vector2(4, -32)
+	number_label.size = Vector2(192, 192)
+	contents.add_child(number_label)
+	
+	# Create star sprites
+	var star_positions = [Vector2(44, 136), Vector2(96, 144), Vector2(148, 136)]
+	for i in range(3):
+		var star = Sprite2D.new()
+		star.name = "Star" + str(i + 1)
+		star.texture = star_icon_texture
+		star.hframes = 2
+		star.frame = 0  # Start with unearned star
+		star.scale = Vector2(2, 2)
+		star.position = star_positions[i]
+		contents.add_child(star)
+	
+	# Add button to container
+	container.add_child(button)
+	
+	# Connect button press
+	button.pressed.connect(StateManager._on_assessment_button_pressed)
+	UIManager.connect_button_sounds(button)
+	
+	# Update star display based on assessment completion
+	update_assessment_button_stars()
+	
+	return button
+
+func update_assessment_button_stars():
+	"""Update the assessment button's star display based on completion status"""
+	if not assessment_button or not is_instance_valid(assessment_button):
+		return
+	
+	var is_completed = SaveManager.is_assessment_completed()
+	var contents = assessment_button.get_node("Contents")
+	if contents:
+		for star_num in range(1, 4):
+			var star_sprite = contents.get_node("Star" + str(star_num))
+			if star_sprite:
+				# Show all 3 stars if completed, 0 stars if not
+				star_sprite.frame = 1 if is_completed else 0
+
+func initialize_with_assessment_check():
+	"""Initialize the level manager starting at Assessment if not completed"""
+	var assessment_completed = SaveManager.is_assessment_completed()
+	
+	if not assessment_completed:
+		# Start at assessment page
+		GameConfig.current_grade = ASSESSMENT_GRADE_INDEX
+		GameConfig.current_grade_page = 1
+	else:
+		# Start at Grade 1 if assessment is completed
+		if GameConfig.current_grade == ASSESSMENT_GRADE_INDEX:
+			GameConfig.current_grade = 1
+			GameConfig.current_grade_page = 1
+	
+	# Update global page index
+	current_global_page_index = get_global_page_index(GameConfig.current_grade, GameConfig.current_grade_page)

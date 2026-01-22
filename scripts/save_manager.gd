@@ -46,7 +46,9 @@ func get_default_save_data():
 		"save_structure": "grade_based",
 		"packs": {},  # Legacy - kept for backwards compatibility
 		"grade_levels": {},  # New grade-based level progress
-		"questions": {}
+		"questions": {},
+		"assessment_completed": false,  # Whether the player has completed the assessment at least once
+		"assessment_history": []  # Array of assessment attempt results with timestamps
 	}
 	
 	return default_data
@@ -216,6 +218,10 @@ func migrate_save_data():
 			save_data.grade_levels = {}
 		if not save_data.has("questions"):
 			save_data.questions = {}
+		if not save_data.has("assessment_completed"):
+			save_data.assessment_completed = false
+		if not save_data.has("assessment_history"):
+			save_data.assessment_history = []
 		
 		# Remove old volume fields if they exist (now in local_settings)
 		if save_data.has("sfx_volume"):
@@ -506,3 +512,51 @@ func set_music_volume(volume: float):
 			AudioServer.set_bus_mute(bus_idx, false)
 			var db = volume_to_db(volume)
 			AudioServer.set_bus_volume_db(bus_idx, db)
+
+# ============================================
+# Assessment Data Functions
+# ============================================
+
+func is_assessment_completed() -> bool:
+	"""Check if the player has completed the assessment at least once"""
+	if not save_data.has("assessment_completed"):
+		return false
+	return save_data.assessment_completed
+
+func get_assessment_history() -> Array:
+	"""Get all assessment attempt results"""
+	if not save_data.has("assessment_history"):
+		return []
+	return save_data.assessment_history
+
+func get_latest_assessment_results() -> Dictionary:
+	"""Get the most recent assessment results, or empty dict if none"""
+	var history = get_assessment_history()
+	if history.is_empty():
+		return {}
+	return history[0]  # Most recent is at the front
+
+func save_assessment_results(results: Dictionary):
+	"""Save a completed assessment attempt
+	
+	results should be a dictionary with:
+	- timestamp: Unix timestamp of completion
+	- standards: Dictionary mapping standard_id to {average_time, accuracy, cqpm}
+	"""
+	# Ensure assessment fields exist
+	if not save_data.has("assessment_completed"):
+		save_data.assessment_completed = false
+	if not save_data.has("assessment_history"):
+		save_data.assessment_history = []
+	
+	# Mark assessment as completed
+	save_data.assessment_completed = true
+	
+	# Add results to the front of history (most recent first)
+	save_data.assessment_history.push_front(results)
+	
+	# Mark dirty and save immediately
+	has_unsaved_changes = true
+	save_save_data()
+	
+	print("[SaveManager] Assessment results saved. Total attempts: ", save_data.assessment_history.size())

@@ -779,3 +779,119 @@ func _on_music_volume_changed(value: float):
 	SaveManager.set_music_volume(value)
 	SaveManager.local_settings.music_volume = value
 	SaveManager.save_local_settings()
+
+# ============================================
+# Assessment Mode UI Functions
+# ============================================
+
+func update_assessment_mode_ui_visibility():
+	"""Set UI visibility for assessment mode (minimal UI - no timer, no accuracy)"""
+	if timer_label:
+		timer_label.visible = false
+	if accuracy_label:
+		accuracy_label.visible = false
+	if progress_line:
+		progress_line.visible = false
+	if timer_line:
+		timer_line.visible = false
+	if accuracy_line:
+		accuracy_line.visible = false
+	if drill_timer_label:
+		drill_timer_label.visible = false
+	if drill_score_label:
+		drill_score_label.visible = false
+
+func update_assessment_game_over_ui():
+	"""Update GameOver UI for assessment mode completion"""
+	# Update LevelComplete text
+	var level_complete_label = game_over_node.get_node("LevelComplete")
+	if level_complete_label:
+		level_complete_label.text = "ASSESSMENT COMPLETE"
+		level_complete_label.visible = true
+	
+	# Hide most game over elements for assessment mode (minimal display)
+	var nodes_to_hide = ["CorrectTitle", "AccuracyTitle", "You", "PlayerCorrect", "PlayerAccuracy", 
+						  "CQPMTitle", "CQPMTooltip", "DrillModeScore", "HighScoreText",
+						  "XPEarnedTitle", "XPEarned"]
+	for node_name in nodes_to_hide:
+		var node = game_over_node.get_node_or_null(node_name)
+		if node:
+			node.visible = false
+	
+	if cqpm_label:
+		cqpm_label.visible = false
+	
+	# Hide continue button initially (will be shown after star animation)
+	if continue_button:
+		continue_button.visible = false
+
+func initialize_assessment_star_states():
+	"""Initialize stars for assessment mode (all will be earned)"""
+	# Make all star nodes visible but empty (will animate to earned)
+	star1_node.visible = false
+	star2_node.visible = false
+	star3_node.visible = false
+	
+	# Reset all star sprite scales and frames
+	star1_sprite.scale = Vector2.ZERO
+	star2_sprite.scale = Vector2.ZERO
+	star3_sprite.scale = Vector2.ZERO
+	
+	# Hide all labels for assessment mode (no requirements to show)
+	star1_correct_label.visible = false
+	star1_accuracy_label.visible = false
+	star2_correct_label.visible = false
+	star2_accuracy_label.visible = false
+	star3_correct_label.visible = false
+	star3_accuracy_label.visible = false
+
+func start_assessment_star_animation_sequence():
+	"""Start the star animation sequence for assessment mode (always 3 stars, sprite only)"""
+	await get_tree().create_timer(GameConfig.animation_duration / 2.0).timeout
+	
+	# Animate all 3 stars in sequence (all earned, no labels)
+	animate_assessment_star(1)
+	await get_tree().create_timer(GameConfig.star_delay).timeout
+	
+	animate_assessment_star(2)
+	await get_tree().create_timer(GameConfig.star_delay).timeout
+	
+	animate_assessment_star(3)
+	# Show continue button when Star 3 starts animating
+	continue_button.visible = true
+
+func animate_assessment_star(star_num: int):
+	"""Animate a single star for assessment mode (always earned, no labels)"""
+	var star_node_ref: Control
+	var star_sprite_ref: Sprite2D
+	
+	# Get references for the specific star
+	match star_num:
+		1:
+			star_node_ref = star1_node
+			star_sprite_ref = star1_sprite
+		2:
+			star_node_ref = star2_node
+			star_sprite_ref = star2_sprite
+		3:
+			star_node_ref = star3_node
+			star_sprite_ref = star3_sprite
+		_:
+			return
+	
+	# Make star visible
+	star_node_ref.visible = true
+	
+	# Set sprite frame to earned
+	star_sprite_ref.frame = 1
+	
+	# Create sprite animation tween (earned animation: 0 -> max_scale -> final_scale)
+	var sprite_tween = star_sprite_ref.create_tween()
+	sprite_tween.set_ease(Tween.EASE_OUT)
+	sprite_tween.set_trans(Tween.TRANS_EXPO)
+	
+	sprite_tween.tween_property(star_sprite_ref, "scale", Vector2(GameConfig.star_max_scale, GameConfig.star_max_scale), GameConfig.star_expand_time)
+	sprite_tween.tween_property(star_sprite_ref, "scale", Vector2(GameConfig.star_final_scale, GameConfig.star_final_scale), GameConfig.star_shrink_time)
+	
+	# Play get sound
+	AudioManager.play_get()

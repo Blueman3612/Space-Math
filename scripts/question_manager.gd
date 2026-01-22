@@ -2470,6 +2470,193 @@ func get_weighted_random_question():
 	print("Error: Weighted selection failed")
 	return null
 
+# ============================================
+# Assessment Mode Question Generation
+# ============================================
+
+var is_assessment_mode = false  # Flag for assessment-specific generation
+
+func set_assessment_mode(enabled: bool):
+	"""Enable or disable assessment mode for range-specific generation"""
+	is_assessment_mode = enabled
+	if enabled:
+		used_questions_this_level.clear()
+
+func generate_assessment_question(standard_data: Dictionary) -> Dictionary:
+	"""Generate a question for assessment mode using the standard's config
+	This handles the special range isolation for overlapping standards
+	standard_data has structure: {id, name, target_cqpm, is_multiple_choice, config: {...}}
+	"""
+	
+	# Extract the inner config and add the name
+	var inner_config = standard_data.get("config", {}).duplicate()
+	inner_config["name"] = standard_data.get("name", "Assessment")
+	
+	# Set the config temporarily for generation
+	current_level_config = inner_config
+	is_assessment_mode = true
+	
+	# Clear used questions when starting a new standard
+	used_questions_this_level.clear()
+	
+	var max_attempts = 100
+	var attempts = 0
+	var question_data: Dictionary
+	var question_key: String
+	
+	while attempts < max_attempts:
+		# Check for special problem types first
+		var problem_type = current_level_config.get("type", "")
+		if problem_type != "":
+			question_data = _generate_special_type_question(problem_type, current_level_config)
+		else:
+			var operators = current_level_config.get("operators", ["+"])
+			var selected_operator = operators[rng.randi() % operators.size()]
+			question_data = _generate_assessment_question_for_operator(selected_operator, current_level_config)
+		
+		if question_data.is_empty():
+			attempts += 1
+			continue
+		
+		question_key = _get_dynamic_question_key(question_data)
+		
+		# Check if this question has been used
+		if not used_questions_this_level.has(question_key):
+			used_questions_this_level[question_key] = true
+			return question_data
+		
+		attempts += 1
+	
+	# If we've exhausted attempts, reset and try once more
+	print("[Assessment] Ran out of unique questions, resetting used questions list")
+	used_questions_this_level.clear()
+	
+	var problem_type = current_level_config.get("type", "")
+	if problem_type != "":
+		question_data = _generate_special_type_question(problem_type, current_level_config)
+	else:
+		var operators = current_level_config.get("operators", ["+"])
+		var selected_operator = operators[rng.randi() % operators.size()]
+		question_data = _generate_assessment_question_for_operator(selected_operator, current_level_config)
+	
+	question_key = _get_dynamic_question_key(question_data)
+	used_questions_this_level[question_key] = true
+	return question_data
+
+func _generate_assessment_question_for_operator(operator: String, config: Dictionary) -> Dictionary:
+	"""Generate a question for the given operator with assessment-specific range handling"""
+	match operator:
+		"+":
+			return _generate_assessment_addition_problem(config)
+		"-":
+			return _generate_assessment_subtraction_problem(config)
+		"x":
+			return _generate_multiplication_problem(config)  # Use existing, config has assessment ranges
+		"/":
+			return _generate_division_problem(config)  # Use existing, config has assessment ranges
+	return {}
+
+func _generate_assessment_addition_problem(config: Dictionary) -> Dictionary:
+	"""Generate an addition problem with assessment-specific range isolation"""
+	var operand1: int
+	var operand2: int
+	var result: int
+	
+	# Check for sum_min/sum_max range isolation (for overlapping standards)
+	if config.has("sum_min") and config.has("sum_max"):
+		var sum_min = config.sum_min
+		var sum_max = config.sum_max
+		var attempts = 0
+		
+		while attempts < 100:
+			# Generate a sum in the range [sum_min, sum_max]
+			result = rng.randi_range(sum_min, sum_max)
+			# Generate operand1 such that operand2 is valid
+			operand1 = rng.randi_range(0, result)
+			operand2 = result - operand1
+			
+			# Both operands should be non-negative (always true with this method)
+			if operand1 >= 0 and operand2 >= 0:
+				break
+			
+			attempts += 1
+	elif config.has("sum_max"):
+		# Standard "Sums to X" style (no minimum constraint)
+		var sum_max = config.sum_max
+		operand1 = rng.randi_range(0, sum_max)
+		operand2 = rng.randi_range(0, sum_max - operand1)
+		result = operand1 + operand2
+	elif config.has("digit_count"):
+		# Multi-digit addition (defer to existing function)
+		return _generate_addition_problem(config)
+	else:
+		# Fallback
+		operand1 = rng.randi_range(0, 10)
+		operand2 = rng.randi_range(0, 10)
+		result = operand1 + operand2
+	
+	var question_text = str(operand1) + " + " + str(operand2)
+	
+	return {
+		"operands": [operand1, operand2],
+		"operator": "+",
+		"result": result,
+		"expression": question_text + " = " + str(result),
+		"question": question_text,
+		"title": config.get("name", "Addition"),
+		"grade": "",
+		"type": ""
+	}
+
+func _generate_assessment_subtraction_problem(config: Dictionary) -> Dictionary:
+	"""Generate a subtraction problem with assessment-specific range isolation"""
+	var operand1: int
+	var operand2: int
+	var result: int
+	
+	# Check for range_min/range_max isolation (for overlapping standards)
+	if config.has("range_min") and config.has("range_max"):
+		var range_min = config.range_min
+		var range_max = config.range_max
+		var attempts = 0
+		
+		while attempts < 100:
+			# First operand must be in [range_min, range_max]
+			operand1 = rng.randi_range(range_min, range_max)
+			# Second operand must be <= first operand to avoid negative results
+			operand2 = rng.randi_range(0, operand1)
+			result = operand1 - operand2
+			
+			# Valid problem found
+			if result >= 0:
+				break
+			
+			attempts += 1
+	elif config.has("range_max"):
+		# Standard "Subtraction 0-X" style (no minimum constraint)
+		return _generate_subtraction_problem(config)
+	elif config.has("digit_count"):
+		# Multi-digit subtraction (defer to existing function)
+		return _generate_subtraction_problem(config)
+	else:
+		# Fallback
+		operand1 = rng.randi_range(0, 10)
+		operand2 = rng.randi_range(0, operand1)
+		result = operand1 - operand2
+	
+	var question_text = str(operand1) + " - " + str(operand2)
+	
+	return {
+		"operands": [operand1, operand2],
+		"operator": "-",
+		"result": result,
+		"expression": question_text + " = " + str(result),
+		"question": question_text,
+		"title": config.get("name", "Subtraction"),
+		"grade": "",
+		"type": ""
+	}
+
 func find_question_by_key(question_key):
 	"""Find a question in math_facts by its key"""
 	# Handle equivalence problems - they use expression as key

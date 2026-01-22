@@ -21,6 +21,7 @@ var in_transition_delay = false  # Whether we're currently in a transition delay
 var waiting_for_continue_after_incorrect = false  # Whether we're waiting for player to press Submit to continue after incorrect answer
 var is_drill_mode = false  # Whether we're currently in drill mode
 var is_grade_level = false  # Whether we're playing a grade-based level
+var is_assessment_mode = false  # Whether we're currently in assessment mode
 
 func initialize(main_node: Control):
 	"""Initialize state manager with references to needed nodes"""
@@ -253,6 +254,7 @@ func return_to_menu():
 	current_state = GameConfig.GameState.MENU
 	is_drill_mode = false  # Reset drill mode flag
 	is_grade_level = false  # Reset grade level flag
+	is_assessment_mode = false  # Reset assessment mode flag
 	current_level_data = {}  # Clear level data
 	current_level_config = {}  # Clear level config
 	
@@ -480,3 +482,144 @@ func _on_continue_button_pressed():
 	
 	return_to_menu()
 
+# ============================================
+# Assessment Mode Functions
+# ============================================
+
+func _on_assessment_button_pressed():
+	"""Handle assessment button press - only respond during MENU state"""
+	if current_state != GameConfig.GameState.MENU:
+		return
+	
+	start_assessment_mode()
+
+func start_assessment_mode():
+	"""Transition from MENU to ASSESSMENT_PLAY state"""
+	current_state = GameConfig.GameState.ASSESSMENT_PLAY
+	is_drill_mode = false
+	is_grade_level = false
+	is_assessment_mode = true
+	problems_completed = 0
+	
+	# Reset scores for assessment
+	ScoreManager.reset_for_assessment()
+	
+	# Reset input state
+	InputManager.reset_for_new_question()
+	
+	# Reset answer state
+	user_answer = ""
+	answer_submitted = false
+	in_transition_delay = false
+	waiting_for_continue_after_incorrect = false
+	
+	# Enable assessment mode in question manager
+	QuestionManager.set_assessment_mode(true)
+	
+	# First animate menu down off screen (downward)
+	var tween = main_menu_node.create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(main_menu_node, "position", GameConfig.menu_below_screen, GameConfig.animation_duration)
+	
+	# After the downward animation completes, teleport to above screen
+	tween.tween_callback(func(): main_menu_node.position = GameConfig.menu_above_screen)
+	
+	# Play node flies in from above
+	play_node.position = GameConfig.menu_above_screen
+	var play_tween = play_node.create_tween()
+	play_tween.set_ease(Tween.EASE_OUT)
+	play_tween.set_trans(Tween.TRANS_EXPO)
+	play_tween.tween_property(play_node, "position", GameConfig.menu_on_screen, GameConfig.animation_duration)
+	
+	# Trigger scroll speed boost effect
+	var space_bg = play_node.get_parent().get_node("BackgroundLayer/SpaceBackground")
+	if space_bg and space_bg.has_method("boost_scroll_speed"):
+		space_bg.boost_scroll_speed(GameConfig.scroll_boost_multiplier, GameConfig.animation_duration * 2.0)
+	
+	# Set UI visibility for assessment mode (minimal UI)
+	UIManager.update_assessment_mode_ui_visibility()
+	
+	# Generate first question from first standard
+	_generate_next_assessment_question()
+	DisplayManager.create_new_problem_label()
+
+func _generate_next_assessment_question():
+	"""Generate the next question for assessment mode based on current standard"""
+	var standard = ScoreManager.get_current_assessment_standard()
+	if standard.is_empty():
+		print("[Assessment] No more standards - assessment complete!")
+		return
+	
+	# Generate a question using the assessment-specific generation
+	var config = standard.config.duplicate()
+	config["name"] = standard.name
+	QuestionManager.current_question = QuestionManager.generate_assessment_question(standard)
+
+func process_assessment_answer(is_correct: bool, time_taken_raw: float):
+	"""Process an answer in assessment mode
+	time_taken_raw is the raw time; we subtract transition_delay here
+	"""
+	# Subtract transition delay from time (time only counts after animation)
+	var time_taken = max(0.0, time_taken_raw - GameConfig.transition_delay)
+	
+	# Process the answer and check if we should advance
+	var result = ScoreManager.process_assessment_answer(is_correct, time_taken)
+	
+	if result.should_advance:
+		# Move to next standard
+		var has_more = ScoreManager.advance_to_next_standard()
+		if not has_more:
+			# Assessment complete!
+			go_to_assessment_game_over()
+			return
+		
+		# Clear used questions for new standard
+		QuestionManager.used_questions_this_level.clear()
+	
+	# Generate next question (either same standard or new standard)
+	if not ScoreManager.is_assessment_complete():
+		_generate_next_assessment_question()
+
+func complete_assessment():
+	"""Called when all assessment questions are completed - transitions to game over"""
+	go_to_assessment_game_over()
+
+func go_to_assessment_game_over():
+	"""Transition from ASSESSMENT_PLAY to GAME_OVER state"""
+	current_state = GameConfig.GameState.GAME_OVER
+	
+	# Get final results
+	var final_results = ScoreManager.get_assessment_final_results()
+	
+	# Save assessment results to KV storage
+	SaveManager.save_assessment_results(final_results)
+	
+	# Disable assessment mode in question manager
+	QuestionManager.set_assessment_mode(false)
+	QuestionManager.current_level_config = null
+	
+	# Update GameOver labels for assessment mode (minimal display)
+	UIManager.update_assessment_game_over_ui()
+	
+	# Initialize star states for assessment (all 3 stars earned)
+	UIManager.initialize_assessment_star_states()
+	
+	# Clean up any remaining problem labels
+	DisplayManager.cleanup_problem_labels()
+	
+	# Play node flies down off screen
+	var play_tween = play_node.create_tween()
+	play_tween.set_ease(Tween.EASE_OUT)
+	play_tween.set_trans(Tween.TRANS_EXPO)
+	play_tween.tween_property(play_node, "position", GameConfig.menu_below_screen, GameConfig.animation_duration)
+	
+	# GameOver teleports to above screen, then animates down to center
+	game_over_node.position = GameConfig.menu_above_screen
+	var tween = game_over_node.create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(game_over_node, "position", GameConfig.menu_on_screen, GameConfig.animation_duration)
+	
+	# Start assessment star animation sequence (always 3 stars, sprite-only)
+	tween.tween_callback(UIManager.start_assessment_star_animation_sequence)
