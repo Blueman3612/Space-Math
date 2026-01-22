@@ -425,17 +425,17 @@ const GRADE_LEVELS = {
 					{"id": "grade4_decimal_add_sub", "name": "Add and Subtract Decimals to the Hundredths", "mastery_count": 15, "config": {"type": "decimal_add_sub", "operators": ["+", "-"]}}
 				]
 			},
-		{
-			"name": "Fractions",
-			"levels": [
-				{"id": "grade4_number_line_fractions", "name": "Place Fractions on Number Line (den. 2, 3, 4, 5, 6, 8, 10)", "mastery_count": 20, "config": {"type": "number_line_fractions_extended", "denominators": [2, 3, 4, 5, 6, 8, 10], "total_pips": 13, "frame": 1, "control_mode": "continuous", "lower_limit": 0, "upper_limit": 3}},
-				{"id": "grade4_fraction_comparison", "name": "Quantity Comparison of Fractions with Unlike Denominators", "mastery_count": 20, "config": {"type": "fraction_comparison"}},
-				{"id": "grade4_mixed_numbers", "name": "Add/Subtract Mixed Numbers with Like Denominators", "mastery_count": 19, "config": {"type": "mixed_numbers_like_denom", "operators": ["+", "-"]}}
-			]
-		}
-	]
-},
-5: {
+			{
+				"name": "Fractions",
+				"levels": [
+					{"id": "grade4_number_line_fractions", "name": "Place Fractions on Number Line (den. 2, 3, 4, 5, 6, 8, 10)", "mastery_count": 20, "config": {"type": "number_line_fractions_extended", "denominators": [2, 3, 4, 5, 6, 8, 10], "total_pips": 13, "frame": 1, "control_mode": "continuous", "lower_limit": 0, "upper_limit": 3}},
+					{"id": "grade4_fraction_comparison", "name": "Quantity Comparison of Fractions with Unlike Denominators", "mastery_count": 20, "config": {"type": "fraction_comparison"}},
+					{"id": "grade4_mixed_numbers", "name": "Add/Subtract Mixed Numbers with Like Denominators", "mastery_count": 19, "config": {"type": "mixed_numbers_like_denom", "operators": ["+", "-"]}}
+				]
+			}
+		]
+	},
+	5: {
 		"categories": [
 			{
 				"name": "Addition",
