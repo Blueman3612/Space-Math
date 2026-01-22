@@ -458,6 +458,9 @@ func unlock_all_levels():
 	if not save_data.has("grade_levels"):
 		save_data.grade_levels = {}
 	
+	# Mark assessment as completed
+	save_data.assessment_completed = true
+	
 	# Unlock all grade-based levels
 	for grade in GameConfig.GRADES:
 		var grade_data = GameConfig.GRADE_LEVELS[grade]
@@ -475,7 +478,7 @@ func unlock_all_levels():
 				}
 	
 	save_save_data()
-	print("All levels unlocked!")
+	print("All levels unlocked (including assessment)!")
 
 func volume_to_db(volume: float) -> float:
 	"""Convert volume (0.0-1.0) to decibels (-48 to 0) using moderately exponential scale"""

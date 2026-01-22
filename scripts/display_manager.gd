@@ -1450,6 +1450,75 @@ func continue_after_multiple_choice_incorrect(is_correct: bool, timer_was_active
 			progress_tween.set_trans(Tween.TRANS_EXPO)
 			progress_tween.tween_method(UIManager.update_progress_line_point, UIManager.progress_line.get_point_position(1).x, new_x_position, GameConfig.animation_duration)
 	
+	# Handle assessment mode separately (has its own flow)
+	if StateManager.is_assessment_mode:
+		# Get the question time from when the answer was selected
+		var question_time = 0.0
+		if ScoreManager.current_question_start_time > 0:
+			question_time = (Time.get_ticks_msec() / 1000.0) - ScoreManager.current_question_start_time
+		
+		# Subtract transition delay from time
+		var adjusted_time = max(0.0, question_time - GameConfig.transition_delay)
+		var result = ScoreManager.process_assessment_answer(is_correct, adjusted_time)
+		
+		if result.should_advance:
+			# Check if assessment is complete or moving to next standard
+			var has_more = ScoreManager.advance_to_next_standard()
+			if not has_more:
+				# Assessment complete!
+				UIManager.hide_play_ui_for_level_complete()
+				
+				# Animate current problem off screen
+				var complete_tween = create_tween()
+				complete_tween.set_ease(Tween.EASE_OUT)
+				complete_tween.set_trans(Tween.TRANS_EXPO)
+				complete_tween.set_parallel(true)
+				for node in current_problem_nodes:
+					if node and node.get_parent() == play_node:
+						var target_pos = node.position + Vector2(0, 1400)
+						complete_tween.tween_property(node, "position", target_pos, GameConfig.animation_duration)
+				complete_tween.set_parallel(false)
+				complete_tween.tween_callback(StateManager.complete_assessment)
+				return
+			
+			# Moving to next standard - clear used questions
+			QuestionManager.used_questions_this_level.clear()
+		
+		# Store references to the nodes we're animating out
+		var nodes_to_animate = current_problem_nodes.duplicate()
+		
+		# Clear current_problem_nodes immediately
+		current_problem_nodes.clear()
+		multiple_choice_buttons.clear()
+		multiple_choice_answered = false
+		multiple_choice_correct_index = -1
+		
+		# Reset state for new question
+		StateManager.user_answer = ""
+		StateManager.answer_submitted = false
+		InputManager.reset_for_new_question()
+		
+		# Generate next assessment question
+		StateManager._generate_next_assessment_question()
+		create_new_problem_label()
+		
+		# Animate old problem off screen
+		var tween = create_tween()
+		tween.set_ease(Tween.EASE_OUT)
+		tween.set_trans(Tween.TRANS_EXPO)
+		tween.set_parallel(true)
+		for node in nodes_to_animate:
+			if node and node.get_parent() == play_node:
+				var target_pos = node.position + Vector2(0, 1400)
+				tween.tween_property(node, "position", target_pos, GameConfig.animation_duration)
+		tween.set_parallel(false)
+		tween.tween_callback(func():
+			for node in nodes_to_animate:
+				if node:
+					node.queue_free()
+		)
+		return
+	
 	# Check if level is complete
 	var level_complete = false
 	if StateManager.is_drill_mode:

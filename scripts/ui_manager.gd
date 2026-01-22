@@ -803,10 +803,10 @@ func update_assessment_mode_ui_visibility():
 
 func update_assessment_game_over_ui():
 	"""Update GameOver UI for assessment mode completion"""
-	# Update LevelComplete text
+	# Update LevelComplete text (keep it as "LEVEL COMPLETE" per requirements)
 	var level_complete_label = game_over_node.get_node("LevelComplete")
 	if level_complete_label:
-		level_complete_label.text = "ASSESSMENT COMPLETE"
+		level_complete_label.text = "LEVEL COMPLETE"
 		level_complete_label.visible = true
 	
 	# Hide most game over elements for assessment mode (minimal display)

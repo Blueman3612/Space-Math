@@ -905,6 +905,9 @@ func update_menu_stars():
 					var star_sprite = contents.get_node("Star" + str(star_num))
 					if star_sprite:
 						star_sprite.frame = 1 if star_num <= stars_earned else 0
+	
+	# Also update the assessment button stars
+	update_assessment_button_stars()
 
 func update_level_availability():
 	"""Update level button availability based on category-based progression within current grade"""
@@ -955,6 +958,9 @@ func update_level_availability():
 	
 	# Update drill mode button availability
 	update_drill_mode_availability()
+	
+	# Update grade display (navigation buttons) based on assessment completion
+	update_grade_display()
 
 func update_drill_mode_availability():
 	"""Update drill mode button availability based on level completion across all packs"""

@@ -2486,6 +2486,7 @@ func generate_assessment_question(standard_data: Dictionary) -> Dictionary:
 	"""Generate a question for assessment mode using the standard's config
 	This handles the special range isolation for overlapping standards
 	standard_data has structure: {id, name, target_cqpm, is_multiple_choice, config: {...}}
+	Note: used_questions_this_level is cleared by state_manager when advancing to a new standard
 	"""
 	
 	# Extract the inner config and add the name
@@ -2496,22 +2497,25 @@ func generate_assessment_question(standard_data: Dictionary) -> Dictionary:
 	current_level_config = inner_config
 	is_assessment_mode = true
 	
-	# Clear used questions when starting a new standard
-	used_questions_this_level.clear()
+	# Note: Don't clear used_questions_this_level here - it's managed by state_manager
+	# when advancing to a new standard to prevent duplicates within the same standard
 	
 	var max_attempts = 100
 	var attempts = 0
 	var question_data: Dictionary
 	var question_key: String
+	var problem_type: String
+	var operators: Array
+	var selected_operator: String
 	
 	while attempts < max_attempts:
 		# Check for special problem types first
-		var problem_type = current_level_config.get("type", "")
+		problem_type = current_level_config.get("type", "")
 		if problem_type != "":
 			question_data = _generate_special_type_question(problem_type, current_level_config)
 		else:
-			var operators = current_level_config.get("operators", ["+"])
-			var selected_operator = operators[rng.randi() % operators.size()]
+			operators = current_level_config.get("operators", ["+"])
+			selected_operator = operators[rng.randi() % operators.size()]
 			question_data = _generate_assessment_question_for_operator(selected_operator, current_level_config)
 		
 		if question_data.is_empty():
@@ -2531,12 +2535,12 @@ func generate_assessment_question(standard_data: Dictionary) -> Dictionary:
 	print("[Assessment] Ran out of unique questions, resetting used questions list")
 	used_questions_this_level.clear()
 	
-	var problem_type = current_level_config.get("type", "")
+	problem_type = current_level_config.get("type", "")
 	if problem_type != "":
 		question_data = _generate_special_type_question(problem_type, current_level_config)
 	else:
-		var operators = current_level_config.get("operators", ["+"])
-		var selected_operator = operators[rng.randi() % operators.size()]
+		operators = current_level_config.get("operators", ["+"])
+		selected_operator = operators[rng.randi() % operators.size()]
 		question_data = _generate_assessment_question_for_operator(selected_operator, current_level_config)
 	
 	question_key = _get_dynamic_question_key(question_data)
