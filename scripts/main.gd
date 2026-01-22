@@ -268,30 +268,35 @@ func submit_answer():
 	
 	# Determine which delay to use based on correctness
 	var delay_to_use = GameConfig.transition_delay  # Default delay for correct answers
-	if not is_correct:
-		delay_to_use = GameConfig.transition_delay_incorrect  # Longer delay for incorrect answers
+	if not is_correct and not StateManager.is_assessment_mode:
+		delay_to_use = GameConfig.transition_delay_incorrect  # Longer delay for incorrect answers (not in assessment)
 	
-	# Set color based on correctness, play sound, and show feedback overlay
-	var feedback_color = Color(0, 1, 0) if is_correct else Color(1, 0, 0)
-	
-	# Color all problem nodes
-	DisplayManager.color_problem_nodes(feedback_color)
-	
-	# Play sounds and show feedback
-	if is_correct:
-		AudioManager.play_correct()
-		UIManager.show_feedback_flash(Color(0, 1, 0))
-		print("✓ Correct! Answer was ", QuestionManager.current_question.result)
+	# Assessment mode: no feedback, just play Select sound
+	if StateManager.is_assessment_mode:
+		AudioManager.play_select()
+		print("[Assessment] Answer submitted: ", "correct" if is_correct else "incorrect")
 	else:
-		AudioManager.play_incorrect()
-		UIManager.show_feedback_flash(Color(1, 0, 0))
-		print("✗ Incorrect. Answer was ", QuestionManager.current_question.result, ", you entered ", player_answer_value)
+		# Set color based on correctness, play sound, and show feedback overlay
+		var feedback_color = Color(0, 1, 0) if is_correct else Color(1, 0, 0)
 		
-		# Create animated label showing correct answer for incorrect responses
-		DisplayManager.create_incorrect_answer_label()
+		# Color all problem nodes
+		DisplayManager.color_problem_nodes(feedback_color)
 		
-		# Pause TimeBack activity timer while showing correct answer (instructional moment)
-		PlaycademyManager.pause_timeback_activity()
+		# Play sounds and show feedback
+		if is_correct:
+			AudioManager.play_correct()
+			UIManager.show_feedback_flash(Color(0, 1, 0))
+			print("✓ Correct! Answer was ", QuestionManager.current_question.result)
+		else:
+			AudioManager.play_incorrect()
+			UIManager.show_feedback_flash(Color(1, 0, 0))
+			print("✗ Incorrect. Answer was ", QuestionManager.current_question.result, ", you entered ", player_answer_value)
+			
+			# Create animated label showing correct answer for incorrect responses
+			DisplayManager.create_incorrect_answer_label()
+			
+			# Pause TimeBack activity timer while showing correct answer (instructional moment)
+			PlaycademyManager.pause_timeback_activity()
 	
 	# Wait for the full transition delay (timer remains paused during this time)
 	if delay_to_use > 0.0:
@@ -305,7 +310,7 @@ func submit_answer():
 	StateManager.set_meta("last_answer_correct", is_correct)
 	
 	# If incorrect and require_submit_after_incorrect is true, wait for player to press Submit to continue
-	if not is_correct and GameConfig.require_submit_after_incorrect:
+	if not is_correct and GameConfig.require_submit_after_incorrect and not StateManager.is_assessment_mode:
 		StateManager.waiting_for_continue_after_incorrect = true
 		# Store timer state for later restoration
 		StateManager.set_meta("timer_was_active", timer_was_active)
@@ -374,31 +379,36 @@ func submit_multi_input_answer():
 	
 	# Determine which delay to use based on correctness
 	var delay_to_use = GameConfig.transition_delay  # Default delay for correct answers
-	if not is_correct:
-		delay_to_use = GameConfig.transition_delay_incorrect  # Longer delay for incorrect answers
+	if not is_correct and not StateManager.is_assessment_mode:
+		delay_to_use = GameConfig.transition_delay_incorrect  # Longer delay for incorrect answers (not in assessment)
 	
-	# Set color based on correctness
-	var feedback_color = Color(0, 1, 0) if is_correct else Color(1, 0, 0)
-	
-	# Color all problem nodes
-	DisplayManager.color_problem_nodes(feedback_color)
-	
-	# Play sounds and show feedback
-	if is_correct:
-		AudioManager.play_correct()
-		UIManager.show_feedback_flash(Color(0, 1, 0))
-		print("✓ Correct! Player answered: ", player_answer_str)
+	# Assessment mode: no feedback, just play Select sound
+	if StateManager.is_assessment_mode:
+		AudioManager.play_select()
+		print("[Assessment] Multi-input answer submitted: ", "correct" if is_correct else "incorrect")
 	else:
-		AudioManager.play_incorrect()
-		UIManager.show_feedback_flash(Color(1, 0, 0))
-		var expected = QuestionManager.current_question.get("expected_answers", [0, 0])
-		print("✗ Incorrect. Expected: ", expected[0], " and ", expected[1], ", you entered: ", player_answer_str)
+		# Set color based on correctness
+		var feedback_color = Color(0, 1, 0) if is_correct else Color(1, 0, 0)
 		
-		# Create animated label showing correct answer
-		DisplayManager.create_incorrect_multi_input_label()
+		# Color all problem nodes
+		DisplayManager.color_problem_nodes(feedback_color)
 		
-		# Pause TimeBack activity timer while showing correct answer (instructional moment)
-		PlaycademyManager.pause_timeback_activity()
+		# Play sounds and show feedback
+		if is_correct:
+			AudioManager.play_correct()
+			UIManager.show_feedback_flash(Color(0, 1, 0))
+			print("✓ Correct! Player answered: ", player_answer_str)
+		else:
+			AudioManager.play_incorrect()
+			UIManager.show_feedback_flash(Color(1, 0, 0))
+			var expected = QuestionManager.current_question.get("expected_answers", [0, 0])
+			print("✗ Incorrect. Expected: ", expected[0], " and ", expected[1], ", you entered: ", player_answer_str)
+			
+			# Create animated label showing correct answer
+			DisplayManager.create_incorrect_multi_input_label()
+			
+			# Pause TimeBack activity timer while showing correct answer (instructional moment)
+			PlaycademyManager.pause_timeback_activity()
 	
 	# Wait for the full transition delay (timer remains paused during this time)
 	if delay_to_use > 0.0:
@@ -412,7 +422,7 @@ func submit_multi_input_answer():
 	StateManager.set_meta("last_answer_correct", is_correct)
 	
 	# If incorrect and require_submit_after_incorrect is true, wait for player to press Submit to continue
-	if not is_correct and GameConfig.require_submit_after_incorrect:
+	if not is_correct and GameConfig.require_submit_after_incorrect and not StateManager.is_assessment_mode:
 		StateManager.waiting_for_continue_after_incorrect = true
 		# Store timer state for later restoration
 		StateManager.set_meta("timer_was_active", timer_was_active)
@@ -473,23 +483,28 @@ func submit_number_line_answer():
 	
 	# Determine which delay to use based on correctness
 	var delay_to_use = GameConfig.transition_delay  # Default delay for correct answers
-	if not is_correct:
-		delay_to_use = GameConfig.transition_delay_incorrect  # Longer delay for incorrect answers
+	if not is_correct and not StateManager.is_assessment_mode:
+		delay_to_use = GameConfig.transition_delay_incorrect  # Longer delay for incorrect answers (not in assessment)
 	
-	# Show feedback on number line and fraction label
-	if is_correct:
-		DisplayManager.show_number_line_correct_feedback()
-		AudioManager.play_correct()
-		UIManager.show_feedback_flash(Color(0, 1, 0))
-		print("✓ Correct! Answer was ", QuestionManager.current_question.result)
+	# Assessment mode: no feedback, just play Select sound
+	if StateManager.is_assessment_mode:
+		AudioManager.play_select()
+		print("[Assessment] Number line answer submitted: ", "correct" if is_correct else "incorrect")
 	else:
-		DisplayManager.show_number_line_incorrect_feedback()
-		AudioManager.play_incorrect()
-		UIManager.show_feedback_flash(Color(1, 0, 0))
-		print("✗ Incorrect. Correct answer was ", QuestionManager.current_question.result, ", you selected ", player_answer_value)
-		
-		# Pause TimeBack activity timer while showing correct answer (instructional moment)
-		PlaycademyManager.pause_timeback_activity()
+		# Show feedback on number line and fraction label
+		if is_correct:
+			DisplayManager.show_number_line_correct_feedback()
+			AudioManager.play_correct()
+			UIManager.show_feedback_flash(Color(0, 1, 0))
+			print("✓ Correct! Answer was ", QuestionManager.current_question.result)
+		else:
+			DisplayManager.show_number_line_incorrect_feedback()
+			AudioManager.play_incorrect()
+			UIManager.show_feedback_flash(Color(1, 0, 0))
+			print("✗ Incorrect. Correct answer was ", QuestionManager.current_question.result, ", you selected ", player_answer_value)
+			
+			# Pause TimeBack activity timer while showing correct answer (instructional moment)
+			PlaycademyManager.pause_timeback_activity()
 	
 	# Wait for the full transition delay (timer remains paused during this time)
 	if delay_to_use > 0.0:
@@ -503,7 +518,7 @@ func submit_number_line_answer():
 	StateManager.set_meta("last_answer_correct", is_correct)
 	
 	# If incorrect and require_submit_after_incorrect is true, wait for player to press Submit to continue
-	if not is_correct and GameConfig.require_submit_after_incorrect:
+	if not is_correct and GameConfig.require_submit_after_incorrect and not StateManager.is_assessment_mode:
 		StateManager.waiting_for_continue_after_incorrect = true
 		# Store timer state for later restoration
 		StateManager.set_meta("timer_was_active", timer_was_active)

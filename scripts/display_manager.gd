@@ -1373,30 +1373,35 @@ func _on_multiple_choice_answer_selected(answer_index: int):
 	
 	# Determine which delay to use based on correctness
 	var delay_to_use = GameConfig.transition_delay  # Default delay for correct answers
-	if not is_correct:
-		delay_to_use = GameConfig.transition_delay_incorrect  # Longer delay for incorrect answers
+	if not is_correct and not StateManager.is_assessment_mode:
+		delay_to_use = GameConfig.transition_delay_incorrect  # Longer delay for incorrect answers (not in assessment)
 	
-	# Color the buttons
-	if is_correct:
-		# Color clicked button green
-		clicked_button.modulate = GameConfig.color_correct
+	# Assessment mode: no feedback, just play Select sound
+	if StateManager.is_assessment_mode:
+		AudioManager.play_select()
+		print("[Assessment] Multiple choice answer submitted: ", "correct" if is_correct else "incorrect")
 	else:
-		# Color clicked button red
-		clicked_button.modulate = GameConfig.color_incorrect
-		# Color correct button dark green
-		var correct_button = multiple_choice_buttons[multiple_choice_correct_index]
-		correct_button.modulate = GameConfig.color_correct_feedback
-	
-	# Play sounds and show feedback (mirrors normal question flow)
-	if is_correct:
-		AudioManager.play_correct()
-		UIManager.show_feedback_flash(GameConfig.color_correct)
-	else:
-		AudioManager.play_incorrect()
-		UIManager.show_feedback_flash(GameConfig.color_incorrect)
+		# Color the buttons
+		if is_correct:
+			# Color clicked button green
+			clicked_button.modulate = GameConfig.color_correct
+		else:
+			# Color clicked button red
+			clicked_button.modulate = GameConfig.color_incorrect
+			# Color correct button dark green
+			var correct_button = multiple_choice_buttons[multiple_choice_correct_index]
+			correct_button.modulate = GameConfig.color_correct_feedback
 		
-		# Pause TimeBack activity timer while showing correct answer (instructional moment)
-		PlaycademyManager.pause_timeback_activity()
+		# Play sounds and show feedback (mirrors normal question flow)
+		if is_correct:
+			AudioManager.play_correct()
+			UIManager.show_feedback_flash(GameConfig.color_correct)
+		else:
+			AudioManager.play_incorrect()
+			UIManager.show_feedback_flash(GameConfig.color_incorrect)
+			
+			# Pause TimeBack activity timer while showing correct answer (instructional moment)
+			PlaycademyManager.pause_timeback_activity()
 	
 	# Wait for the full transition delay (timer remains paused during this time)
 	if delay_to_use > 0.0:
@@ -1406,7 +1411,7 @@ func _on_multiple_choice_answer_selected(answer_index: int):
 	StateManager.in_transition_delay = false
 	
 	# If incorrect and require_submit_after_incorrect is true, wait for player to press Submit to continue
-	if not is_correct and GameConfig.require_submit_after_incorrect:
+	if not is_correct and GameConfig.require_submit_after_incorrect and not StateManager.is_assessment_mode:
 		StateManager.waiting_for_continue_after_incorrect = true
 		# Store timer state for later restoration (mirrors normal question flow)
 		StateManager.set_meta("timer_was_active", timer_was_active)
