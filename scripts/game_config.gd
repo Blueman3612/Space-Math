@@ -648,7 +648,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": [],
 		"error_tolerance": 2,
-		"level_ids": ["grade1_subtraction_0_5"],
+		"level_ids": ["grade1_subtraction_0_5", "grade1_fact_families_0_5"],
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 0, "range_max": 5}
 	},
 	{
@@ -658,7 +658,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_subtraction_0_5"],
 		"error_tolerance": 1,
-		"level_ids": ["grade1_subtraction_0_9", "grade2_subtraction_0_9", "grade3_subtraction_0_9", "grade4_subtraction_0_9", "grade5_subtraction_0_9"],
+		"level_ids": ["grade1_subtraction_0_9", "grade2_subtraction_0_9", "grade3_subtraction_0_9", "grade4_subtraction_0_9", "grade5_subtraction_0_9", "grade1_fact_families_0_9", "grade3_add_sub_0_9"],
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 6, "range_max": 9}
 	},
 	{
@@ -688,7 +688,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_subtraction_13_15"],
 		"error_tolerance": 1,
-		"level_ids": ["grade1_subtraction_0_20", "grade2_subtraction_0_20"],
+		"level_ids": ["grade1_subtraction_0_20", "grade2_subtraction_0_20", "grade1_fact_families_0_20", "grade2_fact_families_0_20", "grade3_add_sub_0_20"],
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 16, "range_max": 20}
 	},
 	
@@ -784,7 +784,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_2digit_sub_regroup"],
 		"error_tolerance": 0,
-		"level_ids": ["grade2_3digit_sub", "grade3_3digit_sub", "grade4_3digit_sub", "grade5_3digit_sub"],
+		"level_ids": ["grade2_3digit_sub", "grade3_3digit_sub", "grade4_3digit_sub", "grade5_3digit_sub", "grade3_3digit_add_sub"],
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 3, "max_answer": 1000}
 	},
 	
@@ -858,7 +858,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_divide_1_4"],
 		"error_tolerance": 1,
-		"level_ids": ["grade3_divide_5_9", "grade3_divide_0_9"],
+		"level_ids": ["grade3_divide_5_9", "grade3_divide_0_9", "grade3_multiply_divide_0_9"],
 		"config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 5, "divisor_max": 8}
 	},
 	{
@@ -868,7 +868,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_divide_5_8"],
 		"error_tolerance": 1,
-		"level_ids": ["grade3_divide_0_12", "grade4_divide_0_12", "grade5_divide_0_12"],
+		"level_ids": ["grade3_divide_0_12", "grade4_divide_0_12", "grade5_divide_0_12", "grade4_multiply_divide_0_12", "grade5_multiply_divide_0_12"],
 		"config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 9, "divisor_max": 12}
 	},
 	{

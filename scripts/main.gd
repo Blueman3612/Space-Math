@@ -236,6 +236,12 @@ func submit_answer():
 		player_answer_value = int(StateManager.user_answer)
 		is_correct = (player_answer_value == QuestionManager.current_question.result)
 	
+	# DEV MODE: Accept "0" as always correct when running in editor
+	if not is_correct and OS.has_feature("editor"):
+		if StateManager.user_answer == "0" or StateManager.user_answer == "0/0":
+			is_correct = true
+			print("[DEV] Accepted '0' as correct answer")
+	
 	# Save question data
 	if QuestionManager.current_question:
 		SaveManager.save_question_data(QuestionManager.current_question, player_answer_value, question_time)
@@ -338,6 +344,12 @@ func submit_multi_input_answer():
 	# Validate: c × ans1 × ans2 should equal a × b
 	var player_product = given_factor * answer1 * answer2
 	var is_correct = (player_product == expected_product)
+	
+	# DEV MODE: Accept both answers as 0 as always correct when running in editor
+	if not is_correct and OS.has_feature("editor"):
+		if answer1 == 0 and answer2 == 0:
+			is_correct = true
+			print("[DEV] Accepted '0, 0' as correct answer")
 	
 	var player_answer_str = str(answer1) + ", " + str(answer2)
 	print("Submitting multi-input answer: ", player_answer_str)
@@ -443,6 +455,18 @@ func submit_number_line_answer():
 	# Get the player's answer from the number line
 	var player_answer_value = DisplayManager.current_number_line.get_selected_fraction_string()
 	var is_correct = DisplayManager.current_number_line.is_correct()
+	
+	# DEV MODE: Accept middle/default position as always correct
+	if not is_correct and OS.has_feature("editor"):
+		var nl = DisplayManager.current_number_line
+		var middle_pip = nl.total_pips / 2
+		if nl.control_mode == "pip_to_pip" and nl.selected_pip == middle_pip:
+			is_correct = true
+			print("[DEV] Accepted middle pip as correct answer")
+		elif nl.control_mode == "continuous" and abs(nl.pointer_x) <= 10:
+			# Middle position in continuous mode is x = 0
+			is_correct = true
+			print("[DEV] Accepted middle position as correct answer")
 	
 	print("Submitting number line answer: ", player_answer_value)
 	

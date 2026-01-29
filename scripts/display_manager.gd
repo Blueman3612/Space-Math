@@ -1418,6 +1418,11 @@ func _on_multiple_choice_answer_selected(answer_index: int):
 	# Check if answer is correct
 	var is_correct = (answer_index == multiple_choice_correct_index)
 	
+	# DEV MODE: Accept first option (index 0) as always correct when running in editor
+	if not is_correct and OS.has_feature("editor") and answer_index == 0:
+		is_correct = true
+		print("[DEV] Accepted first option as correct answer")
+	
 	# Get the clicked button
 	var clicked_button = multiple_choice_buttons[answer_index]
 	
