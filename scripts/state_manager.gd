@@ -574,8 +574,8 @@ func process_assessment_answer(is_correct: bool, time_taken_raw: float):
 	var result = ScoreManager.process_assessment_answer(is_correct, time_taken)
 	
 	if result.should_advance:
-		# Move to next standard
-		var has_more = ScoreManager.advance_to_next_standard()
+		# Move to next standard (pass early_exit flag)
+		var has_more = ScoreManager.advance_to_next_standard(result.get("early_exit", false))
 		if not has_more:
 			# Assessment complete!
 			go_to_assessment_game_over()

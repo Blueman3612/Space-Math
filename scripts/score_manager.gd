@@ -321,7 +321,7 @@ func get_max_questions_for_current_standard() -> int:
 func process_assessment_answer(is_correct: bool, time_taken: float):
 	"""Process an answer in assessment mode
 	time_taken should already have transition_delay subtracted
-	Returns a dictionary with {should_advance: bool, assessment_complete: bool}
+	Returns a dictionary with {should_advance: bool, assessment_complete: bool, early_exit: bool}
 	"""
 	assessment_current_standard_total += 1
 	if is_correct:
@@ -332,36 +332,47 @@ func process_assessment_answer(is_correct: bool, time_taken: float):
 	
 	var standard = get_current_assessment_standard()
 	if standard.is_empty():
-		return {"should_advance": false, "assessment_complete": true}
+		return {"should_advance": false, "assessment_complete": true, "early_exit": false}
+	
+	var error_tolerance = standard.get("error_tolerance", 0)
+	
+	# Check for early exit: exceeded error tolerance
+	if assessment_current_standard_wrong > error_tolerance:
+		return {"should_advance": true, "assessment_complete": false, "early_exit": true}
 	
 	# Calculate dynamic question count for this standard, including error tolerance
 	var max_questions = get_max_questions_for_current_standard()
 	
 	# Advance to next standard when max questions reached
 	if assessment_current_standard_total >= max_questions:
-		return {"should_advance": true, "assessment_complete": false}
+		return {"should_advance": true, "assessment_complete": false, "early_exit": false}
 	
-	return {"should_advance": false, "assessment_complete": false}
+	return {"should_advance": false, "assessment_complete": false, "early_exit": false}
 
 func peek_assessment_answer(is_correct: bool, _time_taken: float):
 	"""Check what would happen if we process this answer, WITHOUT modifying state.
 	Used to determine if this is the last question before animating."""
 	var standard = get_current_assessment_standard()
 	if standard.is_empty():
-		return {"should_advance": false, "assessment_complete": true}
+		return {"should_advance": false, "assessment_complete": true, "early_exit": false}
+	
+	var error_tolerance = standard.get("error_tolerance", 0)
+	var simulated_wrong = assessment_current_standard_wrong + (0 if is_correct else 1)
+	
+	# Check for early exit: would exceed error tolerance
+	if simulated_wrong > error_tolerance:
+		return {"should_advance": true, "assessment_complete": false, "early_exit": true}
 	
 	# Simulate what max_questions would be after processing this answer
 	var base_questions = get_questions_for_standard(standard)
-	var error_tolerance = standard.get("error_tolerance", 0)
-	var simulated_wrong = assessment_current_standard_wrong + (0 if is_correct else 1)
 	var extra_questions = min(simulated_wrong, error_tolerance)
 	var max_questions = base_questions + extra_questions
 	
 	# Check if this would be the last question for this standard
 	if assessment_current_standard_total + 1 >= max_questions:
-		return {"should_advance": true, "assessment_complete": false}
+		return {"should_advance": true, "assessment_complete": false, "early_exit": false}
 	
-	return {"should_advance": false, "assessment_complete": false}
+	return {"should_advance": false, "assessment_complete": false, "early_exit": false}
 
 func has_more_standards_after_current() -> bool:
 	"""Check if there are more standards after the current one (without advancing)"""
@@ -426,8 +437,9 @@ func find_next_eligible_standard() -> int:
 	# No more eligible standards
 	return -1
 
-func finalize_current_standard():
-	"""Finalize results for the current standard before moving to next"""
+func finalize_current_standard(early_exit: bool = false):
+	"""Finalize results for the current standard before moving to next.
+	early_exit: If true, the standard ended early due to exceeding error tolerance."""
 	var standard = get_current_assessment_standard()
 	if standard.is_empty():
 		return
@@ -439,12 +451,20 @@ func finalize_current_standard():
 	var cqpm = _calculate_cqpm_from_avg_time(avg_time, assessment_current_standard_correct)
 	
 	# Determine mastery: wrong_answers <= error_tolerance AND cqpm >= target_cqpm
+	# If early_exit, mastery is automatically false
 	var error_tolerance = standard.get("error_tolerance", 0)
 	var target_cqpm = standard.get("target_cqpm", 10.0)
-	var is_mastered = (assessment_current_standard_wrong <= error_tolerance) and (cqpm >= target_cqpm)
+	var is_mastered = false
+	if not early_exit:
+		is_mastered = (assessment_current_standard_wrong <= error_tolerance) and (cqpm >= target_cqpm)
 	
 	# Record mastery status
 	assessment_mastered_standards[standard.id] = is_mastered
+	
+	# Determine status
+	var status = "completed"
+	if early_exit:
+		status = "failed - exceeded error tolerance"
 	
 	assessment_all_results[standard.id] = {
 		"average_time": avg_time,
@@ -454,18 +474,24 @@ func finalize_current_standard():
 		"total": assessment_current_standard_total,
 		"wrong": assessment_current_standard_wrong,
 		"mastered": is_mastered,
-		"status": "completed"
+		"status": status
 	}
 	
 	var mastery_str = "MASTERED" if is_mastered else "not mastered"
-	print("[Assessment] Standard '%s' complete: %.1f CQPM (target: %.1f), %d wrong (tolerance: %d) - %s" % [
-		standard.name, cqpm, target_cqpm, assessment_current_standard_wrong, error_tolerance, mastery_str
-	])
+	if early_exit:
+		print("[Assessment] Standard '%s' EARLY EXIT: %d wrong > %d tolerance - %s" % [
+			standard.name, assessment_current_standard_wrong, error_tolerance, mastery_str
+		])
+	else:
+		print("[Assessment] Standard '%s' complete: %.1f CQPM (target: %.1f), %d wrong (tolerance: %d) - %s" % [
+			standard.name, cqpm, target_cqpm, assessment_current_standard_wrong, error_tolerance, mastery_str
+		])
 
-func advance_to_next_standard() -> bool:
+func advance_to_next_standard(early_exit: bool = false) -> bool:
 	"""Move to the next assessment standard. Returns true if there are more standards, false if complete.
-	This will skip standards with unmet prerequisites."""
-	finalize_current_standard()
+	This will skip standards with unmet prerequisites.
+	early_exit: If true, the current standard ended early due to exceeding error tolerance."""
+	finalize_current_standard(early_exit)
 	assessment_current_standard_index += 1
 	
 	# Find the next eligible standard (skipping those with unmet prerequisites)
