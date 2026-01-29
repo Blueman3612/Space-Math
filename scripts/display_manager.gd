@@ -25,6 +25,10 @@ var multiple_choice_correct_index = -1  # Index of the correct answer button
 var current_number_line = null  # Reference to the current NumberLine node
 var number_line_fraction_label = null  # Reference to the fraction label above the number line
 
+# Prompt label (shown at top of screen for each question)
+var current_prompt_label = null  # Reference to the current prompt label
+var prompt_label_settings: LabelSettings = null  # Label settings for prompt
+
 # Blink state
 var blink_timer = 0.0
 var underscore_visible = true
@@ -46,6 +50,9 @@ func initialize(main_node: Control):
 		current_problem_label_settings = label_settings_array[0]
 	else:
 		current_problem_label_settings = label_settings_resource
+	
+	# Load prompt label settings
+	prompt_label_settings = load(GameConfig.prompt_label_settings_path)
 
 func update_blink_timer(delta: float):
 	"""Update the underscore blink timer"""
@@ -156,6 +163,50 @@ func update_fraction_problem_display(user_answer: String, answer_submitted: bool
 			current_problem_label.text = display_text
 			current_problem_label.visible = true
 
+func create_prompt_label():
+	"""Create a prompt label at the top of the screen for the current question"""
+	# Skip if label settings not loaded
+	if not prompt_label_settings:
+		return
+	
+	# Get prompt text from level config, default to "SOLVE"
+	var prompt_text = GameConfig.default_prompt_text
+	
+	# Check if StateManager level config has a custom prompt (for grade levels)
+	if StateManager.current_level_config and StateManager.current_level_config.has("prompt"):
+		prompt_text = StateManager.current_level_config.prompt
+	# Check if QuestionManager level config has a custom prompt (for assessment mode)
+	elif QuestionManager.current_level_config and QuestionManager.current_level_config.has("prompt"):
+		prompt_text = QuestionManager.current_level_config.prompt
+	# Also check the current question for a prompt override
+	elif QuestionManager.current_question and QuestionManager.current_question.has("prompt"):
+		prompt_text = QuestionManager.current_question.prompt
+	
+	# Create the prompt label
+	var prompt = Label.new()
+	prompt.label_settings = prompt_label_settings
+	prompt.text = prompt_text
+	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prompt.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	prompt.autowrap_mode = TextServer.AUTOWRAP_OFF
+	prompt.self_modulate = Color(0, 0, 1)  # Blue color, doesn't change with feedback
+	
+	# Set initial position at configured Y, with approximate X centering
+	# The text will be properly centered once the label calculates its size
+	prompt.position = GameConfig.prompt_label_position
+	
+	# Add to play node
+	play_node.add_child(prompt)
+	
+	# Now that it's in the tree, we can get the actual size and center it
+	# The label's size should be calculated after being added to tree
+	if prompt.size.x > 0:
+		prompt.position.x = GameConfig.prompt_label_position.x - prompt.size.x / 2
+	
+	# Track for cleanup
+	current_prompt_label = prompt
+	current_problem_nodes.append(prompt)
+
 func create_new_problem_label():
 	"""Create a new problem label for the current question"""
 	# Check if this is a number line problem
@@ -224,6 +275,9 @@ func create_new_problem_label():
 	# Set as current problem label IMMEDIATELY
 	current_problem_label = new_label
 	
+	# Track for cleanup (so it gets animated off-screen when answered)
+	current_problem_nodes.append(new_label)
+	
 	# Animate to center position (fire and forget)
 	var tween = create_tween()
 	tween.set_ease(Tween.EASE_OUT)
@@ -232,6 +286,9 @@ func create_new_problem_label():
 	
 	# Start timing this question when animation completes
 	tween.tween_callback(ScoreManager.start_question_timing)
+	
+	# Create prompt label at the end (after other nodes are created)
+	create_prompt_label()
 
 func select_label_settings_for_problem() -> LabelSettings:
 	"""Select the best label settings for the current problem based on width constraints.
@@ -405,6 +462,9 @@ func create_multi_input_problem():
 	
 	# Start timing this question when animation completes
 	tween.tween_callback(ScoreManager.start_question_timing)
+	
+	# Create prompt label at the end (after nodes are added to current_problem_nodes)
+	create_prompt_label()
 
 func select_label_settings_for_multi_input_problem() -> LabelSettings:
 	"""Select the best label settings for multi-input problems based on width constraints."""
@@ -709,6 +769,9 @@ func create_fraction_problem():
 	# Start timing this question when animation completes
 	tween.tween_callback(ScoreManager.start_question_timing)
 	
+	# Create prompt label at the end (after nodes are added to current_problem_nodes)
+	create_prompt_label()
+	
 	# Note: answer_fraction_node will be created when user presses Divide
 
 func create_equivalence_problem():
@@ -836,6 +899,9 @@ func create_equivalence_problem():
 	
 	# Start timing this question when animation completes
 	tween.tween_callback(ScoreManager.start_question_timing)
+	
+	# Create prompt label at the end (after nodes are added to current_problem_nodes)
+	create_prompt_label()
 
 func create_fraction_conversion_problem():
 	"""Create a fraction conversion problem display (mixed to improper or improper to mixed)"""
@@ -930,6 +996,9 @@ func create_fraction_conversion_problem():
 
 	# Start timing this question when animation completes
 	tween.tween_callback(ScoreManager.start_question_timing)
+	
+	# Create prompt label at the end (after nodes are added to current_problem_nodes)
+	create_prompt_label()
 
 func create_number_line_problem():
 	"""Create a number line problem display with fraction label above"""
@@ -1022,6 +1091,9 @@ func create_number_line_problem():
 	
 	# Start timing when animation completes
 	tween.tween_callback(ScoreManager.start_question_timing)
+	
+	# Create prompt label at the end (after nodes are added to current_problem_nodes)
+	create_prompt_label()
 
 func show_number_line_correct_feedback():
 	"""Show correct feedback for number line question"""
@@ -1314,6 +1386,9 @@ func create_multiple_choice_problem():
 	
 	tween.set_parallel(false)
 	tween.tween_callback(ScoreManager.start_question_timing)
+	
+	# Create prompt label at the end (after nodes are added to current_problem_nodes)
+	create_prompt_label()
 
 func _on_multiple_choice_answer_selected(answer_index: int):
 	"""Handle multiple choice answer button press"""
@@ -2110,6 +2185,7 @@ func cleanup_problem_labels():
 	current_problem_nodes.clear()
 
 	current_problem_label = null
+	current_prompt_label = null
 	answer_fraction_node = null
 
 	# Reset multiple choice state
@@ -2125,6 +2201,9 @@ func color_problem_nodes(feedback_color: Color):
 	"""Color all problem nodes with the given feedback color"""
 	for node in current_problem_nodes:
 		if node:
+			# Skip the prompt label - it stays blue
+			if node == current_prompt_label:
+				continue
 			# Use modulate for fractions (Control nodes), self_modulate for labels
 			if node is Control and not node is Label:
 				node.modulate = feedback_color

@@ -149,6 +149,13 @@ var off_screen_top = Vector2(480, 1276)   # Off-screen top position
 var off_screen_bottom = Vector2(480, -324) # Off-screen bottom position
 
 # ============================================
+# Problem Prompt Label
+# ============================================
+var prompt_label_position = Vector2(960, 32)  # Top center of screen
+var prompt_label_settings_path = "res://assets/label settings/GravityBold64.tres"
+var default_prompt_text = "SOLVE"  # Default prompt when no custom prompt is specified
+
+# ============================================
 # Level Button Layout
 # ============================================
 var level_button_start_position = Vector2(-960, -32)  # Starting position for first button (top-left of screen)
@@ -374,7 +381,7 @@ const GRADE_LEVELS = {
 			{
 				"name": "Fractions",
 				"levels": [
-					{"id": "grade3_number_line_fractions", "name": "Place Fractions on Number Line (den. 2, 4, 8)", "mastery_count": 20, "config": {"type": "number_line_fractions", "denominators": [2, 4, 8], "total_pips": 9, "frame": 0, "control_mode": "pip_to_pip", "lower_limit": 0, "upper_limit": 1}}
+					{"id": "grade3_number_line_fractions", "name": "Place Fractions on Number Line (den. 2, 4, 8)", "mastery_count": 20, "config": {"type": "number_line_fractions", "prompt": "PLACE ON NUMBER LINE", "denominators": [2, 4, 8], "total_pips": 9, "frame": 0, "control_mode": "pip_to_pip", "lower_limit": 0, "upper_limit": 1}}
 				]
 			}
 		]
@@ -428,7 +435,7 @@ const GRADE_LEVELS = {
 			{
 				"name": "Fractions",
 				"levels": [
-					{"id": "grade4_number_line_fractions", "name": "Place Fractions on Number Line (den. 2, 3, 4, 5, 6, 8, 10)", "mastery_count": 20, "config": {"type": "number_line_fractions_extended", "denominators": [2, 3, 4, 5, 6, 8, 10], "total_pips": 13, "frame": 1, "control_mode": "continuous", "lower_limit": 0, "upper_limit": 3}},
+					{"id": "grade4_number_line_fractions", "name": "Place Fractions on Number Line (den. 2, 3, 4, 5, 6, 8, 10)", "mastery_count": 20, "config": {"type": "number_line_fractions_extended", "prompt": "PLACE ON NUMBER LINE", "denominators": [2, 3, 4, 5, 6, 8, 10], "total_pips": 13, "frame": 1, "control_mode": "continuous", "lower_limit": 0, "upper_limit": 3}},
 					{"id": "grade4_fraction_comparison", "name": "Quantity Comparison of Fractions with Unlike Denominators", "mastery_count": 20, "config": {"type": "fraction_comparison"}},
 					{"id": "grade4_mixed_numbers", "name": "Add/Subtract Mixed Numbers with Like Denominators", "mastery_count": 19, "config": {"type": "mixed_numbers_like_denom", "operators": ["+", "-"]}}
 				]

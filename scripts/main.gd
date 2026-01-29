@@ -637,6 +637,7 @@ func animate_problem_off_screen(is_correct: bool):
 		DisplayManager.current_problem_nodes.clear()
 		DisplayManager.correct_answer_nodes.clear()
 		DisplayManager.current_problem_label = null
+		DisplayManager.current_prompt_label = null
 		DisplayManager.answer_fraction_node = null
 		DisplayManager.current_number_line = null
 		DisplayManager.number_line_fraction_label = null
