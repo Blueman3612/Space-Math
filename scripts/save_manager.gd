@@ -544,7 +544,7 @@ func save_assessment_results(results: Dictionary):
 	
 	results should be a dictionary with:
 	- timestamp: Unix timestamp of completion
-	- standards: Dictionary mapping standard_id to {average_time, accuracy, cqpm}
+	- standards: Dictionary mapping standard_id to {average_time, accuracy, cqpm, mastered, status}
 	"""
 	# Ensure assessment fields exist
 	if not save_data.has("assessment_completed"):
@@ -558,8 +558,98 @@ func save_assessment_results(results: Dictionary):
 	# Add results to the front of history (most recent first)
 	save_data.assessment_history.push_front(results)
 	
+	# Complete corresponding grade levels for mastered standards
+	_complete_levels_from_assessment(results)
+	
 	# Mark dirty and save immediately
 	has_unsaved_changes = true
 	save_save_data()
 	
 	print("[SaveManager] Assessment results saved. Total attempts: ", save_data.assessment_history.size())
+
+func _complete_levels_from_assessment(results: Dictionary):
+	"""Mark grade levels as complete (3 stars) for mastered assessment standards.
+	Only completes a level if the achieved CQPM meets that level's mastery_count / 2."""
+	var standards = results.get("standards", {})
+	var levels_completed = 0
+	
+	for standard_id in standards:
+		var standard_result = standards[standard_id]
+		
+		# Only process mastered standards
+		if not standard_result.get("mastered", false):
+			continue
+		
+		var achieved_cqpm = standard_result.get("cqpm", 0.0)
+		
+		# Find the assessment standard to get its level_ids
+		var assessment_standard = _find_assessment_standard_by_id(standard_id)
+		if assessment_standard.is_empty():
+			continue
+		
+		# Get the explicit level IDs for this standard
+		var level_ids = assessment_standard.get("level_ids", [])
+		
+		for level_id in level_ids:
+			# Get the level's mastery_count to check CQPM requirement
+			var level_data = _find_grade_level_by_id(level_id)
+			if level_data.is_empty():
+				print("[SaveManager] Warning: Level ID '%s' not found in GRADE_LEVELS" % level_id)
+				continue
+			
+			var mastery_count = level_data.get("mastery_count", 20)
+			var required_cqpm = mastery_count / 2.0
+			
+			# Check if achieved CQPM meets this level's requirement
+			if achieved_cqpm >= required_cqpm:
+				_mark_level_complete_from_assessment(level_id, mastery_count)
+				levels_completed += 1
+				print("[SaveManager] Level '%s' completed from assessment (CQPM: %.1f >= %.1f)" % [
+					level_data.get("name", level_id), achieved_cqpm, required_cqpm
+				])
+	
+	print("[SaveManager] Assessment completed %d grade levels" % levels_completed)
+
+func _find_assessment_standard_by_id(standard_id: String) -> Dictionary:
+	"""Find an assessment standard by its ID"""
+	for standard in GameConfig.ASSESSMENT_STANDARDS:
+		if standard.get("id", "") == standard_id:
+			return standard
+	return {}
+
+func _find_grade_level_by_id(level_id: String) -> Dictionary:
+	"""Find a grade level by its ID (across all grades).
+	Returns the level dictionary or empty dict if not found."""
+	for grade in GameConfig.GRADES:
+		var grade_data = GameConfig.GRADE_LEVELS[grade]
+		for category in grade_data.categories:
+			for level in category.levels:
+				if level.get("id", "") == level_id:
+					return level
+	return {}
+
+func _mark_level_complete_from_assessment(level_id: String, mastery_count: int):
+	"""Mark a grade level as complete with 3 stars from assessment.
+	Uses mastery-level performance metrics."""
+	# Ensure grade_levels dict exists
+	if not save_data.has("grade_levels"):
+		save_data.grade_levels = {}
+	
+	# Check if level already has 3 stars
+	if save_data.grade_levels.has(level_id):
+		var existing_stars = save_data.grade_levels[level_id].get("highest_stars", 0)
+		if existing_stars >= 3:
+			# Already complete, don't overwrite
+			return
+	
+	# Set level to have 3 stars with mastery performance
+	save_data.grade_levels[level_id] = {
+		"highest_stars": 3,
+		"best_accuracy": mastery_count,  # 100% correct for mastery
+		"best_time": GameConfig.level_timer_duration,  # Full time
+		"best_cqpm": mastery_count / 2.0,  # CQPM threshold for mastery
+		"xp_earned": 0.0,  # Start with 0 XP earned - they can still earn XP by replaying
+		"completed_from_assessment": true  # Flag to indicate this was from assessment
+	}
+	
+	has_unsaved_changes = true

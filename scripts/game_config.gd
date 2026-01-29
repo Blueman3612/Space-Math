@@ -604,6 +604,7 @@ var assessment_theme_color = Color(0.6, 0.2, 0.8)  # Purple theme for assessment
 #   - is_multiple_choice: Whether this is a multiple choice question type
 #   - prerequisites: Array of standard IDs that must be mastered before this standard is tested (empty = no prerequisites)
 #   - error_tolerance: Number of allowed wrong answers (0 = no tolerance). Each wrong adds an extra question, max = base + tolerance.
+#   - level_ids: Array of grade level IDs that mastering this standard can complete (checked against each level's mastery_count / 2)
 #   - config: Generation config for the assessment (may differ from regular levels for range isolation)
 # Mastery is achieved when: wrong_answers <= error_tolerance AND CQPM >= target_cqpm
 const ASSESSMENT_STANDARDS = [
@@ -615,6 +616,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": [],
 		"error_tolerance": 2,
+		"level_ids": ["grade1_addition_sums_to_6"],
 		"config": {"operators": ["+"], "prompt": "ADD", "sum_min": 0, "sum_max": 6}
 	},
 	{
@@ -624,6 +626,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_sums_to_6"],
 		"error_tolerance": 1,
+		"level_ids": ["grade1_addition_sums_to_12"],
 		"config": {"operators": ["+"], "prompt": "ADD", "sum_min": 7, "sum_max": 12}
 	},
 	{
@@ -633,6 +636,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_sums_to_12"],
 		"error_tolerance": 1,
+		"level_ids": ["grade1_addition_sums_to_20", "grade2_addition_sums_to_20", "grade3_add_sub_sums_to_20", "grade4_addition_sums_to_20", "grade5_addition_sums_to_20"],
 		"config": {"operators": ["+"], "prompt": "ADD", "sum_min": 13, "sum_max": 20}
 	},
 	
@@ -644,6 +648,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": [],
 		"error_tolerance": 2,
+		"level_ids": ["grade1_subtraction_0_5"],
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 0, "range_max": 5}
 	},
 	{
@@ -653,6 +658,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_subtraction_0_5"],
 		"error_tolerance": 1,
+		"level_ids": ["grade1_subtraction_0_9", "grade2_subtraction_0_9", "grade3_subtraction_0_9", "grade4_subtraction_0_9", "grade5_subtraction_0_9"],
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 6, "range_max": 9}
 	},
 	{
@@ -662,6 +668,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_subtraction_6_9"],
 		"error_tolerance": 1,
+		"level_ids": ["grade1_subtraction_0_12", "grade2_subtraction_0_12"],
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 10, "range_max": 12}
 	},
 	{
@@ -671,6 +678,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_subtraction_10_12"],
 		"error_tolerance": 1,
+		"level_ids": ["grade1_subtraction_0_15", "grade2_subtraction_0_15"],
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 13, "range_max": 15}
 	},
 	{
@@ -680,6 +688,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_subtraction_13_15"],
 		"error_tolerance": 1,
+		"level_ids": ["grade1_subtraction_0_20", "grade2_subtraction_0_20"],
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 16, "range_max": 20}
 	},
 	
@@ -691,6 +700,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": true,
 		"prerequisites": ["assess_sums_to_20", "assess_subtraction_16_20"],
 		"error_tolerance": 0,
+		"level_ids": ["grade2_expression_comparison_20"],
 		"config": {"type": "expression_comparison_20", "prompt": "LESS THAN OR GREATER THAN?"}
 	},
 	{
@@ -700,6 +710,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_sums_to_20"],
 		"error_tolerance": 0,
+		"level_ids": ["grade2_2digit_add_no_regroup"],
 		"config": {"operators": ["+"], "prompt": "ADD", "digit_count": 2, "requires_regrouping": false, "max_answer": 100}
 	},
 	{
@@ -709,6 +720,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_subtraction_16_20"],
 		"error_tolerance": 0,
+		"level_ids": ["grade2_2digit_sub_no_regroup"],
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 2, "requires_regrouping": false, "max_answer": 100}
 	},
 	{
@@ -718,6 +730,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_2digit_add_no_regroup"],
 		"error_tolerance": 0,
+		"level_ids": ["grade2_2digit_add_regroup"],
 		"config": {"operators": ["+"], "prompt": "ADD", "digit_count": 2, "requires_regrouping": true, "max_answer": 100}
 	},
 	{
@@ -727,6 +740,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_2digit_sub_no_regroup"],
 		"error_tolerance": 0,
+		"level_ids": ["grade2_2digit_sub_regroup"],
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 2, "requires_regrouping": true, "max_answer": 100}
 	},
 	
@@ -738,6 +752,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_sums_to_20", "assess_subtraction_16_20"],
 		"error_tolerance": 0,
+		"level_ids": ["grade2_equivalence_associative"],
 		"config": {"type": "equivalence_associative"}
 	},
 	{
@@ -747,6 +762,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_sums_to_20", "assess_subtraction_16_20"],
 		"error_tolerance": 0,
+		"level_ids": ["grade2_equivalence_place_value"],
 		"config": {"type": "equivalence_place_value"}
 	},
 	
@@ -758,6 +774,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_2digit_add_regroup"],
 		"error_tolerance": 0,
+		"level_ids": ["grade2_3digit_add", "grade3_3digit_add", "grade4_3digit_add", "grade5_3digit_add"],
 		"config": {"operators": ["+"], "prompt": "ADD", "digit_count": 3, "max_answer": 1998}
 	},
 	{
@@ -767,6 +784,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_2digit_sub_regroup"],
 		"error_tolerance": 0,
+		"level_ids": ["grade2_3digit_sub", "grade3_3digit_sub", "grade4_3digit_sub", "grade5_3digit_sub"],
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 3, "max_answer": 1000}
 	},
 	
@@ -778,6 +796,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": [],
 		"error_tolerance": 2,
+		"level_ids": ["grade3_multiply_0_9"],
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 0, "factor_max": 4}
 	},
 	{
@@ -787,6 +806,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_multiply_0_4"],
 		"error_tolerance": 1,
+		"level_ids": ["grade3_multiply_5_9"],
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 5, "factor_max": 8}
 	},
 	{
@@ -796,6 +816,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_multiply_5_8"],
 		"error_tolerance": 1,
+		"level_ids": ["grade3_multiply_0_12", "grade4_multiply_0_12", "grade5_multiply_0_12"],
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 9, "factor_max": 12}
 	},
 	{
@@ -805,6 +826,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_multiply_9_12"],
 		"error_tolerance": 0,
+		"level_ids": ["grade3_multiply_multi_no_regroup"],
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "multi_digit": true, "requires_regrouping": false}
 	},
 	{
@@ -814,6 +836,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_multiply_multi_no_regroup"],
 		"error_tolerance": 0,
+		"level_ids": ["grade3_multiply_multi_regroup", "grade4_multiply_1digit_by_multidigit"],
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "multi_digit": true, "requires_regrouping": true}
 	},
 	
@@ -825,6 +848,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": [],
 		"error_tolerance": 2,
+		"level_ids": ["grade3_divide_0_5"],
 		"config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 1, "divisor_max": 4}
 	},
 	{
@@ -834,6 +858,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_divide_1_4"],
 		"error_tolerance": 1,
+		"level_ids": ["grade3_divide_5_9", "grade3_divide_0_9"],
 		"config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 5, "divisor_max": 8}
 	},
 	{
@@ -843,6 +868,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_divide_5_8"],
 		"error_tolerance": 1,
+		"level_ids": ["grade3_divide_0_12", "grade4_divide_0_12", "grade5_divide_0_12"],
 		"config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 9, "divisor_max": 12}
 	},
 	{
@@ -852,6 +878,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_divide_9_12"],
 		"error_tolerance": 0,
+		"level_ids": ["grade3_divide_multi", "grade4_divide_multidigit"],
 		"config": {"operators": ["/"], "prompt": "DIVIDE", "multi_digit": true}
 	},
 	
@@ -863,6 +890,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": [],
 		"error_tolerance": 0,
+		"level_ids": ["grade3_number_line_fractions"],
 		"config": {"type": "number_line_fractions", "prompt": "PLACE ON NUMBER LINE", "denominators": [2, 4, 8], "total_pips": 9, "frame": 0, "control_mode": "pip_to_pip", "lower_limit": 0, "upper_limit": 1}
 	},
 	
@@ -874,6 +902,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_multiply_multi_regroup"],
 		"error_tolerance": 0,
+		"level_ids": ["grade4_multiply_2digit_no_regroup"],
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "two_digit_by_two_digit": true, "requires_regrouping": false}
 	},
 	{
@@ -883,6 +912,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_multiply_2digit_no_regroup"],
 		"error_tolerance": 0,
+		"level_ids": ["grade4_multiply_2digit_regroup", "grade5_multiply_2digit"],
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "two_digit_by_two_digit": true, "requires_regrouping": true}
 	},
 	{
@@ -892,6 +922,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_multiply_2digit_regroup", "assess_equivalence_associative"],
 		"error_tolerance": 0,
+		"level_ids": ["grade4_equivalence_mult_factoring"],
 		"config": {"type": "equivalence_mult_factoring"}
 	},
 	
@@ -903,6 +934,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": true,
 		"prerequisites": ["assess_expression_comparison_20"],
 		"error_tolerance": 1,
+		"level_ids": ["grade4_decimal_comparison"],
 		"config": {"type": "decimal_comparison", "prompt": "LESS THAN OR GREATER THAN?"}
 	},
 	{
@@ -912,6 +944,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_decimal_comparison"],
 		"error_tolerance": 0,
+		"level_ids": ["grade4_decimal_add_sub", "grade5_decimal_add_sub"],
 		"config": {"type": "decimal_add_sub", "operators": ["+", "-"]}
 	},
 	
@@ -923,6 +956,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_number_line_fractions_basic"],
 		"error_tolerance": 0,
+		"level_ids": ["grade4_number_line_fractions"],
 		"config": {"type": "number_line_fractions_extended", "prompt": "PLACE ON NUMBER LINE", "denominators": [2, 3, 4, 5, 6, 8, 10], "total_pips": 13, "frame": 1, "control_mode": "continuous", "lower_limit": 0, "upper_limit": 3}
 	},
 	{
@@ -932,6 +966,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": true,
 		"prerequisites": ["assess_expression_comparison_20", "assess_number_line_fractions_extended"],
 		"error_tolerance": 0,
+		"level_ids": ["grade4_fraction_comparison"],
 		"config": {"type": "fraction_comparison", "prompt": "LESS THAN OR GREATER THAN?"}
 	},
 	{
@@ -941,6 +976,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_number_line_fractions_extended", "assess_sums_to_20", "assess_subtraction_16_20"],
 		"error_tolerance": 0,
+		"level_ids": ["grade4_mixed_numbers", "grade5_mixed_numbers"],
 		"config": {"type": "mixed_numbers_like_denom", "operators": ["+", "-"]}
 	},
 	
@@ -952,6 +988,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_decimal_add_sub", "assess_multiply_9_12", "assess_divide_9_12"],
 		"error_tolerance": 0,
+		"level_ids": ["grade5_decimal_multiply_divide"],
 		"config": {"type": "decimal_multiply_divide", "operators": ["x", "/"]}
 	},
 	
@@ -963,6 +1000,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_mixed_numbers_like_denom"],
 		"error_tolerance": 0,
+		"level_ids": ["grade5_fractions_unlike_denom"],
 		"config": {"type": "fractions_unlike_denom", "operators": ["+", "-"]}
 	},
 	{
@@ -972,6 +1010,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_mixed_numbers_like_denom"],
 		"error_tolerance": 0,
+		"level_ids": ["grade5_mixed_to_improper"],
 		"config": {"type": "mixed_to_improper", "prompt": "CONVERT TO IMPROPER FRACTION"}
 	},
 	{
@@ -981,6 +1020,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_mixed_numbers_like_denom"],
 		"error_tolerance": 0,
+		"level_ids": ["grade5_improper_to_mixed"],
 		"config": {"type": "improper_to_mixed", "prompt": "CONVERT TO MIXED FRACTION"}
 	},
 	{
@@ -990,6 +1030,7 @@ const ASSESSMENT_STANDARDS = [
 		"is_multiple_choice": false,
 		"prerequisites": ["assess_mixed_numbers_like_denom", "assess_fractions_unlike_denom"],
 		"error_tolerance": 0,
+		"level_ids": ["grade5_multiply_divide_fractions"],
 		"config": {"type": "multiply_divide_fractions", "operators": ["x", "/"]}
 	}
 ]
