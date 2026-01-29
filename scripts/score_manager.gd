@@ -271,6 +271,16 @@ func get_current_assessment_standard() -> Dictionary:
 		return {}
 	return GameConfig.ASSESSMENT_STANDARDS[assessment_current_standard_index]
 
+func get_questions_for_standard(standard: Dictionary) -> int:
+	"""Calculate the number of questions for a standard based on target_cqpm.
+	Formula: questions = round(target_cqpm * target_seconds / 60)
+	Minimum of 1 question.
+	"""
+	var target_cqpm = standard.get("target_cqpm", 10.0)
+	var target_seconds = GameConfig.assessment_target_seconds_per_standard
+	var questions = round(target_cqpm * target_seconds / 60.0)
+	return max(1, int(questions))
+
 func process_assessment_answer(is_correct: bool, time_taken: float):
 	"""Process an answer in assessment mode
 	time_taken should already have transition_delay subtracted
@@ -285,28 +295,10 @@ func process_assessment_answer(is_correct: bool, time_taken: float):
 	if standard.is_empty():
 		return {"should_advance": false, "assessment_complete": true}
 	
-	var max_questions = GameConfig.assessment_questions_per_standard
-	var early_exit_correct = GameConfig.assessment_early_exit_correct_count
-	var is_multiple_choice = standard.get("is_multiple_choice", false)
+	# Calculate dynamic question count for this standard
+	var max_questions = get_questions_for_standard(standard)
 	
-	# Multiple choice: always do all questions
-	if is_multiple_choice:
-		if assessment_current_standard_total >= max_questions:
-			return {"should_advance": true, "assessment_complete": false}
-		return {"should_advance": false, "assessment_complete": false}
-	
-	# Non-multiple choice: check for early exit conditions
-	# Early exit if: 3+ correct AND CQPM > threshold
-	if assessment_current_standard_correct >= early_exit_correct:
-		var avg_time = _calculate_average_time()
-		var cqpm = _calculate_cqpm_from_avg_time(avg_time, assessment_current_standard_correct)
-		var target_cqpm = standard.get("target_cqpm", 20.0)
-		
-		if cqpm > target_cqpm:
-			print("[Assessment] Early exit for '%s': CQPM %.1f > target %.1f" % [standard.name, cqpm, target_cqpm])
-			return {"should_advance": true, "assessment_complete": false}
-	
-	# Max questions reached
+	# Advance to next standard when max questions reached
 	if assessment_current_standard_total >= max_questions:
 		return {"should_advance": true, "assessment_complete": false}
 	
