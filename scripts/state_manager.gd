@@ -183,8 +183,8 @@ func go_to_game_over():
 	# Initialize star states (make all stars invisible, continue button invisible)
 	UIManager.initialize_star_states()
 	
-	# Clean up any remaining problem labels
-	DisplayManager.cleanup_problem_labels()
+	# Clean up any remaining problem labels (including prompt since level is ending)
+	DisplayManager.cleanup_all_labels()
 	
 	# Play node flies down off screen
 	var play_tween = play_node.create_tween()
@@ -226,8 +226,8 @@ func go_to_drill_mode_game_over():
 	if is_new_high_score:
 		UIManager.start_high_score_celebration()
 	
-	# Clean up any remaining problem labels
-	DisplayManager.cleanup_problem_labels()
+	# Clean up any remaining problem labels (including prompt since level is ending)
+	DisplayManager.cleanup_all_labels()
 	
 	# Play node flies down off screen
 	var play_tween = play_node.create_tween()
@@ -396,8 +396,8 @@ func go_to_grade_level_game_over():
 	# Initialize star states (make all stars invisible, continue button invisible)
 	UIManager.initialize_star_states()
 	
-	# Clean up any remaining problem labels
-	DisplayManager.cleanup_problem_labels()
+	# Clean up any remaining problem labels (including prompt since level is ending)
+	DisplayManager.cleanup_all_labels()
 	
 	# Clear the dynamic generation config
 	QuestionManager.current_level_config = null
@@ -605,8 +605,8 @@ func go_to_assessment_game_over():
 	# Initialize star states for assessment (all 3 stars earned)
 	UIManager.initialize_assessment_star_states()
 	
-	# Clean up any remaining problem labels
-	DisplayManager.cleanup_problem_labels()
+	# Clean up any remaining problem labels (including prompt since assessment is ending)
+	DisplayManager.cleanup_all_labels()
 	
 	# Play node flies down off screen
 	var play_tween = play_node.create_tween()

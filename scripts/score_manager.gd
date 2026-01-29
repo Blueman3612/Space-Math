@@ -304,6 +304,25 @@ func process_assessment_answer(is_correct: bool, time_taken: float):
 	
 	return {"should_advance": false, "assessment_complete": false}
 
+func peek_assessment_answer(_is_correct: bool, _time_taken: float):
+	"""Check what would happen if we process this answer, WITHOUT modifying state.
+	Used to determine if this is the last question before animating."""
+	var standard = get_current_assessment_standard()
+	if standard.is_empty():
+		return {"should_advance": false, "assessment_complete": true}
+	
+	var max_questions = get_questions_for_standard(standard)
+	
+	# Check if this would be the last question for this standard
+	if assessment_current_standard_total + 1 >= max_questions:
+		return {"should_advance": true, "assessment_complete": false}
+	
+	return {"should_advance": false, "assessment_complete": false}
+
+func has_more_standards_after_current() -> bool:
+	"""Check if there are more standards after the current one (without advancing)"""
+	return assessment_current_standard_index + 1 < GameConfig.ASSESSMENT_STANDARDS.size()
+
 func finalize_current_standard():
 	"""Finalize results for the current standard before moving to next"""
 	var standard = get_current_assessment_standard()

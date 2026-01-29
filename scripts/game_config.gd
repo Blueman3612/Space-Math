@@ -259,19 +259,19 @@ const GRADE_LEVELS = {
 			{
 				"name": "Addition",
 				"levels": [
-					{"id": "grade1_addition_sums_to_6", "name": "Sums to 6", "mastery_count": 40, "config": {"operators": ["+"], "sum_max": 6}},
-					{"id": "grade1_addition_sums_to_12", "name": "Sums to 12", "mastery_count": 26, "config": {"operators": ["+"], "sum_max": 12}},
-					{"id": "grade1_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 22, "config": {"operators": ["+"], "sum_max": 20}}
+					{"id": "grade1_addition_sums_to_6", "name": "Sums to 6", "mastery_count": 40, "config": {"operators": ["+"], "prompt": "ADD", "sum_max": 6}},
+					{"id": "grade1_addition_sums_to_12", "name": "Sums to 12", "mastery_count": 26, "config": {"operators": ["+"], "prompt": "ADD", "sum_max": 12}},
+					{"id": "grade1_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 22, "config": {"operators": ["+"], "prompt": "ADD", "sum_max": 20}}
 				]
 			},
 			{
 				"name": "Subtraction",
 				"levels": [
-					{"id": "grade1_subtraction_0_5", "name": "Subtraction 0-5", "mastery_count": 40, "config": {"operators": ["-"], "range_max": 5}},
-					{"id": "grade1_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 40, "config": {"operators": ["-"], "range_max": 9}},
-					{"id": "grade1_subtraction_0_12", "name": "Subtraction 0-12", "mastery_count": 39, "config": {"operators": ["-"], "range_max": 12}},
-					{"id": "grade1_subtraction_0_15", "name": "Subtraction 0-15", "mastery_count": 37, "config": {"operators": ["-"], "range_max": 15}},
-					{"id": "grade1_subtraction_0_20", "name": "Subtraction 0-20", "mastery_count": 33, "config": {"operators": ["-"], "range_max": 20}}
+					{"id": "grade1_subtraction_0_5", "name": "Subtraction 0-5", "mastery_count": 40, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 5}},
+					{"id": "grade1_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 40, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 9}},
+					{"id": "grade1_subtraction_0_12", "name": "Subtraction 0-12", "mastery_count": 39, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 12}},
+					{"id": "grade1_subtraction_0_15", "name": "Subtraction 0-15", "mastery_count": 37, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 15}},
+					{"id": "grade1_subtraction_0_20", "name": "Subtraction 0-20", "mastery_count": 33, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 20}}
 				]
 			},
 			{
@@ -289,32 +289,32 @@ const GRADE_LEVELS = {
 			{
 				"name": "Addition",
 				"levels": [
-					{"id": "grade2_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 22, "config": {"operators": ["+"], "sum_max": 20}}
+					{"id": "grade2_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 22, "config": {"operators": ["+"], "prompt": "ADD", "sum_max": 20}}
 				]
 			},
 			{
 				"name": "Subtraction",
 				"levels": [
-					{"id": "grade2_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 40, "config": {"operators": ["-"], "range_max": 9}},
-					{"id": "grade2_subtraction_0_12", "name": "Subtraction 0-12", "mastery_count": 39, "config": {"operators": ["-"], "range_max": 12}},
-					{"id": "grade2_subtraction_0_15", "name": "Subtraction 0-15", "mastery_count": 37, "config": {"operators": ["-"], "range_max": 15}},
-					{"id": "grade2_subtraction_0_20", "name": "Subtraction 0-20", "mastery_count": 33, "config": {"operators": ["-"], "range_max": 20}}
+					{"id": "grade2_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 40, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 9}},
+					{"id": "grade2_subtraction_0_12", "name": "Subtraction 0-12", "mastery_count": 39, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 12}},
+					{"id": "grade2_subtraction_0_15", "name": "Subtraction 0-15", "mastery_count": 37, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 15}},
+					{"id": "grade2_subtraction_0_20", "name": "Subtraction 0-20", "mastery_count": 33, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 20}}
 				]
 			},
 		{
 			"name": "Add./Sub.",
 			"levels": [
-				{"id": "grade2_expression_comparison_20", "name": "Compare Sums and Differences to 20", "mastery_count": 13, "config": {"type": "expression_comparison_20"}},
+				{"id": "grade2_expression_comparison_20", "name": "Compare Sums and Differences to 20", "mastery_count": 13, "config": {"type": "expression_comparison_20", "prompt": "LESS THAN OR GREATER THAN?"}},
 				{"id": "grade2_fact_families_0_20", "name": "Add/Subtract 0-20", "mastery_count": 33, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}}
 			]
 		},
 		{
 			"name": "2-Digit Numbers",
 				"levels": [
-					{"id": "grade2_2digit_add_no_regroup", "name": "Add 2-Digit without Regrouping", "mastery_count": 16, "config": {"operators": ["+"], "digit_count": 2, "requires_regrouping": false, "max_answer": 100}},
-					{"id": "grade2_2digit_sub_no_regroup", "name": "Subtract 2-Digit without Regrouping", "mastery_count": 20, "config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": false, "max_answer": 100}},
-					{"id": "grade2_2digit_add_regroup", "name": "Add 2-Digit with Regrouping", "mastery_count": 10, "config": {"operators": ["+"], "digit_count": 2, "requires_regrouping": true, "max_answer": 100}},
-					{"id": "grade2_2digit_sub_regroup", "name": "Subtract 2-Digit with Regrouping", "mastery_count": 10, "config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": true, "max_answer": 100}}
+					{"id": "grade2_2digit_add_no_regroup", "name": "Add 2-Digit without Regrouping", "mastery_count": 16, "config": {"operators": ["+"], "prompt": "ADD", "digit_count": 2, "requires_regrouping": false, "max_answer": 100}},
+					{"id": "grade2_2digit_sub_no_regroup", "name": "Subtract 2-Digit without Regrouping", "mastery_count": 20, "config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 2, "requires_regrouping": false, "max_answer": 100}},
+					{"id": "grade2_2digit_add_regroup", "name": "Add 2-Digit with Regrouping", "mastery_count": 10, "config": {"operators": ["+"], "prompt": "ADD", "digit_count": 2, "requires_regrouping": true, "max_answer": 100}},
+					{"id": "grade2_2digit_sub_regroup", "name": "Subtract 2-Digit with Regrouping", "mastery_count": 10, "config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 2, "requires_regrouping": true, "max_answer": 100}}
 				]
 			},
 		{
@@ -327,8 +327,8 @@ const GRADE_LEVELS = {
 			{
 				"name": "3-Digit Numbers",
 				"levels": [
-					{"id": "grade2_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 9, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1000}},
-					{"id": "grade2_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 10, "config": {"operators": ["-"], "digit_count": 3, "max_answer": 1000}}
+					{"id": "grade2_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 9, "config": {"operators": ["+"], "prompt": "ADD", "digit_count": 3, "max_answer": 1000}},
+					{"id": "grade2_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 10, "config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 3, "max_answer": 1000}}
 				]
 			}
 		]
@@ -338,8 +338,8 @@ const GRADE_LEVELS = {
 			{
 				"name": "Add./Sub.",
 				"levels": [
-					{"id": "grade3_add_sub_sums_to_20", "name": "Sums to 20", "mastery_count": 33, "config": {"operators": ["+"], "sum_max": 20, "range_max": 20}},
-					{"id": "grade3_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 60, "config": {"operators": ["-"], "range_max": 9}},
+					{"id": "grade3_add_sub_sums_to_20", "name": "Sums to 20", "mastery_count": 33, "config": {"operators": ["+"], "prompt": "ADD", "sum_max": 20, "range_max": 20}},
+					{"id": "grade3_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 60, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 9}},
 					{"id": "grade3_add_sub_0_9", "name": "Add/Subtract 0-9", "mastery_count": 60, "config": {"operators": ["+", "-"], "sum_max": 9, "range_max": 9}},
 					{"id": "grade3_add_sub_0_20", "name": "Add/Subtract 0-20", "mastery_count": 42, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}}
 				]
@@ -347,29 +347,29 @@ const GRADE_LEVELS = {
 			{
 				"name": "3-Digit Numbers",
 				"levels": [
-					{"id": "grade3_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 14, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1998}},
-					{"id": "grade3_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 15, "config": {"operators": ["-"], "digit_count": 3, "max_answer": 1000}},
+					{"id": "grade3_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 14, "config": {"operators": ["+"], "prompt": "ADD", "digit_count": 3, "max_answer": 1998}},
+					{"id": "grade3_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 15, "config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 3, "max_answer": 1000}},
 					{"id": "grade3_3digit_add_sub", "name": "Add/Subtract 3-Digit Numbers", "mastery_count": 16, "config": {"operators": ["+", "-"], "digit_count": 3, "max_answer": 1998}}
 				]
 			},
 			{
 				"name": "Multiplication",
 				"levels": [
-					{"id": "grade3_multiply_0_9", "name": "Multiply 0-9", "mastery_count": 39, "config": {"operators": ["x"], "factor_min": 0, "factor_max": 9}},
-					{"id": "grade3_multiply_5_9", "name": "Multiply 5-9", "mastery_count": 30, "config": {"operators": ["x"], "factor_min": 5, "factor_max": 9}},
-					{"id": "grade3_multiply_0_12", "name": "Multiply 0-12", "mastery_count": 35, "config": {"operators": ["x"], "factor_min": 0, "factor_max": 12}},
-					{"id": "grade3_multiply_multi_no_regroup", "name": "Multiply 1-Digit by 2-3-Digit without Regrouping", "mastery_count": 19, "config": {"operators": ["x"], "multi_digit": true, "requires_regrouping": false}},
-					{"id": "grade3_multiply_multi_regroup", "name": "Multiply 1-Digit by 2-3-Digit with Regrouping", "mastery_count": 18, "config": {"operators": ["x"], "multi_digit": true, "requires_regrouping": true}}
+					{"id": "grade3_multiply_0_9", "name": "Multiply 0-9", "mastery_count": 39, "config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 0, "factor_max": 9}},
+					{"id": "grade3_multiply_5_9", "name": "Multiply 5-9", "mastery_count": 30, "config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 5, "factor_max": 9}},
+					{"id": "grade3_multiply_0_12", "name": "Multiply 0-12", "mastery_count": 35, "config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 0, "factor_max": 12}},
+					{"id": "grade3_multiply_multi_no_regroup", "name": "Multiply 1-Digit by 2-3-Digit without Regrouping", "mastery_count": 19, "config": {"operators": ["x"], "prompt": "MULTIPLY", "multi_digit": true, "requires_regrouping": false}},
+					{"id": "grade3_multiply_multi_regroup", "name": "Multiply 1-Digit by 2-3-Digit with Regrouping", "mastery_count": 18, "config": {"operators": ["x"], "prompt": "MULTIPLY", "multi_digit": true, "requires_regrouping": true}}
 				]
 			},
 			{
 				"name": "Division",
 				"levels": [
-					{"id": "grade3_divide_0_5", "name": "Divide 0-5", "mastery_count": 60, "config": {"operators": ["/"], "divisor_min": 1, "divisor_max": 5}},
-					{"id": "grade3_divide_0_9", "name": "Divide 0-9", "mastery_count": 60, "config": {"operators": ["/"], "divisor_min": 1, "divisor_max": 9}},
-					{"id": "grade3_divide_5_9", "name": "Divide 5-9", "mastery_count": 60, "config": {"operators": ["/"], "divisor_min": 5, "divisor_max": 9}},
-					{"id": "grade3_divide_0_12", "name": "Divide 0-12", "mastery_count": 48, "config": {"operators": ["/"], "divisor_min": 1, "divisor_max": 12}},
-					{"id": "grade3_divide_multi", "name": "Divide 2-3-Digit by 1-Digit", "mastery_count": 9, "config": {"operators": ["/"], "multi_digit": true}}
+					{"id": "grade3_divide_0_5", "name": "Divide 0-5", "mastery_count": 60, "config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 1, "divisor_max": 5}},
+					{"id": "grade3_divide_0_9", "name": "Divide 0-9", "mastery_count": 60, "config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 1, "divisor_max": 9}},
+					{"id": "grade3_divide_5_9", "name": "Divide 5-9", "mastery_count": 60, "config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 5, "divisor_max": 9}},
+					{"id": "grade3_divide_0_12", "name": "Divide 0-12", "mastery_count": 48, "config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 1, "divisor_max": 12}},
+					{"id": "grade3_divide_multi", "name": "Divide 2-3-Digit by 1-Digit", "mastery_count": 9, "config": {"operators": ["/"], "prompt": "DIVIDE", "multi_digit": true}}
 				]
 			},
 			{
@@ -391,32 +391,32 @@ const GRADE_LEVELS = {
 			{
 				"name": "Addition",
 				"levels": [
-					{"id": "grade4_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 44, "config": {"operators": ["+"], "sum_max": 20}},
-					{"id": "grade4_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 19, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1998}}
+					{"id": "grade4_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 44, "config": {"operators": ["+"], "prompt": "ADD", "sum_max": 20}},
+					{"id": "grade4_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 19, "config": {"operators": ["+"], "prompt": "ADD", "digit_count": 3, "max_answer": 1998}}
 				]
 			},
 			{
 				"name": "Subtraction",
 				"levels": [
-					{"id": "grade4_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 80, "config": {"operators": ["-"], "range_max": 9}},
-					{"id": "grade4_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 20, "config": {"operators": ["-"], "digit_count": 3, "max_answer": 1000}}
+					{"id": "grade4_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 80, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 9}},
+					{"id": "grade4_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 20, "config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 3, "max_answer": 1000}}
 				]
 			},
 			{
 				"name": "Multiplication",
 				"levels": [
-					{"id": "grade4_multiply_0_12", "name": "Multiplication 0-12", "mastery_count": 46, "config": {"operators": ["x"], "factor_min": 0, "factor_max": 12}},
-					{"id": "grade4_multiply_1digit_by_multidigit", "name": "1-Digit Multiply by 2-3 Digit", "mastery_count": 25, "config": {"operators": ["x"], "multi_digit": true}},
-					{"id": "grade4_multiply_2digit_no_regroup", "name": "2-Digit Multiply by 2-Digit without Regrouping", "mastery_count": 11, "config": {"operators": ["x"], "two_digit_by_two_digit": true, "requires_regrouping": false}},
-					{"id": "grade4_multiply_2digit_regroup", "name": "2-Digit Multiply by 2-Digit with Regrouping", "mastery_count": 9, "config": {"operators": ["x"], "two_digit_by_two_digit": true, "requires_regrouping": true}},
+					{"id": "grade4_multiply_0_12", "name": "Multiplication 0-12", "mastery_count": 46, "config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 0, "factor_max": 12}},
+					{"id": "grade4_multiply_1digit_by_multidigit", "name": "1-Digit Multiply by 2-3 Digit", "mastery_count": 25, "config": {"operators": ["x"], "prompt": "MULTIPLY", "multi_digit": true}},
+					{"id": "grade4_multiply_2digit_no_regroup", "name": "2-Digit Multiply by 2-Digit without Regrouping", "mastery_count": 11, "config": {"operators": ["x"], "prompt": "MULTIPLY", "two_digit_by_two_digit": true, "requires_regrouping": false}},
+					{"id": "grade4_multiply_2digit_regroup", "name": "2-Digit Multiply by 2-Digit with Regrouping", "mastery_count": 9, "config": {"operators": ["x"], "prompt": "MULTIPLY", "two_digit_by_two_digit": true, "requires_regrouping": true}},
 					{"id": "grade4_equivalence_mult_factoring", "name": "Create Equivalent Multiplication Problems by Factoring", "mastery_count": 22, "config": {"type": "equivalence_mult_factoring"}}
 				]
 			},
 			{
 				"name": "Division",
 				"levels": [
-					{"id": "grade4_divide_0_12", "name": "Division 0-12", "mastery_count": 64, "config": {"operators": ["/"], "divisor_min": 1, "divisor_max": 12}},
-					{"id": "grade4_divide_multidigit", "name": "Divide 2-3-Digit by 1-Digit", "mastery_count": 12, "config": {"operators": ["/"], "multi_digit": true}}
+					{"id": "grade4_divide_0_12", "name": "Division 0-12", "mastery_count": 64, "config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 1, "divisor_max": 12}},
+					{"id": "grade4_divide_multidigit", "name": "Divide 2-3-Digit by 1-Digit", "mastery_count": 12, "config": {"operators": ["/"], "prompt": "DIVIDE", "multi_digit": true}}
 				]
 			},
 			{
@@ -428,7 +428,7 @@ const GRADE_LEVELS = {
 			{
 				"name": "Decimals",
 				"levels": [
-					{"id": "grade4_decimal_comparison", "name": "Quantity Comparison of Decimals to Hundredths", "mastery_count": 80, "config": {"type": "decimal_comparison"}},
+					{"id": "grade4_decimal_comparison", "name": "Quantity Comparison of Decimals to Hundredths", "mastery_count": 80, "config": {"type": "decimal_comparison", "prompt": "LESS THAN OR GREATER THAN?"}},
 					{"id": "grade4_decimal_add_sub", "name": "Add and Subtract Decimals to the Hundredths", "mastery_count": 15, "config": {"type": "decimal_add_sub", "operators": ["+", "-"]}}
 				]
 			},
@@ -436,7 +436,7 @@ const GRADE_LEVELS = {
 				"name": "Fractions",
 				"levels": [
 					{"id": "grade4_number_line_fractions", "name": "Place Fractions on Number Line (den. 2, 3, 4, 5, 6, 8, 10)", "mastery_count": 20, "config": {"type": "number_line_fractions_extended", "prompt": "PLACE ON NUMBER LINE", "denominators": [2, 3, 4, 5, 6, 8, 10], "total_pips": 13, "frame": 1, "control_mode": "continuous", "lower_limit": 0, "upper_limit": 3}},
-					{"id": "grade4_fraction_comparison", "name": "Quantity Comparison of Fractions with Unlike Denominators", "mastery_count": 20, "config": {"type": "fraction_comparison"}},
+					{"id": "grade4_fraction_comparison", "name": "Quantity Comparison of Fractions with Unlike Denominators", "mastery_count": 20, "config": {"type": "fraction_comparison", "prompt": "LESS THAN OR GREATER THAN?"}},
 					{"id": "grade4_mixed_numbers", "name": "Add/Subtract Mixed Numbers with Like Denominators", "mastery_count": 19, "config": {"type": "mixed_numbers_like_denom", "operators": ["+", "-"]}}
 				]
 			}
@@ -447,15 +447,15 @@ const GRADE_LEVELS = {
 			{
 				"name": "Addition",
 				"levels": [
-					{"id": "grade5_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 44, "config": {"operators": ["+"], "sum_max": 20}},
-					{"id": "grade5_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 19, "config": {"operators": ["+"], "digit_count": 3, "max_answer": 1998}}
+					{"id": "grade5_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 44, "config": {"operators": ["+"], "prompt": "ADD", "sum_max": 20}},
+					{"id": "grade5_3digit_add", "name": "Add 3-Digit Numbers", "mastery_count": 19, "config": {"operators": ["+"], "prompt": "ADD", "digit_count": 3, "max_answer": 1998}}
 				]
 			},
 			{
 				"name": "Subtraction",
 				"levels": [
-					{"id": "grade5_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 80, "config": {"operators": ["-"], "range_max": 9}},
-					{"id": "grade5_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 20, "config": {"operators": ["-"], "digit_count": 3, "max_answer": 1000}}
+					{"id": "grade5_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 80, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 9}},
+					{"id": "grade5_3digit_sub", "name": "Subtract 3-Digit Numbers", "mastery_count": 20, "config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 3, "max_answer": 1000}}
 				]
 			},
 			{
@@ -468,14 +468,14 @@ const GRADE_LEVELS = {
 			{
 				"name": "Multiplication",
 				"levels": [
-					{"id": "grade5_multiply_0_12", "name": "Multiplication 0-12", "mastery_count": 46, "config": {"operators": ["x"], "factor_min": 0, "factor_max": 12}},
-					{"id": "grade5_multiply_2digit", "name": "2-Digit Multiply by 2-Digit", "mastery_count": 10, "config": {"operators": ["x"], "two_digit_by_two_digit": true}}
+					{"id": "grade5_multiply_0_12", "name": "Multiplication 0-12", "mastery_count": 46, "config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 0, "factor_max": 12}},
+					{"id": "grade5_multiply_2digit", "name": "2-Digit Multiply by 2-Digit", "mastery_count": 10, "config": {"operators": ["x"], "prompt": "MULTIPLY", "two_digit_by_two_digit": true}}
 				]
 			},
 			{
 				"name": "Division",
 				"levels": [
-					{"id": "grade5_divide_0_12", "name": "Division 0-12", "mastery_count": 46, "config": {"operators": ["/"], "divisor_min": 1, "divisor_max": 12}}
+					{"id": "grade5_divide_0_12", "name": "Division 0-12", "mastery_count": 46, "config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 1, "divisor_max": 12}}
 				]
 			},
 			{
@@ -488,8 +488,8 @@ const GRADE_LEVELS = {
 				"name": "Fractions",
 				"levels": [
 					{"id": "grade5_fractions_unlike_denom", "name": "Add/Subtract Fractions with Unlike Denominators", "mastery_count": 6, "config": {"type": "fractions_unlike_denom", "operators": ["+", "-"]}},
-					{"id": "grade5_mixed_to_improper", "name": "Convert Mixed Numbers to Improper Fractions", "mastery_count": 24, "config": {"type": "mixed_to_improper"}},
-					{"id": "grade5_improper_to_mixed", "name": "Convert Improper Fractions to Mixed Numbers", "mastery_count": 23, "config": {"type": "improper_to_mixed"}},
+					{"id": "grade5_mixed_to_improper", "name": "Convert Mixed Numbers to Improper Fractions", "mastery_count": 24, "config": {"type": "mixed_to_improper", "prompt": "CONVERT TO IMPROPER FRACTION"}},
+					{"id": "grade5_improper_to_mixed", "name": "Convert Improper Fractions to Mixed Numbers", "mastery_count": 23, "config": {"type": "improper_to_mixed", "prompt": "CONVERT TO MIXED FRACTION"}},
 					{"id": "grade5_mixed_numbers", "name": "Add/Subtract Mixed Numbers with Like Denominators", "mastery_count": 19, "config": {"type": "mixed_numbers_like_denom", "operators": ["+", "-"]}},
 					{"id": "grade5_multiply_divide_fractions", "name": "Multiply/Divide Proper and Improper Fractions", "mastery_count": 11, "config": {"type": "multiply_divide_fractions", "operators": ["x", "/"]}}
 				]
@@ -610,21 +610,21 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Sums to 6",
 		"target_cqpm": 20.0,  # mastery_count 40 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["+"], "sum_min": 0, "sum_max": 6}
+		"config": {"operators": ["+"], "prompt": "ADD", "sum_min": 0, "sum_max": 6}
 	},
 	{
 		"id": "assess_sums_to_12",
 		"name": "Sums to 12",
 		"target_cqpm": 13.0,  # mastery_count 26 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["+"], "sum_min": 7, "sum_max": 12}
+		"config": {"operators": ["+"], "prompt": "ADD", "sum_min": 7, "sum_max": 12}
 	},
 	{
 		"id": "assess_sums_to_20",
 		"name": "Sums to 20",
 		"target_cqpm": 11.0,  # mastery_count 22 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["+"], "sum_min": 13, "sum_max": 20}
+		"config": {"operators": ["+"], "prompt": "ADD", "sum_min": 13, "sum_max": 20}
 	},
 	
 	# === Grade 1-2: Basic Subtraction ===
@@ -633,35 +633,35 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Subtraction 0-5",
 		"target_cqpm": 20.0,  # mastery_count 40 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["-"], "range_min": 0, "range_max": 5}
+		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 0, "range_max": 5}
 	},
 	{
 		"id": "assess_subtraction_6_9",
 		"name": "Subtraction 0-9",
 		"target_cqpm": 20.0,  # mastery_count 40 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["-"], "range_min": 6, "range_max": 9}
+		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 6, "range_max": 9}
 	},
 	{
 		"id": "assess_subtraction_10_12",
 		"name": "Subtraction 0-12",
 		"target_cqpm": 19.5,  # mastery_count 39 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["-"], "range_min": 10, "range_max": 12}
+		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 10, "range_max": 12}
 	},
 	{
 		"id": "assess_subtraction_13_15",
 		"name": "Subtraction 0-15",
 		"target_cqpm": 18.5,  # mastery_count 37 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["-"], "range_min": 13, "range_max": 15}
+		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 13, "range_max": 15}
 	},
 	{
 		"id": "assess_subtraction_16_20",
 		"name": "Subtraction 0-20",
 		"target_cqpm": 16.5,  # mastery_count 33 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["-"], "range_min": 16, "range_max": 20}
+		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 16, "range_max": 20}
 	},
 	
 	# === Grade 2: Expression Comparison & 2-Digit Operations ===
@@ -670,35 +670,35 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Compare Sums and Differences to 20",
 		"target_cqpm": 6.5,  # mastery_count 13 / 2
 		"is_multiple_choice": true,
-		"config": {"type": "expression_comparison_20"}
+		"config": {"type": "expression_comparison_20", "prompt": "LESS THAN OR GREATER THAN?"}
 	},
 	{
 		"id": "assess_2digit_add_no_regroup",
 		"name": "Add 2-Digit without Regrouping",
 		"target_cqpm": 8.0,  # mastery_count 16 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["+"], "digit_count": 2, "requires_regrouping": false, "max_answer": 100}
+		"config": {"operators": ["+"], "prompt": "ADD", "digit_count": 2, "requires_regrouping": false, "max_answer": 100}
 	},
 	{
 		"id": "assess_2digit_sub_no_regroup",
 		"name": "Subtract 2-Digit without Regrouping",
 		"target_cqpm": 10.0,  # mastery_count 20 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": false, "max_answer": 100}
+		"config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 2, "requires_regrouping": false, "max_answer": 100}
 	},
 	{
 		"id": "assess_2digit_add_regroup",
 		"name": "Add 2-Digit with Regrouping",
 		"target_cqpm": 5.0,  # mastery_count 10 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["+"], "digit_count": 2, "requires_regrouping": true, "max_answer": 100}
+		"config": {"operators": ["+"], "prompt": "ADD", "digit_count": 2, "requires_regrouping": true, "max_answer": 100}
 	},
 	{
 		"id": "assess_2digit_sub_regroup",
 		"name": "Subtract 2-Digit with Regrouping",
 		"target_cqpm": 5.0,  # mastery_count 10 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["-"], "digit_count": 2, "requires_regrouping": true, "max_answer": 100}
+		"config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 2, "requires_regrouping": true, "max_answer": 100}
 	},
 	
 	# === Grade 2: Equivalence ===
@@ -723,14 +723,14 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Add 3-Digit Numbers",
 		"target_cqpm": 4.5,  # mastery_count 9 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["+"], "digit_count": 3, "max_answer": 1998}
+		"config": {"operators": ["+"], "prompt": "ADD", "digit_count": 3, "max_answer": 1998}
 	},
 	{
 		"id": "assess_3digit_sub",
 		"name": "Subtract 3-Digit Numbers",
 		"target_cqpm": 5.0,  # mastery_count 10 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["-"], "digit_count": 3, "max_answer": 1000}
+		"config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 3, "max_answer": 1000}
 	},
 	
 	# === Grade 3: Basic Multiplication ===
@@ -739,35 +739,35 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Multiply 0-9",
 		"target_cqpm": 19.5,  # mastery_count 39 / 2 (from Multiply 0-9)
 		"is_multiple_choice": false,
-		"config": {"operators": ["x"], "factor_min": 0, "factor_max": 4}
+		"config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 0, "factor_max": 4}
 	},
 	{
 		"id": "assess_multiply_5_8",
 		"name": "Multiply 5-9",
 		"target_cqpm": 15.0,  # mastery_count 30 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["x"], "factor_min": 5, "factor_max": 8}
+		"config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 5, "factor_max": 8}
 	},
 	{
 		"id": "assess_multiply_9_12",
 		"name": "Multiply 0-12",
 		"target_cqpm": 17.5,  # mastery_count 35 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["x"], "factor_min": 9, "factor_max": 12}
+		"config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 9, "factor_max": 12}
 	},
 	{
 		"id": "assess_multiply_multi_no_regroup",
 		"name": "Multiply 1-Digit by 2-3-Digit without Regrouping",
 		"target_cqpm": 9.5,  # mastery_count 19 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["x"], "multi_digit": true, "requires_regrouping": false}
+		"config": {"operators": ["x"], "prompt": "MULTIPLY", "multi_digit": true, "requires_regrouping": false}
 	},
 	{
 		"id": "assess_multiply_multi_regroup",
 		"name": "Multiply 1-Digit by 2-3-Digit with Regrouping",
 		"target_cqpm": 9.0,  # mastery_count 18 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["x"], "multi_digit": true, "requires_regrouping": true}
+		"config": {"operators": ["x"], "prompt": "MULTIPLY", "multi_digit": true, "requires_regrouping": true}
 	},
 	
 	# === Grade 3: Basic Division ===
@@ -776,28 +776,28 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Divide 0-5",
 		"target_cqpm": 30.0,  # mastery_count 60 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["/"], "divisor_min": 1, "divisor_max": 4}
+		"config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 1, "divisor_max": 4}
 	},
 	{
 		"id": "assess_divide_5_8",
 		"name": "Divide 5-9",
 		"target_cqpm": 30.0,  # mastery_count 60 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["/"], "divisor_min": 5, "divisor_max": 8}
+		"config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 5, "divisor_max": 8}
 	},
 	{
 		"id": "assess_divide_9_12",
 		"name": "Divide 0-12",
 		"target_cqpm": 24.0,  # mastery_count 48 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["/"], "divisor_min": 9, "divisor_max": 12}
+		"config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 9, "divisor_max": 12}
 	},
 	{
 		"id": "assess_divide_multi",
 		"name": "Divide 2-3-Digit by 1-Digit",
 		"target_cqpm": 4.5,  # mastery_count 9 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["/"], "multi_digit": true}
+		"config": {"operators": ["/"], "prompt": "DIVIDE", "multi_digit": true}
 	},
 	
 	# === Grade 3: Fractions Introduction ===
@@ -806,7 +806,7 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Place Fractions on Number Line (den. 2, 4, 8)",
 		"target_cqpm": 10.0,  # mastery_count 20 / 2
 		"is_multiple_choice": false,
-		"config": {"type": "number_line_fractions", "denominators": [2, 4, 8], "total_pips": 9, "frame": 0, "control_mode": "pip_to_pip", "lower_limit": 0, "upper_limit": 1}
+		"config": {"type": "number_line_fractions", "prompt": "PLACE ON NUMBER LINE", "denominators": [2, 4, 8], "total_pips": 9, "frame": 0, "control_mode": "pip_to_pip", "lower_limit": 0, "upper_limit": 1}
 	},
 	
 	# === Grade 4: Advanced Multiplication ===
@@ -815,14 +815,14 @@ const ASSESSMENT_STANDARDS = [
 		"name": "2-Digit Multiply by 2-Digit without Regrouping",
 		"target_cqpm": 5.5,  # mastery_count 11 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["x"], "two_digit_by_two_digit": true, "requires_regrouping": false}
+		"config": {"operators": ["x"], "prompt": "MULTIPLY", "two_digit_by_two_digit": true, "requires_regrouping": false}
 	},
 	{
 		"id": "assess_multiply_2digit_regroup",
 		"name": "2-Digit Multiply by 2-Digit with Regrouping",
 		"target_cqpm": 4.5,  # mastery_count 9 / 2
 		"is_multiple_choice": false,
-		"config": {"operators": ["x"], "two_digit_by_two_digit": true, "requires_regrouping": true}
+		"config": {"operators": ["x"], "prompt": "MULTIPLY", "two_digit_by_two_digit": true, "requires_regrouping": true}
 	},
 	{
 		"id": "assess_equivalence_mult_factoring",
@@ -838,7 +838,7 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Quantity Comparison of Decimals to Hundredths",
 		"target_cqpm": 40.0,  # mastery_count 80 / 2
 		"is_multiple_choice": true,
-		"config": {"type": "decimal_comparison"}
+		"config": {"type": "decimal_comparison", "prompt": "LESS THAN OR GREATER THAN?"}
 	},
 	{
 		"id": "assess_decimal_add_sub",
@@ -854,14 +854,14 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Place Fractions on Number Line (den. 2, 3, 4, 5, 6, 8, 10)",
 		"target_cqpm": 10.0,  # mastery_count 20 / 2
 		"is_multiple_choice": false,
-		"config": {"type": "number_line_fractions_extended", "denominators": [2, 3, 4, 5, 6, 8, 10], "total_pips": 13, "frame": 1, "control_mode": "continuous", "lower_limit": 0, "upper_limit": 3}
+		"config": {"type": "number_line_fractions_extended", "prompt": "PLACE ON NUMBER LINE", "denominators": [2, 3, 4, 5, 6, 8, 10], "total_pips": 13, "frame": 1, "control_mode": "continuous", "lower_limit": 0, "upper_limit": 3}
 	},
 	{
 		"id": "assess_fraction_comparison",
 		"name": "Quantity Comparison of Fractions with Unlike Denominators",
 		"target_cqpm": 10.0,  # mastery_count 20 / 2
 		"is_multiple_choice": true,
-		"config": {"type": "fraction_comparison"}
+		"config": {"type": "fraction_comparison", "prompt": "LESS THAN OR GREATER THAN?"}
 	},
 	{
 		"id": "assess_mixed_numbers_like_denom",
@@ -893,14 +893,14 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Convert Mixed Numbers to Improper Fractions",
 		"target_cqpm": 12.0,  # mastery_count 24 / 2
 		"is_multiple_choice": false,
-		"config": {"type": "mixed_to_improper"}
+		"config": {"type": "mixed_to_improper", "prompt": "CONVERT TO IMPROPER FRACTION"}
 	},
 	{
 		"id": "assess_improper_to_mixed",
 		"name": "Convert Improper Fractions to Mixed Numbers",
 		"target_cqpm": 11.5,  # mastery_count 23 / 2
 		"is_multiple_choice": false,
-		"config": {"type": "improper_to_mixed"}
+		"config": {"type": "improper_to_mixed", "prompt": "CONVERT TO MIXED FRACTION"}
 	},
 	{
 		"id": "assess_multiply_divide_fractions",

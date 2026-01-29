@@ -164,7 +164,8 @@ func update_fraction_problem_display(user_answer: String, answer_submitted: bool
 			current_problem_label.visible = true
 
 func create_prompt_label():
-	"""Create a prompt label at the top of the screen for the current question"""
+	"""Create or update the prompt label at the top of the screen for the current question.
+	The prompt label persists across questions and is only animated off on level complete."""
 	# Skip if label settings not loaded
 	if not prompt_label_settings:
 		return
@@ -182,7 +183,16 @@ func create_prompt_label():
 	elif QuestionManager.current_question and QuestionManager.current_question.has("prompt"):
 		prompt_text = QuestionManager.current_question.prompt
 	
-	# Create the prompt label
+	# If prompt label already exists, just update the text
+	if current_prompt_label and is_instance_valid(current_prompt_label):
+		current_prompt_label.text = prompt_text
+		# Re-center if text changed
+		current_prompt_label.reset_size()
+		if current_prompt_label.size.x > 0:
+			current_prompt_label.position.x = GameConfig.prompt_label_position.x - current_prompt_label.size.x / 2
+		return
+	
+	# Create new prompt label
 	var prompt = Label.new()
 	prompt.label_settings = prompt_label_settings
 	prompt.text = prompt_text
@@ -192,20 +202,23 @@ func create_prompt_label():
 	prompt.self_modulate = Color(0, 0, 1)  # Blue color, doesn't change with feedback
 	
 	# Set initial position at configured Y, with approximate X centering
-	# The text will be properly centered once the label calculates its size
 	prompt.position = GameConfig.prompt_label_position
 	
 	# Add to play node
 	play_node.add_child(prompt)
 	
 	# Now that it's in the tree, we can get the actual size and center it
-	# The label's size should be calculated after being added to tree
 	if prompt.size.x > 0:
 		prompt.position.x = GameConfig.prompt_label_position.x - prompt.size.x / 2
 	
-	# Track for cleanup
+	# Track reference (but DON'T add to current_problem_nodes - prompt persists across questions)
 	current_prompt_label = prompt
-	current_problem_nodes.append(prompt)
+
+func include_prompt_in_animation():
+	"""Add the prompt label to current_problem_nodes so it animates off with the last question"""
+	if current_prompt_label and is_instance_valid(current_prompt_label):
+		if current_prompt_label not in current_problem_nodes:
+			current_problem_nodes.append(current_prompt_label)
 
 func create_new_problem_label():
 	"""Create a new problem label for the current question"""
@@ -1546,7 +1559,8 @@ func continue_after_multiple_choice_incorrect(is_correct: bool, timer_was_active
 			# Check if assessment is complete or moving to next standard
 			var has_more = ScoreManager.advance_to_next_standard()
 			if not has_more:
-				# Assessment complete!
+				# Assessment complete! Include prompt in final animation
+				include_prompt_in_animation()
 				UIManager.hide_play_ui_for_level_complete()
 				
 				# Animate current problem off screen
@@ -2178,7 +2192,8 @@ func create_incorrect_multi_input_label():
 	# The label will be cleaned up when the parent problem label is removed
 
 func cleanup_problem_labels():
-	"""Remove any remaining problem labels from the Play node"""
+	"""Remove any remaining problem labels from the Play node.
+	Note: This does NOT clean up the prompt label - it persists across questions."""
 	# Clean up nodes tracked in current_problem_nodes
 	# Note: We don't iterate and queue_free here because nodes being animated
 	# off-screen are handled by the animation callback in animate_problem_off_screen.
@@ -2186,8 +2201,17 @@ func cleanup_problem_labels():
 	current_problem_nodes.clear()
 
 	current_problem_label = null
-	current_prompt_label = null
 	answer_fraction_node = null
+	# Note: current_prompt_label is intentionally NOT cleared here - it persists across questions
+
+func cleanup_all_labels():
+	"""Full cleanup including the prompt label. Called when leaving a level."""
+	cleanup_problem_labels()
+	
+	# Free the prompt label
+	if current_prompt_label and is_instance_valid(current_prompt_label):
+		current_prompt_label.queue_free()
+	current_prompt_label = null
 
 	# Reset multiple choice state
 	multiple_choice_buttons.clear()

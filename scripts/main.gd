@@ -548,6 +548,26 @@ func continue_after_incorrect_internal(is_correct: bool, timer_was_active: bool,
 	if space_bg and space_bg.has_method("boost_scroll_speed"):
 		space_bg.boost_scroll_speed(GameConfig.scroll_boost_multiplier, GameConfig.animation_duration * 2.0)
 	
+	# Check level completion BEFORE animating to know if we should include prompt in animation
+	var level_complete = false
+	var assessment_complete = false
+	
+	if StateManager.is_assessment_mode:
+		# Pre-check if this answer will complete the assessment
+		var last_question_time = StateManager.get_meta("last_question_time", 0.0)
+		var last_answer_correct = StateManager.get_meta("last_answer_correct", false)
+		var adjusted_time = max(0.0, last_question_time - GameConfig.transition_delay)
+		var result = ScoreManager.peek_assessment_answer(last_answer_correct, adjusted_time)
+		if result.should_advance:
+			assessment_complete = not ScoreManager.has_more_standards_after_current()
+	elif StateManager.is_grade_level and StateManager.current_level_config:
+		var mastery_count = StateManager.current_level_config.mastery_count
+		level_complete = ScoreManager.check_mastery_complete(mastery_count)
+	
+	# Include prompt in animation if this is the last question
+	if level_complete or assessment_complete:
+		DisplayManager.include_prompt_in_animation()
+	
 	# Animate current problem off screen
 	animate_problem_off_screen(is_correct)
 	
@@ -558,8 +578,7 @@ func continue_after_incorrect_internal(is_correct: bool, timer_was_active: bool,
 	if not StateManager.is_drill_mode:
 		animate_progress_line()
 	
-	# Check level completion for grade-based levels or assessment mode
-	var level_complete = false
+	# Handle assessment mode completion
 	if StateManager.is_assessment_mode:
 		# Assessment mode: process answer and check if we should move to next standard or finish
 		# Get stored question time (with transition_delay already subtracted in process_assessment_answer)
@@ -637,7 +656,7 @@ func animate_problem_off_screen(is_correct: bool):
 		DisplayManager.current_problem_nodes.clear()
 		DisplayManager.correct_answer_nodes.clear()
 		DisplayManager.current_problem_label = null
-		DisplayManager.current_prompt_label = null
+		# Note: current_prompt_label is NOT cleared here - it persists across questions
 		DisplayManager.answer_fraction_node = null
 		DisplayManager.current_number_line = null
 		DisplayManager.number_line_fraction_label = null
