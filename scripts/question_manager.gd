@@ -1584,7 +1584,7 @@ func _generate_mixed_numbers_like_denom_problem(config: Dictionary) -> Dictionar
 # ============================================
 
 func _generate_decimal_multiply_divide_problem(config: Dictionary) -> Dictionary:
-	"""Generate a decimal multiply/divide problem with one whole number operand (1-10)
+	"""Generate a decimal multiply/divide problem with one whole number operand (2-10)
 	The decimal operand is always a true decimal (never a whole number), answer terminates at hundredths or earlier, answer <= 10"""
 	var operators = config.get("operators", ["x", "/"])
 	var operator = operators[rng.randi() % operators.size()]
@@ -1595,7 +1595,7 @@ func _generate_decimal_multiply_divide_problem(config: Dictionary) -> Dictionary
 	var attempts = 0
 	
 	while attempts < 100:
-		whole_operand = rng.randi_range(1, 10)
+		whole_operand = rng.randi_range(2, 10)  # Start at 2 to avoid trivial multiply/divide by 1
 		
 		if operator == "x":
 			# For multiplication: decimal × whole

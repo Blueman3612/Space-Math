@@ -292,13 +292,13 @@ func get_current_assessment_standard() -> Dictionary:
 func get_questions_for_standard(standard: Dictionary) -> int:
 	"""Calculate the BASE number of questions for a standard based on target_cqpm.
 	Formula: questions = round(target_cqpm * target_seconds / 60)
-	Minimum of 1 question.
+	Minimum of 2 questions.
 	Note: This does NOT include extra questions from error tolerance.
 	"""
 	var target_cqpm = standard.get("target_cqpm", 10.0)
 	var target_seconds = GameConfig.assessment_target_seconds_per_standard
 	var questions = round(target_cqpm * target_seconds / 60.0)
-	return max(1, int(questions))
+	return max(2, int(questions))
 
 func get_max_questions_for_current_standard() -> int:
 	"""Calculate the maximum questions for current standard including error tolerance.
