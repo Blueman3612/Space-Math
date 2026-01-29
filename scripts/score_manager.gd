@@ -25,8 +25,10 @@ var drill_score_target_value = 0  # Target score value for smooth animation
 var assessment_current_standard_index = 0  # Index into ASSESSMENT_STANDARDS array
 var assessment_current_standard_correct = 0  # Correct answers for current standard
 var assessment_current_standard_total = 0  # Total answers for current standard
+var assessment_current_standard_wrong = 0  # Wrong answers for current standard (for error tolerance)
 var assessment_current_standard_times = []  # Time for each question in current standard (excluding transition delay)
-var assessment_all_results = {}  # Dictionary mapping standard_id to {average_time, accuracy, cqpm}
+var assessment_all_results = {}  # Dictionary mapping standard_id to {average_time, accuracy, cqpm, status}
+var assessment_mastered_standards = {}  # Dictionary mapping standard_id to bool (true = mastered)
 
 func initialize():
 	"""Initialize the score manager"""
@@ -255,13 +257,29 @@ func reset_for_assessment():
 	assessment_current_standard_index = 0
 	assessment_current_standard_correct = 0
 	assessment_current_standard_total = 0
+	assessment_current_standard_wrong = 0
 	assessment_current_standard_times = []
 	assessment_all_results = {}
+	assessment_mastered_standards = {}
+
+func initialize_first_assessment_standard() -> bool:
+	"""Initialize the first eligible assessment standard (checking prerequisites).
+	Returns true if a valid standard was found, false if assessment is immediately complete."""
+	assessment_current_standard_index = 0
+	var next_index = find_next_eligible_standard()
+	
+	if next_index == -1:
+		print("[Assessment] No eligible standards found!")
+		return false
+	
+	reset_for_assessment_standard()
+	return true
 
 func reset_for_assessment_standard():
 	"""Reset tracking for a new standard within assessment"""
 	assessment_current_standard_correct = 0
 	assessment_current_standard_total = 0
+	assessment_current_standard_wrong = 0
 	assessment_current_standard_times = []
 	current_question_start_time = 0.0
 
@@ -272,14 +290,33 @@ func get_current_assessment_standard() -> Dictionary:
 	return GameConfig.ASSESSMENT_STANDARDS[assessment_current_standard_index]
 
 func get_questions_for_standard(standard: Dictionary) -> int:
-	"""Calculate the number of questions for a standard based on target_cqpm.
+	"""Calculate the BASE number of questions for a standard based on target_cqpm.
 	Formula: questions = round(target_cqpm * target_seconds / 60)
 	Minimum of 1 question.
+	Note: This does NOT include extra questions from error tolerance.
 	"""
 	var target_cqpm = standard.get("target_cqpm", 10.0)
 	var target_seconds = GameConfig.assessment_target_seconds_per_standard
 	var questions = round(target_cqpm * target_seconds / 60.0)
 	return max(1, int(questions))
+
+func get_max_questions_for_current_standard() -> int:
+	"""Calculate the maximum questions for current standard including error tolerance.
+	Max questions = base_questions + error_tolerance (used as extra question buffer)
+	Each wrong answer adds 1 extra question up to this maximum.
+	"""
+	var standard = get_current_assessment_standard()
+	if standard.is_empty():
+		return 0
+	
+	var base_questions = get_questions_for_standard(standard)
+	var error_tolerance = standard.get("error_tolerance", 0)
+	
+	# Calculate how many extra questions to add based on wrong answers
+	# Each wrong answer adds 1 extra question, capped at error_tolerance
+	var extra_questions = min(assessment_current_standard_wrong, error_tolerance)
+	
+	return base_questions + extra_questions
 
 func process_assessment_answer(is_correct: bool, time_taken: float):
 	"""Process an answer in assessment mode
@@ -289,14 +326,16 @@ func process_assessment_answer(is_correct: bool, time_taken: float):
 	assessment_current_standard_total += 1
 	if is_correct:
 		assessment_current_standard_correct += 1
+	else:
+		assessment_current_standard_wrong += 1
 	assessment_current_standard_times.append(time_taken)
 	
 	var standard = get_current_assessment_standard()
 	if standard.is_empty():
 		return {"should_advance": false, "assessment_complete": true}
 	
-	# Calculate dynamic question count for this standard
-	var max_questions = get_questions_for_standard(standard)
+	# Calculate dynamic question count for this standard, including error tolerance
+	var max_questions = get_max_questions_for_current_standard()
 	
 	# Advance to next standard when max questions reached
 	if assessment_current_standard_total >= max_questions:
@@ -304,14 +343,19 @@ func process_assessment_answer(is_correct: bool, time_taken: float):
 	
 	return {"should_advance": false, "assessment_complete": false}
 
-func peek_assessment_answer(_is_correct: bool, _time_taken: float):
+func peek_assessment_answer(is_correct: bool, _time_taken: float):
 	"""Check what would happen if we process this answer, WITHOUT modifying state.
 	Used to determine if this is the last question before animating."""
 	var standard = get_current_assessment_standard()
 	if standard.is_empty():
 		return {"should_advance": false, "assessment_complete": true}
 	
-	var max_questions = get_questions_for_standard(standard)
+	# Simulate what max_questions would be after processing this answer
+	var base_questions = get_questions_for_standard(standard)
+	var error_tolerance = standard.get("error_tolerance", 0)
+	var simulated_wrong = assessment_current_standard_wrong + (0 if is_correct else 1)
+	var extra_questions = min(simulated_wrong, error_tolerance)
+	var max_questions = base_questions + extra_questions
 	
 	# Check if this would be the last question for this standard
 	if assessment_current_standard_total + 1 >= max_questions:
@@ -322,6 +366,65 @@ func peek_assessment_answer(_is_correct: bool, _time_taken: float):
 func has_more_standards_after_current() -> bool:
 	"""Check if there are more standards after the current one (without advancing)"""
 	return assessment_current_standard_index + 1 < GameConfig.ASSESSMENT_STANDARDS.size()
+
+func check_prerequisites_met(standard: Dictionary) -> bool:
+	"""Check if all prerequisites for a standard have been mastered.
+	Returns true if all prerequisites are mastered (or if there are no prerequisites)."""
+	var prerequisites = standard.get("prerequisites", [])
+	if prerequisites.is_empty():
+		return true
+	
+	for prereq_id in prerequisites:
+		# Check if the prerequisite was mastered
+		if not assessment_mastered_standards.get(prereq_id, false):
+			return false
+	
+	return true
+
+func skip_current_standard_prerequisite_not_met():
+	"""Mark the current standard as skipped due to unmet prerequisites."""
+	var standard = get_current_assessment_standard()
+	if standard.is_empty():
+		return
+	
+	# Record as skipped
+	assessment_all_results[standard.id] = {
+		"average_time": 0.0,
+		"accuracy": 0.0,
+		"cqpm": 0.0,
+		"correct": 0,
+		"total": 0,
+		"wrong": 0,
+		"mastered": false,
+		"status": "prerequisite not met"
+	}
+	
+	# Not mastered
+	assessment_mastered_standards[standard.id] = false
+	
+	print("[Assessment] Standard '%s' SKIPPED - prerequisite not met" % standard.name)
+
+func find_next_eligible_standard() -> int:
+	"""Find the next standard index that has met prerequisites.
+	Returns -1 if no more eligible standards exist.
+	This will skip standards with unmet prerequisites and record them."""
+	var start_index = assessment_current_standard_index
+	
+	while assessment_current_standard_index < GameConfig.ASSESSMENT_STANDARDS.size():
+		var standard = GameConfig.ASSESSMENT_STANDARDS[assessment_current_standard_index]
+		
+		if check_prerequisites_met(standard):
+			# Found an eligible standard
+			if assessment_current_standard_index != start_index:
+				reset_for_assessment_standard()
+			return assessment_current_standard_index
+		else:
+			# Prerequisites not met - skip this standard
+			skip_current_standard_prerequisite_not_met()
+			assessment_current_standard_index += 1
+	
+	# No more eligible standards
+	return -1
 
 func finalize_current_standard():
 	"""Finalize results for the current standard before moving to next"""
@@ -335,27 +438,44 @@ func finalize_current_standard():
 		accuracy = float(assessment_current_standard_correct) / float(assessment_current_standard_total)
 	var cqpm = _calculate_cqpm_from_avg_time(avg_time, assessment_current_standard_correct)
 	
+	# Determine mastery: wrong_answers <= error_tolerance AND cqpm >= target_cqpm
+	var error_tolerance = standard.get("error_tolerance", 0)
+	var target_cqpm = standard.get("target_cqpm", 10.0)
+	var is_mastered = (assessment_current_standard_wrong <= error_tolerance) and (cqpm >= target_cqpm)
+	
+	# Record mastery status
+	assessment_mastered_standards[standard.id] = is_mastered
+	
 	assessment_all_results[standard.id] = {
 		"average_time": avg_time,
 		"accuracy": accuracy,
 		"cqpm": cqpm,
 		"correct": assessment_current_standard_correct,
-		"total": assessment_current_standard_total
+		"total": assessment_current_standard_total,
+		"wrong": assessment_current_standard_wrong,
+		"mastered": is_mastered,
+		"status": "completed"
 	}
 	
-	print("[Assessment] Standard '%s' complete: %.1f CQPM, %.0f%% accuracy (%d/%d)" % [
-		standard.name, cqpm, accuracy * 100, assessment_current_standard_correct, assessment_current_standard_total
+	var mastery_str = "MASTERED" if is_mastered else "not mastered"
+	print("[Assessment] Standard '%s' complete: %.1f CQPM (target: %.1f), %d wrong (tolerance: %d) - %s" % [
+		standard.name, cqpm, target_cqpm, assessment_current_standard_wrong, error_tolerance, mastery_str
 	])
 
 func advance_to_next_standard() -> bool:
-	"""Move to the next assessment standard. Returns true if there are more standards, false if complete."""
+	"""Move to the next assessment standard. Returns true if there are more standards, false if complete.
+	This will skip standards with unmet prerequisites."""
 	finalize_current_standard()
 	assessment_current_standard_index += 1
 	
-	if assessment_current_standard_index >= GameConfig.ASSESSMENT_STANDARDS.size():
+	# Find the next eligible standard (skipping those with unmet prerequisites)
+	var next_index = find_next_eligible_standard()
+	
+	if next_index == -1:
 		print("[Assessment] All standards complete!")
 		return false
 	
+	# assessment_current_standard_index is already set by find_next_eligible_standard
 	reset_for_assessment_standard()
 	return true
 

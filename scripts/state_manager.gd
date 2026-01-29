@@ -504,6 +504,13 @@ func start_assessment_mode():
 	# Reset scores for assessment
 	ScoreManager.reset_for_assessment()
 	
+	# Initialize first eligible standard (checking prerequisites)
+	if not ScoreManager.initialize_first_assessment_standard():
+		# No eligible standards - immediately complete
+		print("[StateManager] Assessment has no eligible standards!")
+		complete_assessment()
+		return
+	
 	# Reset input state
 	InputManager.reset_for_new_question()
 	

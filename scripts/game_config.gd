@@ -602,7 +602,10 @@ var assessment_theme_color = Color(0.6, 0.2, 0.8)  # Purple theme for assessment
 #   - name: Display name
 #   - target_cqpm: Expected CQPM for mastery (mastery_count / 2). Used to calculate questions per standard.
 #   - is_multiple_choice: Whether this is a multiple choice question type
+#   - prerequisites: Array of standard IDs that must be mastered before this standard is tested (empty = no prerequisites)
+#   - error_tolerance: Number of allowed wrong answers (0 = no tolerance). Each wrong adds an extra question, max = base + tolerance.
 #   - config: Generation config for the assessment (may differ from regular levels for range isolation)
+# Mastery is achieved when: wrong_answers <= error_tolerance AND CQPM >= target_cqpm
 const ASSESSMENT_STANDARDS = [
 	# === Grade 1-2: Basic Addition ===
 	{
@@ -610,6 +613,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Sums to 6",
 		"target_cqpm": 20.0,  # mastery_count 40 / 2
 		"is_multiple_choice": false,
+		"prerequisites": [],
+		"error_tolerance": 2,
 		"config": {"operators": ["+"], "prompt": "ADD", "sum_min": 0, "sum_max": 6}
 	},
 	{
@@ -617,6 +622,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Sums to 12",
 		"target_cqpm": 13.0,  # mastery_count 26 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_sums_to_6"],
+		"error_tolerance": 1,
 		"config": {"operators": ["+"], "prompt": "ADD", "sum_min": 7, "sum_max": 12}
 	},
 	{
@@ -624,6 +631,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Sums to 20",
 		"target_cqpm": 11.0,  # mastery_count 22 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_sums_to_12"],
+		"error_tolerance": 1,
 		"config": {"operators": ["+"], "prompt": "ADD", "sum_min": 13, "sum_max": 20}
 	},
 	
@@ -633,6 +642,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Subtraction 0-5",
 		"target_cqpm": 20.0,  # mastery_count 40 / 2
 		"is_multiple_choice": false,
+		"prerequisites": [],
+		"error_tolerance": 2,
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 0, "range_max": 5}
 	},
 	{
@@ -640,6 +651,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Subtraction 0-9",
 		"target_cqpm": 20.0,  # mastery_count 40 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_subtraction_0_5"],
+		"error_tolerance": 1,
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 6, "range_max": 9}
 	},
 	{
@@ -647,6 +660,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Subtraction 0-12",
 		"target_cqpm": 19.5,  # mastery_count 39 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_subtraction_6_9"],
+		"error_tolerance": 1,
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 10, "range_max": 12}
 	},
 	{
@@ -654,6 +669,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Subtraction 0-15",
 		"target_cqpm": 18.5,  # mastery_count 37 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_subtraction_10_12"],
+		"error_tolerance": 1,
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 13, "range_max": 15}
 	},
 	{
@@ -661,6 +678,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Subtraction 0-20",
 		"target_cqpm": 16.5,  # mastery_count 33 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_subtraction_13_15"],
+		"error_tolerance": 1,
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 16, "range_max": 20}
 	},
 	
@@ -670,6 +689,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Compare Sums and Differences to 20",
 		"target_cqpm": 6.5,  # mastery_count 13 / 2
 		"is_multiple_choice": true,
+		"prerequisites": ["assess_sums_to_20", "assess_subtraction_16_20"],
+		"error_tolerance": 0,
 		"config": {"type": "expression_comparison_20", "prompt": "LESS THAN OR GREATER THAN?"}
 	},
 	{
@@ -677,6 +698,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Add 2-Digit without Regrouping",
 		"target_cqpm": 8.0,  # mastery_count 16 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_sums_to_20"],
+		"error_tolerance": 0,
 		"config": {"operators": ["+"], "prompt": "ADD", "digit_count": 2, "requires_regrouping": false, "max_answer": 100}
 	},
 	{
@@ -684,6 +707,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Subtract 2-Digit without Regrouping",
 		"target_cqpm": 10.0,  # mastery_count 20 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_subtraction_16_20"],
+		"error_tolerance": 0,
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 2, "requires_regrouping": false, "max_answer": 100}
 	},
 	{
@@ -691,6 +716,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Add 2-Digit with Regrouping",
 		"target_cqpm": 5.0,  # mastery_count 10 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_2digit_add_no_regroup"],
+		"error_tolerance": 0,
 		"config": {"operators": ["+"], "prompt": "ADD", "digit_count": 2, "requires_regrouping": true, "max_answer": 100}
 	},
 	{
@@ -698,6 +725,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Subtract 2-Digit with Regrouping",
 		"target_cqpm": 5.0,  # mastery_count 10 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_2digit_sub_no_regroup"],
+		"error_tolerance": 0,
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 2, "requires_regrouping": true, "max_answer": 100}
 	},
 	
@@ -707,6 +736,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Create Equivalent Add & Sub Problems, Associative Property",
 		"target_cqpm": 20.0,  # mastery_count 40 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_sums_to_20", "assess_subtraction_16_20"],
+		"error_tolerance": 0,
 		"config": {"type": "equivalence_associative"}
 	},
 	{
@@ -714,6 +745,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Create Equivalent Add & Sub Problems, Place Value",
 		"target_cqpm": 20.0,  # mastery_count 40 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_sums_to_20", "assess_subtraction_16_20"],
+		"error_tolerance": 0,
 		"config": {"type": "equivalence_place_value"}
 	},
 	
@@ -723,6 +756,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Add 3-Digit Numbers",
 		"target_cqpm": 4.5,  # mastery_count 9 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_2digit_add_regroup"],
+		"error_tolerance": 0,
 		"config": {"operators": ["+"], "prompt": "ADD", "digit_count": 3, "max_answer": 1998}
 	},
 	{
@@ -730,6 +765,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Subtract 3-Digit Numbers",
 		"target_cqpm": 5.0,  # mastery_count 10 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_2digit_sub_regroup"],
+		"error_tolerance": 0,
 		"config": {"operators": ["-"], "prompt": "SUBTRACT", "digit_count": 3, "max_answer": 1000}
 	},
 	
@@ -739,6 +776,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Multiply 0-9",
 		"target_cqpm": 19.5,  # mastery_count 39 / 2 (from Multiply 0-9)
 		"is_multiple_choice": false,
+		"prerequisites": [],
+		"error_tolerance": 2,
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 0, "factor_max": 4}
 	},
 	{
@@ -746,6 +785,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Multiply 5-9",
 		"target_cqpm": 15.0,  # mastery_count 30 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_multiply_0_4"],
+		"error_tolerance": 1,
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 5, "factor_max": 8}
 	},
 	{
@@ -753,6 +794,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Multiply 0-12",
 		"target_cqpm": 17.5,  # mastery_count 35 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_multiply_5_8"],
+		"error_tolerance": 1,
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "factor_min": 9, "factor_max": 12}
 	},
 	{
@@ -760,6 +803,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Multiply 1-Digit by 2-3-Digit without Regrouping",
 		"target_cqpm": 9.5,  # mastery_count 19 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_multiply_9_12"],
+		"error_tolerance": 0,
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "multi_digit": true, "requires_regrouping": false}
 	},
 	{
@@ -767,6 +812,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Multiply 1-Digit by 2-3-Digit with Regrouping",
 		"target_cqpm": 9.0,  # mastery_count 18 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_multiply_multi_no_regroup"],
+		"error_tolerance": 0,
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "multi_digit": true, "requires_regrouping": true}
 	},
 	
@@ -776,6 +823,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Divide 0-5",
 		"target_cqpm": 30.0,  # mastery_count 60 / 2
 		"is_multiple_choice": false,
+		"prerequisites": [],
+		"error_tolerance": 2,
 		"config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 1, "divisor_max": 4}
 	},
 	{
@@ -783,6 +832,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Divide 5-9",
 		"target_cqpm": 30.0,  # mastery_count 60 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_divide_1_4"],
+		"error_tolerance": 1,
 		"config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 5, "divisor_max": 8}
 	},
 	{
@@ -790,6 +841,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Divide 0-12",
 		"target_cqpm": 24.0,  # mastery_count 48 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_divide_5_8"],
+		"error_tolerance": 1,
 		"config": {"operators": ["/"], "prompt": "DIVIDE", "divisor_min": 9, "divisor_max": 12}
 	},
 	{
@@ -797,6 +850,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Divide 2-3-Digit by 1-Digit",
 		"target_cqpm": 4.5,  # mastery_count 9 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_divide_9_12"],
+		"error_tolerance": 0,
 		"config": {"operators": ["/"], "prompt": "DIVIDE", "multi_digit": true}
 	},
 	
@@ -806,6 +861,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Place Fractions on Number Line (den. 2, 4, 8)",
 		"target_cqpm": 10.0,  # mastery_count 20 / 2
 		"is_multiple_choice": false,
+		"prerequisites": [],
+		"error_tolerance": 0,
 		"config": {"type": "number_line_fractions", "prompt": "PLACE ON NUMBER LINE", "denominators": [2, 4, 8], "total_pips": 9, "frame": 0, "control_mode": "pip_to_pip", "lower_limit": 0, "upper_limit": 1}
 	},
 	
@@ -815,6 +872,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "2-Digit Multiply by 2-Digit without Regrouping",
 		"target_cqpm": 5.5,  # mastery_count 11 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_multiply_multi_regroup"],
+		"error_tolerance": 0,
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "two_digit_by_two_digit": true, "requires_regrouping": false}
 	},
 	{
@@ -822,6 +881,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "2-Digit Multiply by 2-Digit with Regrouping",
 		"target_cqpm": 4.5,  # mastery_count 9 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_multiply_2digit_no_regroup"],
+		"error_tolerance": 0,
 		"config": {"operators": ["x"], "prompt": "MULTIPLY", "two_digit_by_two_digit": true, "requires_regrouping": true}
 	},
 	{
@@ -829,6 +890,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Create Equivalent Multiplication Problems by Factoring",
 		"target_cqpm": 11.0,  # mastery_count 22 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_multiply_2digit_regroup", "assess_equivalence_associative"],
+		"error_tolerance": 0,
 		"config": {"type": "equivalence_mult_factoring"}
 	},
 	
@@ -838,6 +901,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Quantity Comparison of Decimals to Hundredths",
 		"target_cqpm": 40.0,  # mastery_count 80 / 2
 		"is_multiple_choice": true,
+		"prerequisites": ["assess_expression_comparison_20"],
+		"error_tolerance": 1,
 		"config": {"type": "decimal_comparison", "prompt": "LESS THAN OR GREATER THAN?"}
 	},
 	{
@@ -845,6 +910,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Add and Subtract Decimals to the Hundredths",
 		"target_cqpm": 7.5,  # mastery_count 15 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_decimal_comparison"],
+		"error_tolerance": 0,
 		"config": {"type": "decimal_add_sub", "operators": ["+", "-"]}
 	},
 	
@@ -854,6 +921,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Place Fractions on Number Line (den. 2, 3, 4, 5, 6, 8, 10)",
 		"target_cqpm": 10.0,  # mastery_count 20 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_number_line_fractions_basic"],
+		"error_tolerance": 0,
 		"config": {"type": "number_line_fractions_extended", "prompt": "PLACE ON NUMBER LINE", "denominators": [2, 3, 4, 5, 6, 8, 10], "total_pips": 13, "frame": 1, "control_mode": "continuous", "lower_limit": 0, "upper_limit": 3}
 	},
 	{
@@ -861,6 +930,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Quantity Comparison of Fractions with Unlike Denominators",
 		"target_cqpm": 10.0,  # mastery_count 20 / 2
 		"is_multiple_choice": true,
+		"prerequisites": ["assess_expression_comparison_20", "assess_number_line_fractions_extended"],
+		"error_tolerance": 0,
 		"config": {"type": "fraction_comparison", "prompt": "LESS THAN OR GREATER THAN?"}
 	},
 	{
@@ -868,6 +939,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Add/Subtract Mixed Numbers with Like Denominators",
 		"target_cqpm": 9.5,  # mastery_count 19 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_number_line_fractions_extended", "assess_sums_to_20", "assess_subtraction_16_20"],
+		"error_tolerance": 0,
 		"config": {"type": "mixed_numbers_like_denom", "operators": ["+", "-"]}
 	},
 	
@@ -877,6 +950,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Multiply/Divide Decimals",
 		"target_cqpm": 5.5,  # mastery_count 11 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_decimal_add_sub", "assess_multiply_9_12", "assess_divide_9_12"],
+		"error_tolerance": 0,
 		"config": {"type": "decimal_multiply_divide", "operators": ["x", "/"]}
 	},
 	
@@ -886,6 +961,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Add/Subtract Fractions with Unlike Denominators",
 		"target_cqpm": 3.0,  # mastery_count 6 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_mixed_numbers_like_denom"],
+		"error_tolerance": 0,
 		"config": {"type": "fractions_unlike_denom", "operators": ["+", "-"]}
 	},
 	{
@@ -893,6 +970,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Convert Mixed Numbers to Improper Fractions",
 		"target_cqpm": 12.0,  # mastery_count 24 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_mixed_numbers_like_denom"],
+		"error_tolerance": 0,
 		"config": {"type": "mixed_to_improper", "prompt": "CONVERT TO IMPROPER FRACTION"}
 	},
 	{
@@ -900,6 +979,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Convert Improper Fractions to Mixed Numbers",
 		"target_cqpm": 11.5,  # mastery_count 23 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_mixed_numbers_like_denom"],
+		"error_tolerance": 0,
 		"config": {"type": "improper_to_mixed", "prompt": "CONVERT TO MIXED FRACTION"}
 	},
 	{
@@ -907,6 +988,8 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Multiply/Divide Proper and Improper Fractions",
 		"target_cqpm": 5.5,  # mastery_count 11 / 2
 		"is_multiple_choice": false,
+		"prerequisites": ["assess_mixed_numbers_like_denom", "assess_fractions_unlike_denom"],
+		"error_tolerance": 0,
 		"config": {"type": "multiply_divide_fractions", "operators": ["x", "/"]}
 	}
 ]
