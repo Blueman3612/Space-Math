@@ -1026,9 +1026,10 @@ func create_number_line_problem():
 	var frame_idx = QuestionManager.current_question.get("frame", 0)
 	var control_mode = QuestionManager.current_question.get("control_mode", "pip_to_pip")
 	
-	# Calculate positions
-	var final_position = GameConfig.number_line_final_position
-	var fraction_position = GameConfig.number_line_fraction_position
+	# Calculate positions (with y offset to make room for prompt label)
+	var y_offset = GameConfig.number_line_y_offset
+	var final_position = GameConfig.number_line_final_position + Vector2(0, y_offset)
+	var fraction_position = GameConfig.number_line_fraction_position + Vector2(0, y_offset)
 	var start_offset = 1080.0  # Start 1080 pixels above final position
 	
 	var number_line_start_y = final_position.y - start_offset

@@ -538,6 +538,7 @@ const PROBLEM_DISPLAY_FORMATS = {
 # ============================================
 var number_line_final_position = Vector2(960, 640)  # Final position of number line on screen
 var number_line_fraction_position = Vector2(960, 288)  # Position of fraction label above number line
+var number_line_y_offset = 64.0  # Additional Y offset to move number line elements down (to make room for prompt)
 var number_line_pip_left_x = -856.0  # X position of leftmost pip (relative to number line)
 var number_line_pip_right_x = 856.0  # X position of rightmost pip (relative to number line)
 var number_line_pointer_move_duration = 0.25  # Duration for pointer movement animation
