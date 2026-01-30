@@ -27,6 +27,9 @@ var assessment_page_container: Control = null  # Container for assessment button
 var assessment_button: Button = null  # The assessment button
 const ASSESSMENT_GRADE_INDEX = 0  # Assessment is displayed as "grade 0" (before Grade 1)
 
+# XP Warning
+var xp_warning_label: Label = null  # Reference to the XpWarning label
+
 func initialize(main_node: Control):
 	"""Initialize level manager with references to needed nodes"""
 	main_menu_node = main_node.get_node("MainMenu")
@@ -35,6 +38,11 @@ func initialize(main_node: Control):
 	right_button = main_menu_node.get_node("RightButton")
 	label_settings_64 = load("res://assets/label settings/GravityBold64.tres")
 	star_icon_texture = load("res://assets/sprites/Star Icon.png")
+	
+	# Get XP warning label reference
+	xp_warning_label = main_menu_node.get_node_or_null("XpWarning")
+	if xp_warning_label:
+		xp_warning_label.visible = false
 	
 	# Calculate initial global page index
 	current_global_page_index = get_global_page_index(GameConfig.current_grade, GameConfig.current_grade_page)
@@ -631,7 +639,27 @@ func create_grade_level_button_in_container(container: Control, global_number: i
 	button.pressed.connect(StateManager._on_grade_level_button_pressed.bind(level_data))
 	UIManager.connect_button_sounds(button)
 	
+	# Connect hover signals for XP warning
+	button.mouse_entered.connect(_on_level_button_hover_enter.bind(level_data))
+	button.mouse_exited.connect(_on_level_button_hover_exit)
+	
 	return button
+
+func _on_level_button_hover_enter(level_data: Dictionary):
+	"""Show XP warning when hovering over a level with 3 stars"""
+	if not xp_warning_label:
+		return
+	
+	var level_id = level_data.get("id", "")
+	var stars = SaveManager.get_grade_level_stars(level_id)
+	
+	# Show warning if level has 3 stars (reduced XP for replay)
+	xp_warning_label.visible = (stars >= 3)
+
+func _on_level_button_hover_exit():
+	"""Hide XP warning when mouse leaves level button"""
+	if xp_warning_label:
+		xp_warning_label.visible = false
 
 func create_pack_outline_in_container(container: Control, pack_name: String, pack_buttons: Array, start_x: float, row_outlines: Array, theme_color: Color, show_label_text: bool = true):
 	"""Create a level pack outline inside a page container.

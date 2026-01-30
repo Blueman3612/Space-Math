@@ -345,6 +345,21 @@ focus_mode = 0
 mouse_default_cursor_shape = 7
 theme = ExtResource("1_jyhfs")
 
+[node name="XpWarning" type="Label" parent="MainMenu"]
+visible = false
+self_modulate = Color(1, 0, 0, 1)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -670.0
+offset_top = 384.0
+offset_right = 670.0
+offset_bottom = 416.0
+grow_horizontal = 2
+text = "YOU WILL RECEIVE MINIMAL XP FROM PLAYING A COMPLETED LEVEL"
+label_settings = ExtResource("9_85g3d")
+
 [node name="GameOver" type="Control" parent="."]
 anchors_preset = 0
 offset_top = -1144.0
@@ -877,6 +892,7 @@ offset_bottom = 1080.0
 mouse_filter = 2
 
 [node name="Splash Screen" type="Sprite2D" parent="Loading"]
+position = Vector2(21, 81)
 texture = ExtResource("16_jbj1t")
 centered = false
 
