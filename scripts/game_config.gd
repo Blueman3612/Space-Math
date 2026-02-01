@@ -259,7 +259,7 @@ const GRADE_LEVELS = {
 			{
 				"name": "Addition",
 				"levels": [
-					{"id": "grade1_addition_sums_to_6", "name": "Sums to 6", "mastery_count": 40, "config": {"operators": ["+"], "prompt": "ADD", "sum_max": 6}},
+					{"id": "grade1_addition_sums_to_6", "name": "Sums to 6", "mastery_count": 40, "config": {"operators": ["+"], "prompt": "ADD", "sum_max": 6, "allow_zero": true}},
 					{"id": "grade1_addition_sums_to_12", "name": "Sums to 12", "mastery_count": 26, "config": {"operators": ["+"], "prompt": "ADD", "sum_max": 12}},
 					{"id": "grade1_addition_sums_to_20", "name": "Sums to 20", "mastery_count": 22, "config": {"operators": ["+"], "prompt": "ADD", "sum_max": 20}}
 				]
@@ -267,7 +267,7 @@ const GRADE_LEVELS = {
 			{
 				"name": "Subtraction",
 				"levels": [
-					{"id": "grade1_subtraction_0_5", "name": "Subtraction 0-5", "mastery_count": 40, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 5}},
+					{"id": "grade1_subtraction_0_5", "name": "Subtraction 0-5", "mastery_count": 40, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 5, "allow_zero": true}},
 					{"id": "grade1_subtraction_0_9", "name": "Subtraction 0-9", "mastery_count": 40, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 9}},
 					{"id": "grade1_subtraction_0_12", "name": "Subtraction 0-12", "mastery_count": 39, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 12}},
 					{"id": "grade1_subtraction_0_15", "name": "Subtraction 0-15", "mastery_count": 37, "config": {"operators": ["-"], "prompt": "SUBTRACT", "range_max": 15}},
@@ -617,7 +617,7 @@ const ASSESSMENT_STANDARDS = [
 		"prerequisites": [],
 		"error_tolerance": 2,
 		"level_ids": ["grade1_addition_sums_to_6"],
-		"config": {"operators": ["+"], "prompt": "ADD", "sum_min": 0, "sum_max": 6}
+		"config": {"operators": ["+"], "prompt": "ADD", "sum_min": 0, "sum_max": 6, "allow_zero": true}
 	},
 	{
 		"id": "assess_sums_to_12",
@@ -649,7 +649,7 @@ const ASSESSMENT_STANDARDS = [
 		"prerequisites": [],
 		"error_tolerance": 2,
 		"level_ids": ["grade1_subtraction_0_5", "grade1_fact_families_0_5"],
-		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 0, "range_max": 5}
+		"config": {"operators": ["-"], "prompt": "SUBTRACT", "range_min": 0, "range_max": 5, "allow_zero": true}
 	},
 	{
 		"id": "assess_subtraction_6_9",

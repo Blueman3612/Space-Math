@@ -484,11 +484,15 @@ func _generate_addition_problem(config: Dictionary) -> Dictionary:
 	var operand2: int
 	var result: int
 	
+	# Determine minimum value - default to 1 to avoid zeroes unless explicitly allowed
+	var allow_zero = config.get("allow_zero", false)
+	var default_min = 0 if allow_zero else 1
+	
 	if config.has("sum_max"):
 		# "Sums to X" style - generate operands where sum doesn't exceed max
 		var sum_max = config.sum_max
-		var min_val = config.get("min_val", 0)
-		operand1 = rng.randi_range(min_val, sum_max)
+		var min_val = config.get("min_val", default_min)
+		operand1 = rng.randi_range(min_val, sum_max - min_val)  # Leave room for operand2
 		operand2 = rng.randi_range(min_val, sum_max - operand1)
 		result = operand1 + operand2
 	elif config.has("digit_count"):
@@ -513,9 +517,10 @@ func _generate_addition_problem(config: Dictionary) -> Dictionary:
 		
 		result = operand1 + operand2
 	else:
-		# Fallback - simple addition 0-10
-		operand1 = rng.randi_range(0, 10)
-		operand2 = rng.randi_range(0, 10)
+		# Fallback - simple addition 1-10 (avoid zero unless allowed)
+		var fallback_min = 0 if allow_zero else 1
+		operand1 = rng.randi_range(fallback_min, 10)
+		operand2 = rng.randi_range(fallback_min, 10)
 		result = operand1 + operand2
 	
 	var question_text = str(operand1) + " + " + str(operand2)
@@ -537,13 +542,27 @@ func _generate_subtraction_problem(config: Dictionary) -> Dictionary:
 	var operand2: int
 	var result: int
 	
+	# Determine if zeroes are allowed - default to false to avoid zeroes
+	var allow_zero = config.get("allow_zero", false)
+	
 	if config.has("range_max"):
 		# "Subtraction 0-X" style - first operand in range, second less than first
 		var range_max = config.range_max
 		var range_min = config.get("range_min", 0)
-		operand1 = rng.randi_range(range_min, range_max)
-		operand2 = rng.randi_range(range_min, operand1)  # Ensure no negative result
-		result = operand1 - operand2
+		
+		if allow_zero:
+			# Allow any values including zero
+			operand1 = rng.randi_range(range_min, range_max)
+			operand2 = rng.randi_range(range_min, operand1)  # Ensure no negative result
+			result = operand1 - operand2
+		else:
+			# Avoid zero as operand or result
+			# operand1 must be at least 2 to allow operand2 >= 1 and result >= 1
+			var min_operand1 = max(range_min, 2)
+			operand1 = rng.randi_range(min_operand1, range_max)
+			# operand2 must be at least 1 and at most operand1 - 1 (to ensure result >= 1)
+			operand2 = rng.randi_range(1, operand1 - 1)
+			result = operand1 - operand2
 	elif config.has("digit_count"):
 		# Multi-digit subtraction
 		var digit_count = config.digit_count
@@ -566,9 +585,13 @@ func _generate_subtraction_problem(config: Dictionary) -> Dictionary:
 		
 		result = operand1 - operand2
 	else:
-		# Fallback - simple subtraction 0-10
-		operand1 = rng.randi_range(0, 10)
-		operand2 = rng.randi_range(0, operand1)
+		# Fallback - simple subtraction (avoid zero unless allowed)
+		if allow_zero:
+			operand1 = rng.randi_range(0, 10)
+			operand2 = rng.randi_range(0, operand1)
+		else:
+			operand1 = rng.randi_range(2, 10)
+			operand2 = rng.randi_range(1, operand1 - 1)
 		result = operand1 - operand2
 	
 	var question_text = str(operand1) + " - " + str(operand2)
@@ -1032,28 +1055,28 @@ func _generate_single_expression_comparison() -> Variant:
 	
 	var attempts = 0
 	while attempts < 100:
-		# Generate first expression
+		# Generate first expression (avoid zeroes as operands and results)
 		if op1 == "+":
-			# Addition: a + b <= 20
-			expr1_a = rng.randi_range(0, 20)
-			expr1_b = rng.randi_range(0, 20 - expr1_a)
+			# Addition: a + b <= 20, both operands >= 1
+			expr1_a = rng.randi_range(1, 19)
+			expr1_b = rng.randi_range(1, 20 - expr1_a)
 			expr1_result = expr1_a + expr1_b
 		else:
-			# Subtraction: a - b >= 0, a <= 20
-			expr1_a = rng.randi_range(0, 20)
-			expr1_b = rng.randi_range(0, expr1_a)
+			# Subtraction: a - b >= 1, a >= 2, b >= 1
+			expr1_a = rng.randi_range(2, 20)
+			expr1_b = rng.randi_range(1, expr1_a - 1)
 			expr1_result = expr1_a - expr1_b
 		
-		# Generate second expression
+		# Generate second expression (avoid zeroes as operands and results)
 		if op2 == "+":
-			# Addition: a + b <= 20
-			expr2_a = rng.randi_range(0, 20)
-			expr2_b = rng.randi_range(0, 20 - expr2_a)
+			# Addition: a + b <= 20, both operands >= 1
+			expr2_a = rng.randi_range(1, 19)
+			expr2_b = rng.randi_range(1, 20 - expr2_a)
 			expr2_result = expr2_a + expr2_b
 		else:
-			# Subtraction: a - b >= 0, a <= 20
-			expr2_a = rng.randi_range(0, 20)
-			expr2_b = rng.randi_range(0, expr2_a)
+			# Subtraction: a - b >= 1, a >= 2, b >= 1
+			expr2_a = rng.randi_range(2, 20)
+			expr2_b = rng.randi_range(1, expr2_a - 1)
 			expr2_result = expr2_a - expr2_b
 		
 		# Ensure results are not equal
@@ -1110,19 +1133,19 @@ func _generate_equivalence_associative_problem(config: Dictionary) -> Dictionary
 	var attempts = 0
 	while attempts < 100:
 		if main_op == "+":
-			# Addition: a + b <= 20
-			left_a = rng.randi_range(0, 20)
-			left_b = rng.randi_range(0, 20 - left_a)
+			# Addition: a + b <= 20, avoid zeroes (operands >= 1)
+			left_a = rng.randi_range(1, 19)
+			left_b = rng.randi_range(1, 20 - left_a)
 			left_result = left_a + left_b
 		else:
-			# Subtraction: a - b >= 0, result <= 20
+			# Subtraction: a - b >= 1, result <= 20, avoid zeroes
 			# For subtraction, left_a can be > 20 as long as result <= 20
-			left_result = rng.randi_range(0, 20)
-			left_b = rng.randi_range(0, 20)  # The subtracted amount
+			left_result = rng.randi_range(1, 20)  # Result >= 1
+			left_b = rng.randi_range(1, 20)  # The subtracted amount >= 1
 			left_a = left_result + left_b  # So left_a - left_b = left_result
 		
-		# Ensure we have valid operands
-		if left_a < 0 or left_b < 0:
+		# Ensure we have valid operands (all >= 1)
+		if left_a < 1 or left_b < 1:
 			attempts += 1
 			continue
 		
@@ -1146,8 +1169,8 @@ func _generate_equivalence_associative_problem(config: Dictionary) -> Dictionary
 		else:
 			modified = non_shared - adjustment
 		
-		# Ensure modified operand is valid (non-negative)
-		if modified < 0:
+		# Ensure modified operand is valid (at least 1 to avoid zero)
+		if modified < 1:
 			attempts += 1
 			continue
 		
@@ -2566,6 +2589,10 @@ func _generate_assessment_addition_problem(config: Dictionary) -> Dictionary:
 	var operand2: int
 	var result: int
 	
+	# Determine if zeroes are allowed - default to false to avoid zeroes
+	var allow_zero = config.get("allow_zero", false)
+	var min_operand = 0 if allow_zero else 1
+	
 	# Check for sum_min/sum_max range isolation (for overlapping standards)
 	if config.has("sum_min") and config.has("sum_max"):
 		var sum_min = config.sum_min
@@ -2574,29 +2601,31 @@ func _generate_assessment_addition_problem(config: Dictionary) -> Dictionary:
 		
 		while attempts < 100:
 			# Generate a sum in the range [sum_min, sum_max]
-			result = rng.randi_range(sum_min, sum_max)
+			# If not allowing zero, ensure sum is at least 2 (so both operands can be >= 1)
+			var min_result = sum_min if allow_zero else max(sum_min, 2)
+			result = rng.randi_range(min_result, sum_max)
 			# Generate operand1 such that operand2 is valid
-			operand1 = rng.randi_range(0, result)
+			operand1 = rng.randi_range(min_operand, result - min_operand)
 			operand2 = result - operand1
 			
-			# Both operands should be non-negative (always true with this method)
-			if operand1 >= 0 and operand2 >= 0:
+			# Both operands should meet minimum requirement
+			if operand1 >= min_operand and operand2 >= min_operand:
 				break
 			
 			attempts += 1
 	elif config.has("sum_max"):
 		# Standard "Sums to X" style (no minimum constraint)
 		var sum_max = config.sum_max
-		operand1 = rng.randi_range(0, sum_max)
-		operand2 = rng.randi_range(0, sum_max - operand1)
+		operand1 = rng.randi_range(min_operand, sum_max - min_operand)
+		operand2 = rng.randi_range(min_operand, sum_max - operand1)
 		result = operand1 + operand2
 	elif config.has("digit_count"):
 		# Multi-digit addition (defer to existing function)
 		return _generate_addition_problem(config)
 	else:
 		# Fallback
-		operand1 = rng.randi_range(0, 10)
-		operand2 = rng.randi_range(0, 10)
+		operand1 = rng.randi_range(min_operand, 10)
+		operand2 = rng.randi_range(min_operand, 10)
 		result = operand1 + operand2
 	
 	var question_text = str(operand1) + " + " + str(operand2)
@@ -2618,6 +2647,9 @@ func _generate_assessment_subtraction_problem(config: Dictionary) -> Dictionary:
 	var operand2: int
 	var result: int
 	
+	# Determine if zeroes are allowed - default to false to avoid zeroes
+	var allow_zero = config.get("allow_zero", false)
+	
 	# Check for range_min/range_max isolation (for overlapping standards)
 	if config.has("range_min") and config.has("range_max"):
 		var range_min = config.range_min
@@ -2625,15 +2657,28 @@ func _generate_assessment_subtraction_problem(config: Dictionary) -> Dictionary:
 		var attempts = 0
 		
 		while attempts < 100:
-			# First operand must be in [range_min, range_max]
-			operand1 = rng.randi_range(range_min, range_max)
-			# Second operand must be <= first operand to avoid negative results
-			operand2 = rng.randi_range(0, operand1)
-			result = operand1 - operand2
-			
-			# Valid problem found
-			if result >= 0:
-				break
+			if allow_zero:
+				# First operand must be in [range_min, range_max]
+				operand1 = rng.randi_range(range_min, range_max)
+				# Second operand must be <= first operand to avoid negative results
+				operand2 = rng.randi_range(0, operand1)
+				result = operand1 - operand2
+				
+				# Valid problem found
+				if result >= 0:
+					break
+			else:
+				# Avoid zero as operand or result
+				# operand1 must be at least 2 to allow operand2 >= 1 and result >= 1
+				var min_operand1 = max(range_min, 2)
+				operand1 = rng.randi_range(min_operand1, range_max)
+				# operand2 must be at least 1 and at most operand1 - 1 (to ensure result >= 1)
+				operand2 = rng.randi_range(1, operand1 - 1)
+				result = operand1 - operand2
+				
+				# Valid problem found
+				if result >= 1 and operand2 >= 1:
+					break
 			
 			attempts += 1
 	elif config.has("range_max"):
@@ -2644,8 +2689,12 @@ func _generate_assessment_subtraction_problem(config: Dictionary) -> Dictionary:
 		return _generate_subtraction_problem(config)
 	else:
 		# Fallback
-		operand1 = rng.randi_range(0, 10)
-		operand2 = rng.randi_range(0, operand1)
+		if allow_zero:
+			operand1 = rng.randi_range(0, 10)
+			operand2 = rng.randi_range(0, operand1)
+		else:
+			operand1 = rng.randi_range(2, 10)
+			operand2 = rng.randi_range(1, operand1 - 1)
 		result = operand1 - operand2
 	
 	var question_text = str(operand1) + " - " + str(operand2)

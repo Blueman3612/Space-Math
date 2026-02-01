@@ -45,7 +45,7 @@ window/stretch/mode="viewport"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/playcademy/backend/plugin.cfg")
+enabled=PackedStringArray("res://addons/playcademy/backend/plugin.cfg", "res://addons/playcademy/manifest_exporter/plugin.cfg")
 
 [gui]
 
