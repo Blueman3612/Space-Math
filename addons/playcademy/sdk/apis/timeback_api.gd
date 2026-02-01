@@ -84,13 +84,6 @@ var enrollments: Array:
 		return result
 
 # Start tracking an activity
-# metadata should contain:
-#   - activityId: String (required) - unique identifier for the activity
-#   - grade: int (required) - grade level for multi-grade course routing
-#   - subject: String (required) - subject area (e.g., "math", "reading")
-#   - activityName: String (optional) - display name for the activity
-#   - courseId: String (optional) - course identifier
-#   - courseName: String (optional) - course display name
 func start_activity(metadata: Dictionary):
 	if _main_client == null:
 		printerr("[TimebackAPI] Main client not set. Cannot call start_activity().")
@@ -102,32 +95,9 @@ func start_activity(metadata: Dictionary):
 		printerr("[TimebackAPI] client.timeback.startActivity() path not found.")
 		return
 	
-	# Validate required fields
-	if not metadata.has("activityId"):
-		printerr("[TimebackAPI] start_activity() requires 'activityId' in metadata.")
-		return
-	if not metadata.has("grade"):
-		printerr("[TimebackAPI] start_activity() requires 'grade' in metadata.")
-		return
-	if not metadata.has("subject"):
-		printerr("[TimebackAPI] start_activity() requires 'subject' in metadata.")
-		return
-	
 	# Build metadata object for JavaScript
 	var js_metadata = JavaScriptBridge.create_object("Object")
-	
-	# Required fields
-	js_metadata["activityId"] = metadata.get("activityId")
-	js_metadata["grade"] = metadata.get("grade")
-	js_metadata["subject"] = metadata.get("subject")
-	
-	# Optional fields - only set if provided
-	if metadata.has("activityName"):
-		js_metadata["activityName"] = metadata.get("activityName")
-	if metadata.has("courseId"):
-		js_metadata["courseId"] = metadata.get("courseId")
-	if metadata.has("courseName"):
-		js_metadata["courseName"] = metadata.get("courseName")
+	js_metadata["activityId"] = metadata.get("activityId", "unknown")
 	
 	# Call JavaScript SDK's startActivity
 	_main_client.timeback.startActivity(js_metadata)
@@ -135,7 +105,7 @@ func start_activity(metadata: Dictionary):
 	_activity_start_time = Time.get_ticks_msec()
 	_activity_metadata = metadata.duplicate()
 	_activity_in_progress = true
-	print("[TimebackAPI] Started activity: ", _activity_metadata.get("activityId", "unknown"), " (Grade ", metadata.get("grade"), ", ", metadata.get("subject"), ")")
+	print("[TimebackAPI] Started activity: ", _activity_metadata.get("activityId", "unknown"))
 
 # Pause the current activity timer
 # Paused time is not counted toward the activity duration

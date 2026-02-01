@@ -98,31 +98,13 @@ func _on_user_context_completed(result: int, response_code: int, headers: Packed
 	emit_signal("user_context_received", {"role": _role, "enrollments": _enrollments})
 
 # Start tracking an activity
-# metadata should contain:
-#   - activityId: String (required) - unique identifier for the activity
-#   - grade: int (required) - grade level for multi-grade course routing
-#   - subject: String (required) - subject area (e.g., "math", "reading")
-#   - activityName: String (optional) - display name for the activity
-#   - courseId: String (optional) - course identifier
-#   - courseName: String (optional) - course display name
 func start_activity(metadata: Dictionary):
-	# Validate required fields
-	if not metadata.has("activityId"):
-		printerr("[LocalTimebackAPI] start_activity() requires 'activityId' in metadata.")
-		return
-	if not metadata.has("grade"):
-		printerr("[LocalTimebackAPI] start_activity() requires 'grade' in metadata.")
-		return
-	if not metadata.has("subject"):
-		printerr("[LocalTimebackAPI] start_activity() requires 'subject' in metadata.")
-		return
-	
 	_activity_start_time = Time.get_ticks_msec()
 	_activity_metadata = metadata.duplicate()
 	_activity_in_progress = true
 	_paused_time = 0
 	_pause_start_time = 0
-	print("[LocalTimebackAPI] Started activity: ", _activity_metadata.get("activityId", "unknown"), " (Grade ", metadata.get("grade"), ", ", metadata.get("subject"), ")")
+	print("[LocalTimebackAPI] Started activity: ", _activity_metadata.get("activityId", "unknown"))
 
 # Pause the current activity timer
 # Paused time is not counted toward the activity duration
