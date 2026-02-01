@@ -204,13 +204,51 @@ The system sends progress data including:
 
 This data is sent to `PlaycademySdk.timeback.record_progress()` and appears in the Playcademy dashboard for analytics.
 
+## Assessment Mode XP
+
+Assessment mode uses a simplified XP calculation:
+- **1 XP per minute of active play time**
+- Idle time is still subtracted (same 10-second threshold)
+- **No performance multipliers** - XP is awarded regardless of how well the student performs
+- **No star bonuses** - the assessment is diagnostic, not rewarded based on results
+
+### Assessment XP Formula
+
+```
+Active Time = Total Session Time - Idle Time
+Active Minutes = Active Time / 60
+Final XP = Active Minutes × 1.0 (rounded to nearest integer)
+```
+
+### Example Assessment Output
+
+```
+============================================================
+[TimeBack] ASSESSMENT COMPLETION METRICS
+============================================================
+Standards Tested: 12
+Standards Mastered: 8
+
+TIME METRICS:
+  Total session duration: 420.0s (7.00 minutes)
+  Idle time subtracted:   30.0s (0.50 minutes)
+  Active time counted:    390.0s (6.50 minutes)
+
+XP CALCULATION (Simple: 1 XP per minute):
+  Active minutes: 6.50
+  XP per minute: 1.0
+  Final XP: 7 XP
+============================================================
+```
+
 ## Notes
 
 - Minimum session duration (5 seconds) prevents trivial sessions from awarding XP
 - Session tracking is independent of the game's paused timer
 - Idle time detection starts after the configurable threshold (10 seconds)
 - All CQPM multipliers are clamped between min (0.1x) and max (4.0x)
-- Star-based gating only applies to normal levels, NOT drill mode
+- Star-based gating only applies to normal levels, NOT drill mode or assessment mode
 - Star gating encourages players to progress to new content rather than farm mastered levels
+- Assessment mode awards XP purely based on time spent, not performance
 - The system gracefully handles missing SDK or network issues
 

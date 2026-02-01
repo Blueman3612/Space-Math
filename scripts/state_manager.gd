@@ -547,6 +547,9 @@ func start_assessment_mode():
 	# Set UI visibility for assessment mode (minimal UI)
 	UIManager.update_assessment_mode_ui_visibility()
 	
+	# Start TimeBack session tracking for assessment mode
+	PlaycademyManager.start_assessment_session_tracking()
+	
 	# Generate first question from first standard
 	_generate_next_assessment_question()
 	DisplayManager.create_new_problem_label()
@@ -601,6 +604,10 @@ func go_to_assessment_game_over():
 	
 	# Save assessment results to KV storage
 	SaveManager.save_assessment_results(final_results)
+	
+	# End session tracking and award XP through TimeBack (simple 1 XP per minute)
+	if PlaycademyManager:
+		PlaycademyManager.end_assessment_session_and_award_xp()
 	
 	# Disable assessment mode in question manager
 	QuestionManager.set_assessment_mode(false)

@@ -567,3 +567,117 @@ func award_drill_mode_timeback_xp(xp: int, details: Dictionary):
 	}
 	
 	PlaycademySdk.timeback.end_activity(score_data)
+
+# ============================================
+# Assessment Mode Session Tracking
+# ============================================
+
+func start_assessment_session_tracking():
+	"""Start tracking a new session for assessment mode"""
+	session_start_timestamp = Time.get_unix_time_from_system()
+	last_input_timestamp = session_start_timestamp
+	total_idle_time = 0.0
+	is_session_active = true
+	current_session_pack = "Assessment"
+	current_session_level = 0
+	
+	# Start TimeBack activity tracking for assessment
+	if PlaycademySdk and PlaycademySdk.is_ready() and PlaycademySdk.timeback:
+		var activity_metadata = {
+			"activityId": "assessment",
+			"activityName": "Skills Assessment",
+			"grade": GameConfig.current_grade if GameConfig.current_grade > 0 else 3,
+			"subject": "FastMath"
+		}
+		PlaycademySdk.timeback.start_activity(activity_metadata)
+
+func end_assessment_session_and_award_xp() -> Dictionary:
+	"""End assessment session tracking and calculate XP to award.
+	Assessment uses a simple calculation: 1 XP per minute of active time.
+	No performance multipliers - just flat time-based XP regardless of results."""
+	if not is_session_active:
+		return {"xp_awarded": 0, "details": "No active session"}
+	
+	session_end_timestamp = Time.get_unix_time_from_system()
+	is_session_active = false
+	
+	# Calculate total session duration (wall clock time)
+	var total_duration = session_end_timestamp - session_start_timestamp
+	
+	# Check for final idle period (from last input to session end)
+	var time_since_last_input = session_end_timestamp - last_input_timestamp
+	if time_since_last_input > GameConfig.timeback_idle_threshold:
+		var final_idle = time_since_last_input - GameConfig.timeback_idle_threshold
+		total_idle_time += final_idle
+		print("[TimeBack] Final idle period: %.1fs" % final_idle)
+	
+	# Calculate active time (total - idle)
+	var active_time = max(0.0, total_duration - total_idle_time)
+	var active_minutes = active_time / 60.0
+	
+	# Simple XP calculation: 1 XP per minute of active time
+	# No performance multipliers for assessment
+	var xp_per_minute = 1.0
+	var final_xp = round(active_minutes * xp_per_minute)
+	
+	# Get assessment results for logging
+	var results = ScoreManager.assessment_all_results
+	var standards_tested = results.size()
+	var standards_mastered = 0
+	for standard_id in results:
+		if results[standard_id].get("mastered", false):
+			standards_mastered += 1
+	
+	# Build detailed breakdown
+	var details = {
+		"total_duration": total_duration,
+		"idle_time": total_idle_time,
+		"active_time": active_time,
+		"active_minutes": active_minutes,
+		"xp_per_minute": xp_per_minute,
+		"final_xp": final_xp,
+		"standards_tested": standards_tested,
+		"standards_mastered": standards_mastered
+	}
+	
+	# Print detailed metrics
+	print("\n" + "=".repeat(60))
+	print("[TimeBack] ASSESSMENT COMPLETION METRICS")
+	print("=".repeat(60))
+	print("Standards Tested: %d" % standards_tested)
+	print("Standards Mastered: %d" % standards_mastered)
+	print("")
+	print("TIME METRICS:")
+	print("  Total session duration: %.1fs (%.2f minutes)" % [total_duration, total_duration / 60.0])
+	print("  Idle time subtracted:   %.1fs (%.2f minutes)" % [total_idle_time, total_idle_time / 60.0])
+	print("  Active time counted:    %.1fs (%.2f minutes)" % [active_time, active_minutes])
+	print("")
+	print("XP CALCULATION (Simple: 1 XP per minute):")
+	print("  Active minutes: %.2f" % active_minutes)
+	print("  XP per minute: %.1f" % xp_per_minute)
+	print("  Final XP: %d" % final_xp)
+	print("=".repeat(60) + "\n")
+	
+	# Only award if session meets minimum duration
+	if total_duration >= GameConfig.timeback_min_session_duration:
+		award_assessment_timeback_xp(int(final_xp), details)
+	else:
+		print("[TimeBack] ⚠ Session too short (%.1fs < %.1fs minimum), no XP awarded" % [total_duration, GameConfig.timeback_min_session_duration])
+	
+	return details
+
+func award_assessment_timeback_xp(xp: int, details: Dictionary):
+	"""Award XP through Playcademy TimeBack API for assessment mode"""
+	if not PlaycademySdk or not PlaycademySdk.is_ready() or not PlaycademySdk.timeback:
+		print("[TimeBack] SDK not ready, cannot award XP")
+		return
+	
+	# Prepare score data - assessment doesn't track individual correct/total the same way
+	# We'll use standards_tested as totalQuestions and standards_mastered as correctQuestions
+	var score_data = {
+		"correctQuestions": details.standards_mastered,
+		"totalQuestions": details.standards_tested,
+		"xpAwarded": xp
+	}
+	
+	PlaycademySdk.timeback.end_activity(score_data)
