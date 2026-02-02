@@ -103,7 +103,7 @@ offset_right = -384.0
 offset_bottom = 524.0
 grow_horizontal = 2
 grow_vertical = 2
-tooltip_text = "Last Grade"
+tooltip_text = "Previous"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 
@@ -131,7 +131,7 @@ offset_right = 480.0
 offset_bottom = 524.0
 grow_horizontal = 2
 grow_vertical = 2
-tooltip_text = "Next Grade"
+tooltip_text = "Next"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 
