@@ -450,6 +450,50 @@ label_settings = ExtResource("6_tefeu")
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="Star0" type="Control" parent="GameOver"]
+anchors_preset = 0
+offset_left = 256.0
+offset_top = 416.0
+offset_right = 256.0
+offset_bottom = 416.0
+mouse_filter = 2
+
+[node name="Correct" type="Label" parent="GameOver/Star0"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -148.0
+offset_top = 160.0
+offset_right = 148.0
+offset_bottom = 224.0
+grow_horizontal = 2
+text = "10"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Sprite" type="Sprite2D" parent="GameOver/Star0"]
+scale = Vector2(8, 8)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Grade" type="Label" parent="GameOver/Star0"]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -188.0
+offset_top = -32.0
+offset_right = 188.0
+offset_bottom = 32.0
+grow_horizontal = 2
+text = "Grade 1"
+label_settings = ExtResource("7_eb6dy")
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Star1" type="Control" parent="GameOver"]
 anchors_preset = 0
 offset_left = 608.0
@@ -492,6 +536,22 @@ vertical_alignment = 1
 scale = Vector2(8, 8)
 texture = ExtResource("7_o6xl0")
 hframes = 2
+
+[node name="Grade" type="Label" parent="GameOver/Star1"]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -188.0
+offset_top = -32.0
+offset_right = 188.0
+offset_bottom = 32.0
+grow_horizontal = 2
+text = "Grade 2"
+label_settings = ExtResource("7_eb6dy")
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Star2" type="Control" parent="GameOver"]
 anchors_preset = 0
@@ -536,6 +596,22 @@ scale = Vector2(8, 8)
 texture = ExtResource("7_o6xl0")
 hframes = 2
 
+[node name="Grade" type="Label" parent="GameOver/Star2"]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -188.0
+offset_top = -32.0
+offset_right = 188.0
+offset_bottom = 32.0
+grow_horizontal = 2
+text = "Grade 3"
+label_settings = ExtResource("7_eb6dy")
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Star3" type="Control" parent="GameOver"]
 anchors_preset = 0
 offset_left = 1312.0
@@ -578,6 +654,81 @@ vertical_alignment = 1
 scale = Vector2(8, 8)
 texture = ExtResource("7_o6xl0")
 hframes = 2
+
+[node name="Grade" type="Label" parent="GameOver/Star3"]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -188.0
+offset_top = -32.0
+offset_right = 188.0
+offset_bottom = 32.0
+grow_horizontal = 2
+text = "Grade 4"
+label_settings = ExtResource("7_eb6dy")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Star4" type="Control" parent="GameOver"]
+anchors_preset = 0
+offset_left = 1664.0
+offset_top = 416.0
+offset_right = 1664.0
+offset_bottom = 416.0
+mouse_filter = 2
+
+[node name="Correct" type="Label" parent="GameOver/Star4"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -148.0
+offset_top = 160.0
+offset_right = 148.0
+offset_bottom = 224.0
+grow_horizontal = 2
+text = "20"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Accuracy" type="Label" parent="GameOver/Star4"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -148.0
+offset_top = 272.0
+offset_right = 148.0
+offset_bottom = 336.0
+grow_horizontal = 2
+text = "85%"
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Sprite" type="Sprite2D" parent="GameOver/Star4"]
+scale = Vector2(8, 8)
+texture = ExtResource("7_o6xl0")
+hframes = 2
+
+[node name="Grade" type="Label" parent="GameOver/Star4"]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -188.0
+offset_top = -32.0
+offset_right = 188.0
+offset_bottom = 32.0
+grow_horizontal = 2
+text = "Grade 5"
+label_settings = ExtResource("7_eb6dy")
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="ContinueButton" type="Button" parent="GameOver"]
 modulate = Color(0, 1, 0, 1)

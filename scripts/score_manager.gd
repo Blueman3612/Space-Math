@@ -516,6 +516,40 @@ func get_assessment_final_results() -> Dictionary:
 		"standards": assessment_all_results.duplicate(true)
 	}
 
+func get_assessment_stars_per_grade() -> Dictionary:
+	"""Calculate the total stars earned for each grade from assessment results.
+	Returns a dictionary mapping grade number (1-5) to total stars earned.
+	Each mastered level = 3 stars."""
+	var stars_by_grade = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+	
+	# Iterate through all mastered standards
+	for standard_id in assessment_mastered_standards:
+		if not assessment_mastered_standards[standard_id]:
+			continue  # Skip non-mastered standards
+		
+		# Find the standard config to get its level_ids
+		var standard_config = _find_standard_by_id(standard_id)
+		if standard_config.is_empty():
+			continue
+		
+		var level_ids = standard_config.get("level_ids", [])
+		
+		# Count levels per grade
+		for level_id in level_ids:
+			for grade in range(1, 6):
+				if level_id.begins_with("grade%d_" % grade):
+					stars_by_grade[grade] += 3  # Each level = 3 stars
+					break
+	
+	return stars_by_grade
+
+func _find_standard_by_id(standard_id: String) -> Dictionary:
+	"""Find a standard config by its ID"""
+	for standard in GameConfig.ASSESSMENT_STANDARDS:
+		if standard.get("id", "") == standard_id:
+			return standard
+	return {}
+
 func _calculate_average_time() -> float:
 	"""Calculate average time per question for current standard"""
 	if assessment_current_standard_times.is_empty():

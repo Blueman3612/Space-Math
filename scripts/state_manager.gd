@@ -616,7 +616,7 @@ func go_to_assessment_game_over():
 	# Update GameOver labels for assessment mode (minimal display)
 	UIManager.update_assessment_game_over_ui()
 	
-	# Initialize star states for assessment (all 3 stars earned)
+	# Initialize star states for assessment (5 stars, one per grade)
 	UIManager.initialize_assessment_star_states()
 	
 	# Clean up any remaining problem labels (including prompt since assessment is ending)
@@ -635,5 +635,5 @@ func go_to_assessment_game_over():
 	tween.set_trans(Tween.TRANS_EXPO)
 	tween.tween_property(game_over_node, "position", GameConfig.menu_on_screen, GameConfig.animation_duration)
 	
-	# Start assessment star animation sequence (always 3 stars, sprite-only)
+	# Start assessment 5-star animation sequence (one star per grade with Grade labels)
 	tween.tween_callback(UIManager.start_assessment_star_animation_sequence)

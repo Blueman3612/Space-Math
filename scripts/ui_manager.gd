@@ -24,19 +24,32 @@ var feedback_color_rect: ColorRect
 var title_sprite: Sprite2D
 var high_score_text_label: Label
 
-# Star node references
+# Star node references (Star1-3 for normal levels, Star0-4 for assessment)
+var star0_node: Control  # Assessment only - Grade 1
 var star1_node: Control
 var star2_node: Control
 var star3_node: Control
+var star4_node: Control  # Assessment only - Grade 5
+var star0_sprite: Sprite2D
 var star1_sprite: Sprite2D
 var star2_sprite: Sprite2D
 var star3_sprite: Sprite2D
+var star4_sprite: Sprite2D
 var star1_correct_label: Label  # Renamed from accuracy - shows correct count required
 var star1_accuracy_label: Label  # Renamed from time - shows accuracy percentage required
 var star2_correct_label: Label
 var star2_accuracy_label: Label
 var star3_correct_label: Label
 var star3_accuracy_label: Label
+# Assessment star labels (Correct = stars earned, Grade = grade label)
+var star0_correct_label: Label
+var star0_grade_label: Label
+var star1_grade_label: Label
+var star2_grade_label: Label
+var star3_grade_label: Label
+var star4_correct_label: Label
+var star4_accuracy_label: Label  # Exists in scene, needs to be hidden for assessment
+var star4_grade_label: Label
 
 # Volume sliders
 var sfx_slider: HSlider
@@ -77,22 +90,36 @@ func initialize(main_node: Control):
 	xp_earned_title = game_over_node.get_node("XPEarnedTitle")
 	high_score_text_label = game_over_node.get_node("HighScoreText")
 	
-	# Get references to star nodes
+	# Get references to star nodes (all 5 stars)
+	star0_node = game_over_node.get_node("Star0")
 	star1_node = game_over_node.get_node("Star1")
 	star2_node = game_over_node.get_node("Star2")
 	star3_node = game_over_node.get_node("Star3")
+	star4_node = game_over_node.get_node("Star4")
 	
+	star0_sprite = star0_node.get_node("Sprite")
 	star1_sprite = star1_node.get_node("Sprite")
 	star2_sprite = star2_node.get_node("Sprite")
 	star3_sprite = star3_node.get_node("Sprite")
+	star4_sprite = star4_node.get_node("Sprite")
 	
-	# Star requirement labels (Correct = number required, Accuracy = percentage required)
+	# Star requirement labels for normal levels (Correct = number required, Accuracy = percentage required)
 	star1_correct_label = star1_node.get_node("Correct")
 	star1_accuracy_label = star1_node.get_node("Accuracy")
 	star2_correct_label = star2_node.get_node("Correct")
 	star2_accuracy_label = star2_node.get_node("Accuracy")
 	star3_correct_label = star3_node.get_node("Correct")
 	star3_accuracy_label = star3_node.get_node("Accuracy")
+	
+	# Assessment star labels (Correct = stars earned for that grade, Grade = grade name label)
+	star0_correct_label = star0_node.get_node("Correct")
+	star0_grade_label = star0_node.get_node("Grade")
+	star1_grade_label = star1_node.get_node("Grade")
+	star2_grade_label = star2_node.get_node("Grade")
+	star3_grade_label = star3_node.get_node("Grade")
+	star4_correct_label = star4_node.get_node("Correct")
+	star4_accuracy_label = star4_node.get_node("Accuracy")
+	star4_grade_label = star4_node.get_node("Grade")
 	
 	# Get references to volume sliders
 	sfx_slider = main_menu_node.get_node("VolumeControls/SFXIcon/SFXSlider")
@@ -290,8 +317,12 @@ func start_star_animation_sequence(_current_level_number: int):
 	start_star_animation_sequence_for_mastery(20)  # Default fallback
 
 func initialize_star_states():
-	"""Initialize all stars to invisible state and hide continue button"""
-	# Make all star nodes invisible
+	"""Initialize stars for normal level completion (Star1-3 only, Star0/4 always hidden)"""
+	# Hide Star0 and Star4 (assessment only)
+	star0_node.visible = false
+	star4_node.visible = false
+	
+	# Make Star1-3 invisible (will animate in)
 	star1_node.visible = false
 	star2_node.visible = false
 	star3_node.visible = false
@@ -299,18 +330,23 @@ func initialize_star_states():
 	# Hide continue button
 	continue_button.visible = false
 	
-	# Reset all star sprite scales and frames
+	# Reset star sprite scales and frames for Star1-3
 	star1_sprite.scale = Vector2.ZERO
 	star2_sprite.scale = Vector2.ZERO
 	star3_sprite.scale = Vector2.ZERO
 	
-	# Set all star labels to transparent
+	# Set star labels to transparent for Star1-3
 	star1_correct_label.self_modulate.a = 0.0
 	star1_accuracy_label.self_modulate.a = 0.0
 	star2_correct_label.self_modulate.a = 0.0
 	star2_accuracy_label.self_modulate.a = 0.0
 	star3_correct_label.self_modulate.a = 0.0
 	star3_accuracy_label.self_modulate.a = 0.0
+	
+	# Ensure Grade labels are hidden for normal levels
+	star1_grade_label.visible = false
+	star2_grade_label.visible = false
+	star3_grade_label.visible = false
 
 func start_star_animation_sequence_for_mastery(mastery_count: int):
 	"""Start the sequential star animation using mastery-based star evaluation"""
@@ -589,11 +625,18 @@ func update_normal_mode_game_over_ui_visibility():
 		level_complete_label.text = "LEVEL COMPLETE"  # Reset to normal text
 		level_complete_label.visible = true
 	
+	# Show Star1-3 (normal level stars), hide Star0 and Star4 (assessment only)
 	var nodes_to_show = ["CorrectTitle", "AccuracyTitle", "You", "PlayerCorrect", "PlayerAccuracy", "Star1", "Star2", "Star3", "CQPMTitle", "CQPMTooltip"]
 	for node_name in nodes_to_show:
 		var node = game_over_node.get_node(node_name)
 		if node:
 			node.visible = true
+	
+	# Hide Star0 and Star4 (assessment only)
+	if star0_node:
+		star0_node.visible = false
+	if star4_node:
+		star4_node.visible = false
 	
 	if cqpm_label:
 		cqpm_label.visible = true
@@ -802,14 +845,14 @@ func update_assessment_mode_ui_visibility():
 		drill_score_label.visible = false
 
 func update_assessment_game_over_ui():
-	"""Update GameOver UI for assessment mode completion"""
-	# Update LevelComplete text (keep it as "LEVEL COMPLETE" per requirements)
+	"""Update GameOver UI for assessment complete screen (5-star display)"""
+	# Update LevelComplete text for assessment
 	var level_complete_label = game_over_node.get_node("LevelComplete")
 	if level_complete_label:
-		level_complete_label.text = "LEVEL COMPLETE"
+		level_complete_label.text = "ASSESSMENT COMPLETE"
 		level_complete_label.visible = true
 	
-	# Hide most game over elements for assessment mode (minimal display)
+	# Hide most game over elements for assessment mode
 	var nodes_to_hide = ["CorrectTitle", "AccuracyTitle", "You", "PlayerCorrect", "PlayerAccuracy", 
 						  "CQPMTitle", "CQPMTooltip", "DrillModeScore", "HighScoreText",
 						  "XPEarnedTitle", "XPEarned"]
@@ -826,64 +869,126 @@ func update_assessment_game_over_ui():
 		continue_button.visible = false
 
 func initialize_assessment_star_states():
-	"""Initialize stars for assessment mode (all will be earned)"""
-	# Make all star nodes visible but empty (will animate to earned)
+	"""Initialize all 5 stars for assessment complete screen"""
+	# Make all star nodes invisible (will animate in sequence)
+	star0_node.visible = false
 	star1_node.visible = false
 	star2_node.visible = false
 	star3_node.visible = false
+	star4_node.visible = false
 	
 	# Reset all star sprite scales and frames
+	star0_sprite.scale = Vector2.ZERO
 	star1_sprite.scale = Vector2.ZERO
 	star2_sprite.scale = Vector2.ZERO
 	star3_sprite.scale = Vector2.ZERO
+	star4_sprite.scale = Vector2.ZERO
 	
-	# Hide all labels for assessment mode (no requirements to show)
-	star1_correct_label.visible = false
+	# Hide accuracy labels (not used for assessment)
 	star1_accuracy_label.visible = false
-	star2_correct_label.visible = false
 	star2_accuracy_label.visible = false
-	star3_correct_label.visible = false
 	star3_accuracy_label.visible = false
+	star4_accuracy_label.visible = false
+	
+	# Hide continue button initially
+	continue_button.visible = false
+	
+	# Prepare Correct labels (will show stars earned per grade)
+	# Set them invisible initially, will fade in with animation
+	star0_correct_label.visible = true
+	star0_correct_label.self_modulate.a = 0.0
+	star1_correct_label.visible = true
+	star1_correct_label.self_modulate.a = 0.0
+	star2_correct_label.visible = true
+	star2_correct_label.self_modulate.a = 0.0
+	star3_correct_label.visible = true
+	star3_correct_label.self_modulate.a = 0.0
+	star4_correct_label.visible = true
+	star4_correct_label.self_modulate.a = 0.0
+	
+	# Prepare Grade labels (hidden initially, will appear with each star)
+	star0_grade_label.visible = false
+	star1_grade_label.visible = false
+	star2_grade_label.visible = false
+	star3_grade_label.visible = false
+	star4_grade_label.visible = false
 
 func start_assessment_star_animation_sequence():
-	"""Start the star animation sequence for assessment mode (always 3 stars, sprite only)"""
+	"""Start the 5-star animation sequence for assessment complete screen.
+	Each star represents a grade (Star0=Grade1, Star1=Grade2, etc.)
+	Shows Grade label and stars earned for each grade."""
 	await get_tree().create_timer(GameConfig.animation_duration / 2.0).timeout
 	
-	# Animate all 3 stars in sequence (all earned, no labels)
-	animate_assessment_star(1)
+	# Get stars earned per grade from assessment results
+	var stars_per_grade = ScoreManager.get_assessment_stars_per_grade()
+	
+	# Animate all 5 stars in sequence (Star0 through Star4)
+	animate_assessment_5star(0, stars_per_grade.get(1, 0))  # Star0 = Grade 1
 	await get_tree().create_timer(GameConfig.star_delay).timeout
 	
-	animate_assessment_star(2)
+	animate_assessment_5star(1, stars_per_grade.get(2, 0))  # Star1 = Grade 2
 	await get_tree().create_timer(GameConfig.star_delay).timeout
 	
-	animate_assessment_star(3)
-	# Show continue button when Star 3 starts animating
+	animate_assessment_5star(2, stars_per_grade.get(3, 0))  # Star2 = Grade 3
+	await get_tree().create_timer(GameConfig.star_delay).timeout
+	
+	animate_assessment_5star(3, stars_per_grade.get(4, 0))  # Star3 = Grade 4
+	await get_tree().create_timer(GameConfig.star_delay).timeout
+	
+	animate_assessment_5star(4, stars_per_grade.get(5, 0))  # Star4 = Grade 5
+	# Show continue button when Star4 starts animating
 	continue_button.visible = true
 
-func animate_assessment_star(star_num: int):
-	"""Animate a single star for assessment mode (always earned, no labels)"""
+func animate_assessment_5star(star_index: int, stars_earned: int):
+	"""Animate a single star for assessment complete screen.
+	star_index: 0-4 (Star0 through Star4)
+	stars_earned: Number of stars earned for this grade (displayed in Correct label)"""
 	var star_node_ref: Control
 	var star_sprite_ref: Sprite2D
+	var correct_label_ref: Label
+	var grade_label_ref: Label
 	
 	# Get references for the specific star
-	match star_num:
+	match star_index:
+		0:
+			star_node_ref = star0_node
+			star_sprite_ref = star0_sprite
+			correct_label_ref = star0_correct_label
+			grade_label_ref = star0_grade_label
 		1:
 			star_node_ref = star1_node
 			star_sprite_ref = star1_sprite
+			correct_label_ref = star1_correct_label
+			grade_label_ref = star1_grade_label
 		2:
 			star_node_ref = star2_node
 			star_sprite_ref = star2_sprite
+			correct_label_ref = star2_correct_label
+			grade_label_ref = star2_grade_label
 		3:
 			star_node_ref = star3_node
 			star_sprite_ref = star3_sprite
+			correct_label_ref = star3_correct_label
+			grade_label_ref = star3_grade_label
+		4:
+			star_node_ref = star4_node
+			star_sprite_ref = star4_sprite
+			correct_label_ref = star4_correct_label
+			grade_label_ref = star4_grade_label
 		_:
 			return
 	
 	# Make star visible
 	star_node_ref.visible = true
 	
-	# Set sprite frame to earned
+	# Set sprite frame to earned (always shows filled star)
 	star_sprite_ref.frame = 1
+	
+	# Update Correct label with stars earned for this grade
+	correct_label_ref.text = str(stars_earned)
+	
+	# Show Grade label
+	grade_label_ref.visible = true
 	
 	# Create sprite animation tween (earned animation: 0 -> max_scale -> final_scale)
 	var sprite_tween = star_sprite_ref.create_tween()
@@ -892,6 +997,12 @@ func animate_assessment_star(star_num: int):
 	
 	sprite_tween.tween_property(star_sprite_ref, "scale", Vector2(GameConfig.star_max_scale, GameConfig.star_max_scale), GameConfig.star_expand_time)
 	sprite_tween.tween_property(star_sprite_ref, "scale", Vector2(GameConfig.star_final_scale, GameConfig.star_final_scale), GameConfig.star_shrink_time)
+	
+	# Animate Correct label fade in
+	var correct_tween = correct_label_ref.create_tween()
+	correct_tween.set_ease(Tween.EASE_OUT)
+	correct_tween.set_trans(Tween.TRANS_EXPO)
+	correct_tween.tween_property(correct_label_ref, "self_modulate:a", 1.0, GameConfig.label_fade_time)
 	
 	# Play get sound
 	AudioManager.play_get()
