@@ -8,16 +8,18 @@ signal end_activity_failed(error_message)
 signal pause_activity_failed(error_message)
 signal resume_activity_failed(error_message)
 
-# Signals for user context
-signal user_context_received(data: Dictionary)
-signal user_context_failed(error_message: String)
+# Signals for user operations
+signal user_fetch_succeeded(user_data: Dictionary)
+signal user_fetch_failed(error_message: String)
 
 var _base_url: String
 var _sandbox_url: String = ""
 
-# User context (role and enrollments)
-var _role: String = "student"
-var _enrollments: Array = []
+# User context data
+var _user_id: String = ""
+var _user_role: String = "student"
+var _user_enrollments: Array = []
+var _user_organizations: Array = []
 var _user_context_loaded: bool = false
 
 # Internal state for tracking current activity
@@ -27,84 +29,87 @@ var _activity_in_progress: bool = false
 var _paused_time: int = 0  # Accumulated paused duration in milliseconds
 var _pause_start_time: int = 0  # When current pause started (0 if not paused)
 
+# User context object
+var _user: LocalTimebackUser
+
 func _init(base_url: String, sandbox_url: String = ""):
 	_base_url = base_url.rstrip("/")
 	_sandbox_url = sandbox_url.rstrip("/") if sandbox_url else ""
+	_user = LocalTimebackUser.new(self)
 
-# Get the user's TimeBack role (student, parent, teacher, administrator)
+# ============================================================================
+# USER PROPERTY
+# ============================================================================
+# Access TimeBack user data via Playcademy.timeback.user
+# Matches TypeScript SDK's client.timeback.user structure
+#
+# Properties:
+#   - user.id: String - TimeBack user ID
+#   - user.role: String - student, parent, teacher, administrator
+#   - user.enrollments: Array - [{ subject, grade, courseId }]
+#   - user.organizations: Array - [{ id, name, type }]
+#
+# Methods:
+#   - user.fetch() - Fetch fresh data from server (emits user_fetch_succeeded/failed)
+# ============================================================================
+var user: LocalTimebackUser:
+	get:
+		return _user
+
+# ============================================================================
+# DEPRECATED: Direct role/enrollments access
+# Use user.role and user.enrollments instead
+# ============================================================================
+
+## @deprecated Use user.role instead
 var role: String:
 	get:
-		return _role
+		return _user_role
 
-# Get the user's TimeBack enrollments for this game
-# Returns an array of dictionaries with { subject, grade, courseId }
+## @deprecated Use user.enrollments instead
 var enrollments: Array:
 	get:
-		return _enrollments
+		return _user_enrollments
 
-# Set role and enrollments (called by PlaycademySDK after fetching user data)
-func set_user_context(user_role: String, user_enrollments: Array):
-	_role = user_role if user_role else "student"
-	_enrollments = user_enrollments if user_enrollments else []
+# Set user context (called by PlaycademySDK after fetching user data)
+func set_user_context(user_id: String, user_role: String, user_enrollments: Array, user_organizations: Array = []):
+	_user_id = user_id if user_id else ""
+	_user_role = user_role if user_role else "student"
+	_user_enrollments = user_enrollments if user_enrollments else []
+	_user_organizations = user_organizations if user_organizations else []
 	_user_context_loaded = true
-	print("[LocalTimebackAPI] User context set: role=%s, enrollments=%d" % [_role, _enrollments.size()])
+	print("[LocalTimebackAPI] User context set: id=%s, role=%s, enrollments=%d, organizations=%d" % [_user_id, _user_role, _user_enrollments.size(), _user_organizations.size()])
 
-# Fetch user context from sandbox (role and enrollments)
-func fetch_user_context():
-	if _sandbox_url.is_empty():
-		printerr("[LocalTimebackAPI] Cannot fetch user context: sandbox URL not set")
-		emit_signal("user_context_failed", "NO_SANDBOX_URL")
-		return
-	
-	var http := HTTPRequest.new()
-	add_child(http)
-	http.request_completed.connect(_on_user_context_completed.bind(http))
-	
-	var url = "%s/users/me" % _sandbox_url
-	var headers = ["Authorization: Bearer sandbox-demo-token"]
-	var err := http.request(url, headers)
-	
-	if err != OK:
-		printerr("[LocalTimebackAPI] Failed to fetch user context. Error code: %s" % err)
-		emit_signal("user_context_failed", "HTTP_REQUEST_FAILED")
-		http.queue_free()
-
-func _on_user_context_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, http: HTTPRequest):
-	http.queue_free()
-	
-	if response_code != 200:
-		emit_signal("user_context_failed", "HTTP_%d" % response_code)
-		return
-	
-	var json = JSON.new()
-	var parse_result = json.parse(body.get_string_from_utf8())
-	if parse_result != OK:
-		emit_signal("user_context_failed", "JSON_PARSE_ERROR")
-		return
-	
-	var data = json.data
-	
-	# Extract timeback data from user response
-	if data.has("timeback") and data["timeback"] != null:
-		var tb = data["timeback"]
-		_role = tb.get("role", "student")
-		_enrollments = tb.get("enrollments", [])
-	else:
-		_role = "student"
-		_enrollments = []
-	
-	_user_context_loaded = true
-	print("[LocalTimebackAPI] User context loaded: role=%s, enrollments=%d" % [_role, _enrollments.size()])
-	emit_signal("user_context_received", {"role": _role, "enrollments": _enrollments})
+# ============================================================================
+# ACTIVITY TRACKING
+# ============================================================================
 
 # Start tracking an activity
+# metadata should contain:
+#   - activityId: String (required) - unique identifier for the activity
+#   - grade: int (required) - grade level for multi-grade course routing
+#   - subject: String (required) - subject area (e.g., "FastMath", "Reading")
+#   - activityName: String (optional) - display name for the activity
+#   - courseId: String (optional) - course identifier
+#   - courseName: String (optional) - course display name
 func start_activity(metadata: Dictionary):
+	# Validate required fields
+	if not metadata.has("activityId"):
+		printerr("[LocalTimebackAPI] start_activity() requires 'activityId' in metadata.")
+		return
+	if not metadata.has("grade"):
+		printerr("[LocalTimebackAPI] start_activity() requires 'grade' in metadata.")
+		return
+	if not metadata.has("subject"):
+		printerr("[LocalTimebackAPI] start_activity() requires 'subject' in metadata.")
+		return
+	
 	_activity_start_time = Time.get_ticks_msec()
 	_activity_metadata = metadata.duplicate()
 	_activity_in_progress = true
 	_paused_time = 0
 	_pause_start_time = 0
-	print("[LocalTimebackAPI] Started activity: ", _activity_metadata.get("activityId", "unknown"))
+	print("[LocalTimebackAPI] Started activity: ", _activity_metadata.get("activityId", "unknown"), " (Grade ", metadata.get("grade"), ", ", metadata.get("subject"), ")")
 
 # Pause the current activity timer
 # Paused time is not counted toward the activity duration
@@ -182,14 +187,6 @@ func end_activity(score_data: Dictionary):
 		"totalQuestions": total_questions
 	}
 	
-	# Add optional XP override
-	if xp_awarded != null:
-		score_data_dict["xpAwarded"] = xp_awarded
-	
-	# Add optional mastered units
-	if mastered_units != null:
-		score_data_dict["masteredUnits"] = mastered_units
-	
 	var request_body = {
 		"activityData": _activity_metadata,
 		"scoreData": score_data_dict,
@@ -197,6 +194,10 @@ func end_activity(score_data: Dictionary):
 			"durationSeconds": int(duration_seconds)
 		}
 	}
+	
+	# Add optional XP override to request body
+	if xp_awarded != null:
+		request_body["xpEarned"] = xp_awarded
 	
 	# Add optional mastered units to request body
 	if mastered_units != null:
@@ -225,3 +226,107 @@ func _on_end_activity_completed(result: int, response_code: int, headers: Packed
 		return
 	var data = json.data
 	emit_signal("end_activity_succeeded", data)
+
+# ============================================================================
+# USER FETCH HANDLER
+# ============================================================================
+
+func _fetch_user_from_sandbox(options: Dictionary = {}):
+	if _sandbox_url.is_empty():
+		printerr("[LocalTimebackAPI] Cannot fetch user context: sandbox URL not set")
+		emit_signal("user_fetch_failed", "NO_SANDBOX_URL")
+		return
+	
+	var http := HTTPRequest.new()
+	add_child(http)
+	http.request_completed.connect(_on_user_fetch_completed.bind(http))
+	
+	var url = "%s/users/me" % _sandbox_url
+	var url_headers = ["Authorization: Bearer sandbox-demo-token"]
+	var err := http.request(url, url_headers)
+	
+	if err != OK:
+		printerr("[LocalTimebackAPI] Failed to fetch user context. Error code: %s" % err)
+		emit_signal("user_fetch_failed", "HTTP_REQUEST_FAILED")
+		http.queue_free()
+
+func _on_user_fetch_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, http: HTTPRequest):
+	http.queue_free()
+	
+	if response_code != 200:
+		emit_signal("user_fetch_failed", "HTTP_%d" % response_code)
+		return
+	
+	var json = JSON.new()
+	var parse_result = json.parse(body.get_string_from_utf8())
+	if parse_result != OK:
+		emit_signal("user_fetch_failed", "JSON_PARSE_ERROR")
+		return
+	
+	var data = json.data
+	
+	# Extract timeback data from user response
+	if data.has("timeback") and data["timeback"] != null:
+		var tb = data["timeback"]
+		_user_id = tb.get("id", "")
+		_user_role = tb.get("role", "student")
+		_user_enrollments = tb.get("enrollments", [])
+		_user_organizations = tb.get("organizations", [])
+	else:
+		_user_id = ""
+		_user_role = "student"
+		_user_enrollments = []
+		_user_organizations = []
+	
+	_user_context_loaded = true
+	print("[LocalTimebackAPI] User context loaded: id=%s, role=%s, enrollments=%d, organizations=%d" % [_user_id, _user_role, _user_enrollments.size(), _user_organizations.size()])
+	
+	var user_data = {
+		"id": _user_id,
+		"role": _user_role,
+		"enrollments": _user_enrollments,
+		"organizations": _user_organizations
+	}
+	emit_signal("user_fetch_succeeded", user_data)
+
+# ============================================================================
+# LOCAL TIMEBACK USER CLASS
+# ============================================================================
+# Provides access to TimeBack user data matching TypeScript SDK's client.timeback.user
+# ============================================================================
+class LocalTimebackUser extends RefCounted:
+	var _api: LocalTimebackAPI
+	
+	func _init(api: LocalTimebackAPI):
+		_api = api
+	
+	# Get the user's TimeBack ID
+	var id: String:
+		get:
+			return _api._user_id
+	
+	# Get the user's TimeBack role (student, parent, teacher, administrator)
+	var role: String:
+		get:
+			return _api._user_role
+	
+	# Get the user's TimeBack enrollments for this game
+	# Returns an array of dictionaries with { subject, grade, courseId }
+	var enrollments: Array:
+		get:
+			return _api._user_enrollments
+	
+	# Get the user's TimeBack organizations (schools/districts)
+	# Returns an array of dictionaries with { id, name, type }
+	var organizations: Array:
+		get:
+			return _api._user_organizations
+	
+	# Fetch fresh TimeBack user data from the server
+	# Emits user_fetch_succeeded(user_data: Dictionary) or user_fetch_failed(error_message: String)
+	# The user_data dictionary contains: { id, role, enrollments, organizations }
+	#
+	# @param options - Optional dictionary with { force: bool } to bypass cache
+	func fetch(options: Dictionary = {}):
+		_api._fetch_user_from_sandbox(options)
+		print("[LocalTimebackAPI] Fetching fresh user data...")

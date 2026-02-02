@@ -8,6 +8,10 @@ signal end_activity_failed(error_message: String)
 signal pause_activity_failed(error_message: String)
 signal resume_activity_failed(error_message: String)
 
+# Signals for user operations
+signal user_fetch_succeeded(user_data: Dictionary)
+signal user_fetch_failed(error_message: String)
+
 var _timeback_api
 
 func _init(playcademy_client: JavaScriptObject):
@@ -16,17 +20,46 @@ func _init(playcademy_client: JavaScriptObject):
 	_timeback_api.end_activity_failed.connect(_on_original_end_activity_failed)
 	_timeback_api.pause_activity_failed.connect(_on_original_pause_activity_failed)
 	_timeback_api.resume_activity_failed.connect(_on_original_resume_activity_failed)
+	_timeback_api.user_fetch_succeeded.connect(_on_original_user_fetch_succeeded)
+	_timeback_api.user_fetch_failed.connect(_on_original_user_fetch_failed)
 
-# Get the user's TimeBack role (student, parent, teacher, administrator)
+# ============================================================================
+# USER PROPERTY
+# ============================================================================
+# Access TimeBack user data via Playcademy.timeback.user
+# Matches TypeScript SDK's client.timeback.user structure
+#
+# Properties:
+#   - user.id: String - TimeBack user ID
+#   - user.role: String - student, parent, teacher, administrator
+#   - user.enrollments: Array - [{ subject, grade, courseId }]
+#   - user.organizations: Array - [{ id, name, type }]
+#
+# Methods:
+#   - user.fetch() - Fetch fresh data from server (emits user_fetch_succeeded/failed)
+# ============================================================================
+var user:
+	get:
+		return _timeback_api.user
+
+# ============================================================================
+# DEPRECATED: Direct role/enrollments access
+# Use user.role and user.enrollments instead
+# ============================================================================
+
+## @deprecated Use user.role instead
 var role: String:
 	get:
 		return _timeback_api.role
 
-# Get the user's TimeBack enrollments for this game
-# Returns an array of dictionaries with { subject, grade, courseId }
+## @deprecated Use user.enrollments instead
 var enrollments: Array:
 	get:
 		return _timeback_api.enrollments
+
+# ============================================================================
+# ACTIVITY METHODS
+# ============================================================================
 
 func start_activity(metadata: Dictionary):
 	_timeback_api.start_activity(metadata)
@@ -40,7 +73,10 @@ func resume_activity():
 func end_activity(score_data: Dictionary):
 	_timeback_api.end_activity(score_data)
 
-# Signal forwarding
+# ============================================================================
+# SIGNAL FORWARDING
+# ============================================================================
+
 func _on_original_end_activity_succeeded(response_data):
 	emit_signal("end_activity_succeeded", response_data)
 
@@ -52,3 +88,9 @@ func _on_original_pause_activity_failed(error_message: String):
 
 func _on_original_resume_activity_failed(error_message: String):
 	emit_signal("resume_activity_failed", error_message)
+
+func _on_original_user_fetch_succeeded(user_data: Dictionary):
+	emit_signal("user_fetch_succeeded", user_data)
+
+func _on_original_user_fetch_failed(error_message: String):
+	emit_signal("user_fetch_failed", error_message)

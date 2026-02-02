@@ -209,8 +209,8 @@ func _initialize_mock_client():
 	add_child(timeback)
 	add_child(backend)
 	
-	# Fetch TimeBack user context (role and enrollments)
-	timeback.fetch_user_context()
+	# Fetch TimeBack user context (id, role, enrollments, organizations)
+	timeback.user.fetch()
 
 	print("[PlaycademySDK.gd] Local development mode: Game SDK namespaces ready (users + inventory, runtime, credits, scores, timeback, backend)")
 	emit_signal("sdk_ready")

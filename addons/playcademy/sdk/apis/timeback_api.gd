@@ -6,84 +6,76 @@ signal end_activity_failed(error_message)
 signal pause_activity_failed(error_message)
 signal resume_activity_failed(error_message)
 
+# Signals for user operations
+signal user_fetch_succeeded(user_data: Dictionary)
+signal user_fetch_failed(error_message: String)
+
 var _main_client: JavaScriptObject
 
 # To keep JS callbacks alive for ongoing operations
 var _end_activity_resolve_cb_js: JavaScriptObject = null
 var _end_activity_reject_cb_js: JavaScriptObject = null
+var _user_fetch_resolve_cb_js: JavaScriptObject = null
+var _user_fetch_reject_cb_js: JavaScriptObject = null
 
 # Internal state for tracking current activity
 var _activity_start_time: int = 0
 var _activity_metadata: Dictionary = {}
 var _activity_in_progress: bool = false
 
+# User context object
+var _user: TimebackUser
+
 func _init(client_js_object: JavaScriptObject):
 	_main_client = client_js_object
+	_user = TimebackUser.new(self)
 
-# Get the user's TimeBack role (student, parent, teacher, administrator)
-# Returns the role from the JS SDK, or from window if SDK doesn't have it
+# ============================================================================
+# USER PROPERTY
+# ============================================================================
+# Access TimeBack user data via Playcademy.timeback.user
+# Matches TypeScript SDK's client.timeback.user structure
+#
+# Properties:
+#   - user.id: String - TimeBack user ID
+#   - user.role: String - student, parent, teacher, administrator
+#   - user.enrollments: Array - [{ subject, grade, courseId }]
+#   - user.organizations: Array - [{ id, name, type }]
+#
+# Methods:
+#   - user.fetch() - Fetch fresh data from server (emits user_fetch_succeeded/failed)
+# ============================================================================
+var user: TimebackUser:
+	get:
+		return _user
+
+# ============================================================================
+# DEPRECATED: Direct role/enrollments access
+# Use user.role and user.enrollments instead
+# ============================================================================
+
+## @deprecated Use user.role instead
 var role: String:
 	get:
-		# Try to get from JS SDK client first
-		if _main_client != null and 'timeback' in _main_client:
-			var tb = _main_client.timeback
-			if tb is JavaScriptObject and 'role' in tb:
-				var r = tb.role
-				if r != null:
-					return str(r)
-		
-		# Fall back to window.playcademyTimebackRole (set by shell.html)
-		var js_window = JavaScriptBridge.get_interface("window")
-		if js_window != null and 'playcademyTimebackRole' in js_window:
-			var r = js_window.playcademyTimebackRole
-			if r != null:
-				return str(r)
-		
-		return ""
+		return _user.role
 
-# Get the user's TimeBack enrollments for this game
-# Returns an array of dictionaries with { subject, grade, courseId }
+## @deprecated Use user.enrollments instead
 var enrollments: Array:
 	get:
-		var result: Array = []
-		
-		# Try to get from JS SDK client first
-		if _main_client != null and 'timeback' in _main_client:
-			var tb = _main_client.timeback
-			if tb is JavaScriptObject and 'enrollments' in tb:
-				var js_enrollments = tb.enrollments
-				if js_enrollments is JavaScriptObject:
-					# Convert JS array to GDScript array
-					var length = js_enrollments.length if 'length' in js_enrollments else 0
-					for i in range(length):
-						var item = js_enrollments[i]
-						if item is JavaScriptObject:
-							result.append({
-								"subject": str(item.subject) if 'subject' in item else "",
-								"grade": int(item.grade) if 'grade' in item else 0,
-								"courseId": str(item.courseId) if 'courseId' in item else ""
-							})
-					if result.size() > 0:
-						return result
-		
-		# Fall back to window.playcademyTimebackEnrollments (set by shell.html)
-		var js_window = JavaScriptBridge.get_interface("window")
-		if js_window != null and 'playcademyTimebackEnrollments' in js_window:
-			var js_enrollments = js_window.playcademyTimebackEnrollments
-			if js_enrollments is JavaScriptObject:
-				var length = js_enrollments.length if 'length' in js_enrollments else 0
-				for i in range(length):
-					var item = js_enrollments[i]
-					if item is JavaScriptObject:
-						result.append({
-							"subject": str(item.subject) if 'subject' in item else "",
-							"grade": int(item.grade) if 'grade' in item else 0,
-							"courseId": str(item.courseId) if 'courseId' in item else ""
-						})
-		
-		return result
+		return _user.enrollments
+
+# ============================================================================
+# ACTIVITY TRACKING
+# ============================================================================
 
 # Start tracking an activity
+# metadata should contain:
+#   - activityId: String (required) - unique identifier for the activity
+#   - grade: int (required) - grade level for multi-grade course routing
+#   - subject: String (required) - subject area (e.g., "FastMath", "Reading")
+#   - activityName: String (optional) - display name for the activity
+#   - courseId: String (optional) - course identifier
+#   - courseName: String (optional) - course display name
 func start_activity(metadata: Dictionary):
 	if _main_client == null:
 		printerr("[TimebackAPI] Main client not set. Cannot call start_activity().")
@@ -95,9 +87,32 @@ func start_activity(metadata: Dictionary):
 		printerr("[TimebackAPI] client.timeback.startActivity() path not found.")
 		return
 	
+	# Validate required fields
+	if not metadata.has("activityId"):
+		printerr("[TimebackAPI] start_activity() requires 'activityId' in metadata.")
+		return
+	if not metadata.has("grade"):
+		printerr("[TimebackAPI] start_activity() requires 'grade' in metadata.")
+		return
+	if not metadata.has("subject"):
+		printerr("[TimebackAPI] start_activity() requires 'subject' in metadata.")
+		return
+	
 	# Build metadata object for JavaScript
 	var js_metadata = JavaScriptBridge.create_object("Object")
-	js_metadata["activityId"] = metadata.get("activityId", "unknown")
+	
+	# Required fields
+	js_metadata["activityId"] = metadata.get("activityId")
+	js_metadata["grade"] = int(metadata.get("grade"))
+	js_metadata["subject"] = metadata.get("subject")
+	
+	# Optional fields - only set if provided
+	if metadata.has("activityName"):
+		js_metadata["activityName"] = metadata.get("activityName")
+	if metadata.has("courseId"):
+		js_metadata["courseId"] = metadata.get("courseId")
+	if metadata.has("courseName"):
+		js_metadata["courseName"] = metadata.get("courseName")
 	
 	# Call JavaScript SDK's startActivity
 	_main_client.timeback.startActivity(js_metadata)
@@ -105,7 +120,7 @@ func start_activity(metadata: Dictionary):
 	_activity_start_time = Time.get_ticks_msec()
 	_activity_metadata = metadata.duplicate()
 	_activity_in_progress = true
-	print("[TimebackAPI] Started activity: ", _activity_metadata.get("activityId", "unknown"))
+	print("[TimebackAPI] Started activity: ", _activity_metadata.get("activityId", "unknown"), " (Grade ", metadata.get("grade"), ", ", metadata.get("subject"), ")")
 
 # Pause the current activity timer
 # Paused time is not counted toward the activity duration
@@ -288,3 +303,229 @@ func _on_end_activity_rejected(args: Array):
 func _clear_end_activity_callbacks():
 	_end_activity_resolve_cb_js = null
 	_end_activity_reject_cb_js = null
+
+# ============================================================================
+# USER FETCH CALLBACKS
+# ============================================================================
+
+func _on_user_fetch_resolved(args: Array):
+	if args.size() > 0:
+		var result = args[0]
+		var user_data = {}
+		
+		if result is JavaScriptObject:
+			user_data["id"] = str(result.id) if 'id' in result and result.id != null else ""
+			user_data["role"] = str(result.role) if 'role' in result and result.role != null else "student"
+			user_data["enrollments"] = _convert_js_array_to_enrollments(result.enrollments if 'enrollments' in result else null)
+			user_data["organizations"] = _convert_js_array_to_organizations(result.organizations if 'organizations' in result else null)
+		
+		emit_signal("user_fetch_succeeded", user_data)
+	else:
+		emit_signal("user_fetch_failed", "USER_FETCH_RESOLVED_NO_DATA")
+	_clear_user_fetch_callbacks()
+
+func _on_user_fetch_rejected(args: Array):
+	var error_message = "USER_FETCH_PROMISE_REJECTED"
+	
+	if args.size() > 0:
+		var error_obj = args[0]
+		if error_obj is JavaScriptObject and "message" in error_obj:
+			error_message = str(error_obj.message)
+		else:
+			error_message = str(error_obj)
+		printerr("[TimebackAPI] User fetch failed: ", error_message)
+	else:
+		printerr("[TimebackAPI] User fetch failed: Unknown error")
+	
+	emit_signal("user_fetch_failed", error_message)
+	_clear_user_fetch_callbacks()
+
+func _clear_user_fetch_callbacks():
+	_user_fetch_resolve_cb_js = null
+	_user_fetch_reject_cb_js = null
+
+# ============================================================================
+# HELPER METHODS
+# ============================================================================
+
+func _convert_js_array_to_enrollments(js_array) -> Array:
+	var result: Array = []
+	if js_array == null or not js_array is JavaScriptObject:
+		return result
+	
+	var length = js_array.length if 'length' in js_array else 0
+	for i in range(length):
+		var item = js_array[i]
+		if item is JavaScriptObject:
+			result.append({
+				"subject": str(item.subject) if 'subject' in item else "",
+				"grade": int(item.grade) if 'grade' in item else 0,
+				"courseId": str(item.courseId) if 'courseId' in item else ""
+			})
+	return result
+
+func _convert_js_array_to_organizations(js_array) -> Array:
+	var result: Array = []
+	if js_array == null or not js_array is JavaScriptObject:
+		return result
+	
+	var length = js_array.length if 'length' in js_array else 0
+	for i in range(length):
+		var item = js_array[i]
+		if item is JavaScriptObject:
+			result.append({
+				"id": str(item.id) if 'id' in item else "",
+				"name": str(item.name) if 'name' in item else "",
+				"type": str(item.type) if 'type' in item else ""
+			})
+	return result
+
+# ============================================================================
+# TIMEBACK USER CLASS
+# ============================================================================
+# Provides access to TimeBack user data matching TypeScript SDK's client.timeback.user
+# ============================================================================
+class TimebackUser extends RefCounted:
+	var _api: TimebackAPI
+	
+	func _init(api: TimebackAPI):
+		_api = api
+	
+	# Get the user's TimeBack ID
+	var id: String:
+		get:
+			# Try to get from JS SDK client.timeback.user.id
+			if _api._main_client != null and 'timeback' in _api._main_client:
+				var tb = _api._main_client.timeback
+				if tb is JavaScriptObject and 'user' in tb:
+					var user_obj = tb.user
+					if user_obj is JavaScriptObject and 'id' in user_obj:
+						var val = user_obj.id
+						if val != null:
+							return str(val)
+			
+			# Fall back to window.playcademyTimebackId (set by shell.html)
+			var js_window = JavaScriptBridge.get_interface("window")
+			if js_window != null and 'playcademyTimebackId' in js_window:
+				var val = js_window.playcademyTimebackId
+				if val != null:
+					return str(val)
+			
+			return ""
+	
+	# Get the user's TimeBack role (student, parent, teacher, administrator)
+	var role: String:
+		get:
+			# Try to get from JS SDK client.timeback.user.role
+			if _api._main_client != null and 'timeback' in _api._main_client:
+				var tb = _api._main_client.timeback
+				if tb is JavaScriptObject and 'user' in tb:
+					var user_obj = tb.user
+					if user_obj is JavaScriptObject and 'role' in user_obj:
+						var val = user_obj.role
+						if val != null:
+							return str(val)
+			
+			# Fall back to window.playcademyTimebackRole (set by shell.html)
+			var js_window = JavaScriptBridge.get_interface("window")
+			if js_window != null and 'playcademyTimebackRole' in js_window:
+				var val = js_window.playcademyTimebackRole
+				if val != null:
+					return str(val)
+			
+			return ""
+	
+	# Get the user's TimeBack enrollments for this game
+	# Returns an array of dictionaries with { subject, grade, courseId }
+	var enrollments: Array:
+		get:
+			var result: Array = []
+			
+			# Try to get from JS SDK client.timeback.user.enrollments
+			if _api._main_client != null and 'timeback' in _api._main_client:
+				var tb = _api._main_client.timeback
+				if tb is JavaScriptObject and 'user' in tb:
+					var user_obj = tb.user
+					if user_obj is JavaScriptObject and 'enrollments' in user_obj:
+						var js_enrollments = user_obj.enrollments
+						result = _api._convert_js_array_to_enrollments(js_enrollments)
+						if result.size() > 0:
+							return result
+			
+			# Fall back to window.playcademyTimebackEnrollments (set by shell.html)
+			var js_window = JavaScriptBridge.get_interface("window")
+			if js_window != null and 'playcademyTimebackEnrollments' in js_window:
+				var js_enrollments = js_window.playcademyTimebackEnrollments
+				result = _api._convert_js_array_to_enrollments(js_enrollments)
+			
+			return result
+	
+	# Get the user's TimeBack organizations (schools/districts)
+	# Returns an array of dictionaries with { id, name, type }
+	var organizations: Array:
+		get:
+			var result: Array = []
+			
+			# Try to get from JS SDK client.timeback.user.organizations
+			if _api._main_client != null and 'timeback' in _api._main_client:
+				var tb = _api._main_client.timeback
+				if tb is JavaScriptObject and 'user' in tb:
+					var user_obj = tb.user
+					if user_obj is JavaScriptObject and 'organizations' in user_obj:
+						var js_orgs = user_obj.organizations
+						result = _api._convert_js_array_to_organizations(js_orgs)
+						if result.size() > 0:
+							return result
+			
+			# Fall back to window.playcademyTimebackOrganizations (set by shell.html)
+			var js_window = JavaScriptBridge.get_interface("window")
+			if js_window != null and 'playcademyTimebackOrganizations' in js_window:
+				var js_orgs = js_window.playcademyTimebackOrganizations
+				result = _api._convert_js_array_to_organizations(js_orgs)
+			
+			return result
+	
+	# Fetch fresh TimeBack user data from the server
+	# Emits user_fetch_succeeded(user_data: Dictionary) or user_fetch_failed(error_message: String)
+	# The user_data dictionary contains: { id, role, enrollments, organizations }
+	#
+	# @param options - Optional dictionary with { force: bool } to bypass cache
+	func fetch(options: Dictionary = {}):
+		if _api._main_client == null:
+			printerr("[TimebackAPI] Main client not set. Cannot fetch user data.")
+			_api.emit_signal("user_fetch_failed", "MAIN_CLIENT_NULL")
+			return
+		
+		if not ('timeback' in _api._main_client and 
+				_api._main_client.timeback is JavaScriptObject and 
+				'user' in _api._main_client.timeback):
+			printerr("[TimebackAPI] client.timeback.user path not found.")
+			_api.emit_signal("user_fetch_failed", "USER_PATH_NOT_FOUND")
+			return
+		
+		var user_obj = _api._main_client.timeback.user
+		if not (user_obj is JavaScriptObject and 'fetch' in user_obj):
+			printerr("[TimebackAPI] client.timeback.user.fetch() not found.")
+			_api.emit_signal("user_fetch_failed", "FETCH_METHOD_NOT_FOUND")
+			return
+		
+		# Build options object for JavaScript
+		var js_options = JavaScriptBridge.create_object("Object")
+		if options.has("force"):
+			js_options["force"] = options.get("force")
+		
+		var promise = user_obj.fetch(js_options)
+		
+		if promise == null or not promise is JavaScriptObject:
+			printerr("[TimebackAPI] user.fetch() did not return a Promise.")
+			_api.emit_signal("user_fetch_failed", "NOT_A_PROMISE")
+			return
+		
+		var on_resolve = Callable(_api, "_on_user_fetch_resolved").bind()
+		var on_reject = Callable(_api, "_on_user_fetch_rejected").bind()
+		
+		_api._user_fetch_resolve_cb_js = JavaScriptBridge.create_callback(on_resolve)
+		_api._user_fetch_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
+		
+		promise.then(_api._user_fetch_resolve_cb_js, _api._user_fetch_reject_cb_js)
+		print("[TimebackAPI] Fetching fresh user data...")

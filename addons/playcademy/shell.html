@@ -180,11 +180,15 @@
                     const timeback = event.data.payload?.timeback || null
                     if (timeback) {
                         logIfDebug('[PlaycademyBridge] Timeback data:', timeback)
+                        window.playcademyTimebackId = timeback.id || ''
                         window.playcademyTimebackRole = timeback.role || 'student'
                         window.playcademyTimebackEnrollments = timeback.enrollments || []
+                        window.playcademyTimebackOrganizations = timeback.organizations || []
                     } else {
+                        window.playcademyTimebackId = null
                         window.playcademyTimebackRole = null
                         window.playcademyTimebackEnrollments = []
+                        window.playcademyTimebackOrganizations = []
                     }
 
                     try {

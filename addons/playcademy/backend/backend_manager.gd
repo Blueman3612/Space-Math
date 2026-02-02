@@ -268,7 +268,46 @@ func start_servers(silent: bool = false):
 	
 	# Check if playcademy.config.js or .json exists
 	if _has_backend_config():
+		# Wait for sandbox to register before starting backend
+		# This ensures the backend reads the correct sandbox URL from the registry
+		await _wait_for_sandbox_ready()
 		start_backend(silent)
+
+# Wait for sandbox to be ready in the registry before starting backend
+# This prevents a race condition where the backend starts before the sandbox
+# registers its URL, causing the backend to use a stale/wrong PLAYCADEMY_BASE_URL
+func _wait_for_sandbox_ready():
+	var max_wait_time = 10.0  # seconds
+	var wait_interval = 0.5  # seconds
+	var waited = 0.0
+	
+	while waited < max_wait_time:
+		var home = OS.get_environment("HOME")
+		var registry_path = home + "/.playcademy/.proc"
+		var file = FileAccess.open(registry_path, FileAccess.READ)
+		
+		if file:
+			var registry_text = file.get_as_text()
+			file.close()
+			
+			var json_result = JSON.parse_string(registry_text)
+			if json_result != null:
+				var my_project = ProjectSettings.globalize_path("res://").rstrip("/")
+				
+				# Check if sandbox for this project is registered
+				for key in json_result:
+					if key.begins_with("sandbox-"):
+						var server = json_result[key]
+						if server.projectRoot == my_project:
+							print("[PlaycademyBackend] Sandbox registered, starting backend...")
+							return
+		
+		# Not found yet, wait and retry
+		await get_tree().create_timer(wait_interval).timeout
+		waited += wait_interval
+	
+	# Timed out, start backend anyway (it will use default URL)
+	print("[PlaycademyBackend] Warning: Sandbox registration timeout, starting backend with defaults")
 
 func _has_backend_config() -> bool:
 	var project_root = ProjectSettings.globalize_path("res://")
