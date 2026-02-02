@@ -22,12 +22,15 @@ var waiting_for_continue_after_incorrect = false  # Whether we're waiting for pl
 var is_drill_mode = false  # Whether we're currently in drill mode
 var is_grade_level = false  # Whether we're playing a grade-based level
 var is_assessment_mode = false  # Whether we're currently in assessment mode
+var is_showing_assessment_primer = false  # Whether we're showing the assessment primer screen
+var assessment_primer_label: Label = null  # Reference to the AssessmentPrimer label
 
 func initialize(main_node: Control):
 	"""Initialize state manager with references to needed nodes"""
 	main_menu_node = main_node.get_node("MainMenu")
 	game_over_node = main_node.get_node("GameOver")
 	play_node = main_node.get_node("Play")
+	assessment_primer_label = play_node.get_node_or_null("AssessmentPrimer")
 
 func start_play_state(pack_name: String, pack_level_index: int):
 	"""Transition from MENU to PLAY state"""
@@ -252,13 +255,21 @@ func go_to_drill_mode_game_over():
 func return_to_menu():
 	"""Transition from GAME_OVER to MENU state"""
 	current_state = GameConfig.GameState.MENU
+	var was_assessment = is_assessment_mode  # Remember if we just completed assessment
 	is_drill_mode = false  # Reset drill mode flag
 	is_grade_level = false  # Reset grade level flag
 	is_assessment_mode = false  # Reset assessment mode flag
+	is_showing_assessment_primer = false  # Reset assessment primer flag
 	current_level_data = {}  # Clear level data
 	current_level_config = {}  # Clear level config
 	
+	# If we just completed the assessment, create level buttons for the first time
+	if was_assessment and SaveManager.is_assessment_completed():
+		# Player just completed assessment - create level buttons and show normal menu
+		LevelManager.create_level_buttons()
+	
 	# Update menu display with new save data
+	LevelManager.update_grade_display()  # Update visibility of PlayButton/navigation
 	LevelManager.update_menu_stars()
 	LevelManager.update_level_availability()
 	UIManager.update_drill_mode_high_score_display()
@@ -486,20 +497,81 @@ func _on_continue_button_pressed():
 # Assessment Mode Functions
 # ============================================
 
-func _on_assessment_button_pressed():
-	"""Handle assessment button press - only respond during MENU state"""
+func _on_play_button_pressed():
+	"""Handle PlayButton press for new players - only respond during MENU state"""
 	if current_state != GameConfig.GameState.MENU:
 		return
 	
-	start_assessment_mode()
+	start_assessment_primer()
 
-func start_assessment_mode():
-	"""Transition from MENU to ASSESSMENT_PLAY state"""
-	current_state = GameConfig.GameState.ASSESSMENT_PLAY
+func start_assessment_primer():
+	"""Transition from MENU to PLAY state showing AssessmentPrimer screen"""
+	current_state = GameConfig.GameState.PLAY
 	is_drill_mode = false
 	is_grade_level = false
 	is_assessment_mode = true
+	is_showing_assessment_primer = true
 	problems_completed = 0
+	
+	# First animate menu down off screen (downward)
+	var tween = main_menu_node.create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(main_menu_node, "position", GameConfig.menu_below_screen, GameConfig.animation_duration)
+	
+	# After the downward animation completes, teleport to above screen
+	tween.tween_callback(func(): main_menu_node.position = GameConfig.menu_above_screen)
+	
+	# Play node flies in from above
+	play_node.position = GameConfig.menu_above_screen
+	var play_tween = play_node.create_tween()
+	play_tween.set_ease(Tween.EASE_OUT)
+	play_tween.set_trans(Tween.TRANS_EXPO)
+	play_tween.tween_property(play_node, "position", GameConfig.menu_on_screen, GameConfig.animation_duration)
+	
+	# Show AssessmentPrimer label
+	if assessment_primer_label:
+		assessment_primer_label.visible = true
+	
+	# Hide all play UI elements (assessment primer is a clean screen)
+	UIManager.update_assessment_mode_ui_visibility()
+	
+	# Hide ControlGuide during primer
+	var control_guide = play_node.get_node_or_null("ControlGuide")
+	if control_guide:
+		control_guide.visible = false
+
+func dismiss_assessment_primer():
+	"""Dismiss the AssessmentPrimer and start the actual assessment"""
+	if not is_showing_assessment_primer:
+		return
+	
+	is_showing_assessment_primer = false
+	
+	# Animate AssessmentPrimer flying off screen downward (same as problem fly-off animation)
+	if assessment_primer_label:
+		var tween = assessment_primer_label.create_tween()
+		tween.set_ease(Tween.EASE_OUT)
+		tween.set_trans(Tween.TRANS_EXPO)
+		# Fly down off screen (same pattern as animate_problem_off_screen)
+		var target_y = GameConfig.off_screen_top.y  # Below screen (Y = 1276)
+		tween.tween_property(assessment_primer_label, "position:y", target_y, GameConfig.animation_duration)
+		tween.tween_callback(func():
+			assessment_primer_label.visible = false
+			assessment_primer_label.position.y = 0  # Reset position for next time
+		)
+	
+	# Now actually start the assessment
+	start_assessment_mode()
+
+func start_assessment_mode():
+	"""Start the actual assessment after AssessmentPrimer is dismissed"""
+	current_state = GameConfig.GameState.ASSESSMENT_PLAY
+	
+	# Show ControlGuide again (was hidden during primer)
+	var control_guide = play_node.get_node_or_null("ControlGuide")
+	if control_guide:
+		control_guide.visible = true
 	
 	# Reset scores for assessment
 	ScoreManager.reset_for_assessment()
@@ -523,29 +595,10 @@ func start_assessment_mode():
 	# Enable assessment mode in question manager
 	QuestionManager.set_assessment_mode(true)
 	
-	# First animate menu down off screen (downward)
-	var tween = main_menu_node.create_tween()
-	tween.set_ease(Tween.EASE_OUT)
-	tween.set_trans(Tween.TRANS_EXPO)
-	tween.tween_property(main_menu_node, "position", GameConfig.menu_below_screen, GameConfig.animation_duration)
-	
-	# After the downward animation completes, teleport to above screen
-	tween.tween_callback(func(): main_menu_node.position = GameConfig.menu_above_screen)
-	
-	# Play node flies in from above
-	play_node.position = GameConfig.menu_above_screen
-	var play_tween = play_node.create_tween()
-	play_tween.set_ease(Tween.EASE_OUT)
-	play_tween.set_trans(Tween.TRANS_EXPO)
-	play_tween.tween_property(play_node, "position", GameConfig.menu_on_screen, GameConfig.animation_duration)
-	
 	# Trigger scroll speed boost effect
 	var space_bg = play_node.get_parent().get_node("BackgroundLayer/SpaceBackground")
 	if space_bg and space_bg.has_method("boost_scroll_speed"):
 		space_bg.boost_scroll_speed(GameConfig.scroll_boost_multiplier, GameConfig.animation_duration * 2.0)
-	
-	# Set UI visibility for assessment mode (minimal UI)
-	UIManager.update_assessment_mode_ui_visibility()
 	
 	# Start TimeBack session tracking for assessment mode
 	PlaycademyManager.start_assessment_session_tracking()

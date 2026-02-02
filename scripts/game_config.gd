@@ -888,7 +888,7 @@ const ASSESSMENT_STANDARDS = [
 		"name": "Place Fractions on Number Line (den. 2, 4, 8)",
 		"target_cqpm": 10.0,  # mastery_count 20 / 2
 		"is_multiple_choice": false,
-		"prerequisites": [],
+		"prerequisites": ["assess_divide_9_12"],
 		"error_tolerance": 0,
 		"level_ids": ["grade3_number_line_fractions"],
 		"config": {"type": "number_line_fractions", "prompt": "PLACE ON NUMBER LINE", "denominators": [2, 4, 8], "total_pips": 9, "frame": 0, "control_mode": "pip_to_pip", "lower_limit": 0, "upper_limit": 1}

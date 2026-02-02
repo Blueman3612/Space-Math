@@ -73,14 +73,14 @@ Multiply 0-4                      Divide 0-4
     ↓                                 ↓
 Multiply 5-8                      Divide 5-8
     ↓                                 ↓
-Multiply 9-12                     Divide 9-12
-    ↓                                 ↓
+Multiply 9-12                     Divide 9-12 ────────→ Fractions
+    ↓                                 ↓                 (Number Lines)
 Multi-digit × (no regroup)        Multi-digit ÷
     ↓                                 │
 Multi-digit × (regroup)               │
     ↓                                 ↓
 2-Digit × 2-Digit ───────────→ Grade 4-5 Content
-                                (Decimals, Fractions)
+                               (Decimals, Advanced Fractions)
 ```
 
 ### Error Tolerance

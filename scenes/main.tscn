@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://dgsyvy33jqe6f"]
+[gd_scene load_steps=21 format=3 uid="uid://dgsyvy33jqe6f"]
 
 [ext_resource type="Script" uid="uid://b7dgkimpo8qo0" path="res://scripts/main.gd" id="1_8k3xf"]
 [ext_resource type="Theme" uid="uid://qx67shaxna0a" path="res://assets/themes/classic/classic.tres" id="1_jyhfs"]
@@ -14,6 +14,7 @@
 [ext_resource type="LabelSettings" uid="uid://bokvnafms2bfh" path="res://assets/label settings/GravityBold16.tres" id="8_choun"]
 [ext_resource type="LabelSettings" uid="uid://cfexrs5iigrqq" path="res://assets/label settings/GravityBold32.tres" id="9_85g3d"]
 [ext_resource type="Texture2D" uid="uid://etg2ex4n2k8r" path="res://assets/sprites/Audio Icons.png" id="9_a8y0u"]
+[ext_resource type="LabelSettings" uid="uid://bmajo348bhh6o" path="res://assets/label settings/GravityBold96.tres" id="13_dp3eg"]
 [ext_resource type="LabelSettings" uid="uid://nqkc5o1v0fhc" path="res://assets/label settings/GravityBold256.tres" id="13_trceg"]
 [ext_resource type="Texture2D" uid="uid://bwlmifnvnxasi" path="res://assets/sprites/Key Icons.png" id="15_jkv2x"]
 [ext_resource type="Texture2D" uid="uid://b11flqxfam1db" path="res://assets/sprites/Playcademy Splashscreen.png" id="16_jbj1t"]
@@ -359,6 +360,43 @@ offset_bottom = 416.0
 grow_horizontal = 2
 text = "YOU WILL RECEIVE MINIMAL XP FROM PLAYING A COMPLETED LEVEL"
 label_settings = ExtResource("9_85g3d")
+
+[node name="PlayButton" type="Button" parent="MainMenu"]
+visible = false
+self_modulate = Color(0, 1, 0, 1)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = 36.0
+offset_right = 320.0
+offset_bottom = 228.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="Label" type="Label" parent="MainMenu/PlayButton"]
+self_modulate = Color(0, 0.5019608, 0, 1)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -96.0
+offset_right = 320.0
+offset_bottom = 96.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "PLAY"
+label_settings = ExtResource("13_dp3eg")
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="GameOver" type="Control" parent="."]
 anchors_preset = 0
@@ -1036,6 +1074,25 @@ scale = Vector2(0.25, 0.25)
 text = "Continue"
 label_settings = ExtResource("9_85g3d")
 
+[node name="AssessmentPrimer" type="Label" parent="Play"]
+visible = false
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+text = "First, you will play the
+assessment level.
+
+Try to answer every question
+correctly as fast as possible!
+
+The more questions you answer,
+the better you are doing!
+
+Press [ENTER] to begin."
+label_settings = ExtResource("6_tefeu")
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Loading" type="Control" parent="."]
 anchors_preset = 0
 offset_right = 1920.0
@@ -1043,7 +1100,6 @@ offset_bottom = 1080.0
 mouse_filter = 2
 
 [node name="Splash Screen" type="Sprite2D" parent="Loading"]
-position = Vector2(21, 81)
 texture = ExtResource("16_jbj1t")
 centered = false
 

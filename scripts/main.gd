@@ -45,15 +45,10 @@ func _on_save_data_loaded(success: bool):
 	# Now that save data is loaded, start music with correct volumes
 	AudioManager.start_music()
 	
-	# Initialize with assessment check (sets starting grade based on completion)
+	# Initialize with assessment check (handles level button creation based on assessment completion)
+	# For new players: shows PlayButton only, no level buttons
+	# For returning players: creates level buttons and updates display
 	LevelManager.initialize_with_assessment_check()
-	
-	# Create dynamic level buttons
-	LevelManager.create_level_buttons()
-	
-	# Update menu display after buttons are created (requires save data)
-	LevelManager.update_menu_stars()
-	LevelManager.update_level_availability()
 	UIManager.update_drill_mode_high_score_display()
 	
 	# Connect menu buttons
@@ -87,8 +82,15 @@ func _input(event):
 	InputManager.handle_backspace_just_pressed(StateManager.current_state)
 	
 	# Handle submit (during PLAY, DRILL_PLAY, or ASSESSMENT_PLAY state)
-	if Input.is_action_just_pressed("Submit") and (StateManager.current_state == GameConfig.GameState.PLAY or StateManager.current_state == GameConfig.GameState.DRILL_PLAY or StateManager.current_state == GameConfig.GameState.ASSESSMENT_PLAY):
-		submit_answer()
+	if Input.is_action_just_pressed("Submit"):
+		# Check if showing assessment primer - dismiss it instead of submitting answer
+		if StateManager.is_showing_assessment_primer:
+			StateManager.dismiss_assessment_primer()
+			return
+		
+		# Normal submit handling for play states
+		if StateManager.current_state == GameConfig.GameState.PLAY or StateManager.current_state == GameConfig.GameState.DRILL_PLAY or StateManager.current_state == GameConfig.GameState.ASSESSMENT_PLAY:
+			submit_answer()
 
 func _process(delta):
 	# Process UI animations
