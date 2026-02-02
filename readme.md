@@ -1,5 +1,3 @@
-# Astro Math Demo Guide
-
 ## What is Astro Math?
 
 Astro Math is an adaptive math fluency game covering **Grades 1-5** with 40+ skill standards across addition, subtraction, multiplication, division, fractions, and decimals.
@@ -168,6 +166,21 @@ Astro Math uses **TimeBack** for XP tracking:
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## ⏱️ Time to Mastery
+
+Astro Math contains **77 levels** across Grades 1-5, requiring **2,428 correct answers** for full 3-star completion. Time to mastery varies based on whether students are demonstrating existing fluency or building it from scratch.
+
+| Student Profile | Time to Master All Grades (1-5) |
+|-----------------|--------------------------------|
+| Already fluent (demonstrating mastery) | **2.5 hours** |
+| Above-average learner (75th percentile) | **40-50 hours** |
+| Average learner (50th percentile) | **60-80 hours** |
+| Single grade (appropriate level) | **6-15 hours per grade** |
+
+The diagnostic assessment ensures students start at their appropriate level, avoiding wasted time on already-mastered content.
 
 ---
 
