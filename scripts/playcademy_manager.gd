@@ -97,7 +97,12 @@ func start_grade_level_session_tracking(level_data: Dictionary):
 	last_input_timestamp = session_start_timestamp
 	total_idle_time = 0.0
 	is_session_active = true
-	current_session_pack = "Grade" + str(GameConfig.current_grade)
+	
+	# Extract the grade from the level_id (e.g., "grade1_addition_sums_to_6" -> 1)
+	# This is more reliable than using GameConfig.current_grade which could be stale
+	var level_grade = _extract_grade_from_level_id(level_data.id)
+	
+	current_session_pack = "Grade" + str(level_grade)
 	current_session_level = 0
 	
 	# Start TimeBack activity tracking with proper level info
@@ -105,9 +110,10 @@ func start_grade_level_session_tracking(level_data: Dictionary):
 		var activity_metadata = {
 			"activityId": level_data.id,
 			"activityName": level_data.name,
-			"grade": GameConfig.current_grade,
+			"grade": level_grade,
 			"subject": "FastMath"
 		}
+		print("[TimeBack] Starting activity with metadata: ", activity_metadata)
 		PlaycademySdk.timeback.start_activity(activity_metadata)
 
 func record_player_input():
@@ -398,6 +404,7 @@ func award_grade_level_timeback_xp(xp: int, details: Dictionary, _mastery_count:
 		score_data["masteredUnits"] = mastered_units
 		print("[TimeBack] New stars earned: %d (was %d, now %d)" % [mastered_units, previous_stars, new_stars])
 	
+	print("[TimeBack] Ending grade level activity with score_data: ", score_data)
 	PlaycademySdk.timeback.end_activity(score_data)
 
 func end_drill_session_and_award_xp() -> Dictionary:
@@ -522,6 +529,26 @@ func calculate_multiplier_from_scale(scale: Array, cqpm: float) -> float:
 			return entry[1]
 	return 1.0  # Fallback
 
+func _extract_grade_from_level_id(level_id: String) -> int:
+	"""Extract the grade number from a level ID (e.g., 'grade1_addition_sums_to_6' -> 1)
+	Returns 3 as a fallback if parsing fails (middle of elementary school range)"""
+	# Level IDs follow the pattern: gradeX_category_level_name
+	if level_id.begins_with("grade"):
+		var after_grade = level_id.substr(5)  # Remove "grade" prefix
+		var underscore_pos = after_grade.find("_")
+		if underscore_pos > 0:
+			var grade_str = after_grade.substr(0, underscore_pos)
+			if grade_str.is_valid_int():
+				var grade = int(grade_str)
+				# Validate grade is within API-accepted range (-1 to 13)
+				if grade >= -1 and grade <= 13:
+					return grade
+	
+	# Fallback: try using GameConfig.current_grade if valid, otherwise default to 3
+	if GameConfig.current_grade >= 1 and GameConfig.current_grade <= 13:
+		return GameConfig.current_grade
+	return 3  # Safe default (middle of elementary school range)
+
 func award_timeback_xp(xp: int, details: Dictionary, _pack_name: String, _pack_level_index: int, _current_track, previous_stars: int):
 	"""Award XP through Playcademy TimeBack API using the new end_activity method"""
 	if not PlaycademySdk or not PlaycademySdk.is_ready() or not PlaycademySdk.timeback:
@@ -551,6 +578,7 @@ func award_timeback_xp(xp: int, details: Dictionary, _pack_name: String, _pack_l
 		score_data["masteredUnits"] = mastered_units
 		print("[TimeBack] New stars earned: %d (was %d, now %d)" % [mastered_units, previous_stars, new_stars])
 	
+	print("[TimeBack] Ending legacy level activity with score_data: ", score_data)
 	PlaycademySdk.timeback.end_activity(score_data)
 
 func award_drill_mode_timeback_xp(xp: int, details: Dictionary):
@@ -566,6 +594,7 @@ func award_drill_mode_timeback_xp(xp: int, details: Dictionary):
 		"xpAwarded": xp
 	}
 	
+	print("[TimeBack] Ending drill mode activity with score_data: ", score_data)
 	PlaycademySdk.timeback.end_activity(score_data)
 
 # ============================================
@@ -680,4 +709,5 @@ func award_assessment_timeback_xp(xp: int, details: Dictionary):
 		"xpAwarded": xp
 	}
 	
+	print("[TimeBack] Ending assessment activity with score_data: ", score_data)
 	PlaycademySdk.timeback.end_activity(score_data)
