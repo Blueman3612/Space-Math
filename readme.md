@@ -210,14 +210,14 @@ To discourage farming already-mastered content, XP is scaled based on previously
 
 ## ⏱️ Time to Mastery
 
-Astro Math contains **77 levels** across Grades 1-5, requiring **2,428 correct answers** for full 3-star completion. Time to mastery varies based on whether students are demonstrating existing fluency or building it from scratch.
+Astro Math contains **77 levels** across Grades 1-5, requiring **2,428 correct answers** for full 3-star completion. Mastery counts are calibrated so that fluent students complete each level in ~2 minutes—higher counts mean simpler questions, lower counts mean fewer but more complex questions.
 
 | Student Profile | Time to Master All Grades (1-5) |
 |-----------------|--------------------------------|
 | Already fluent (demonstrating mastery) | **2.5 hours** |
-| Above-average learner (75th percentile) | **40-50 hours** |
-| Average learner (50th percentile) | **60-80 hours** |
-| Single grade (appropriate level) | **6-15 hours per grade** |
+| Fast learner | **8-12 hours** |
+| Average learner | **15-25 hours** |
+| Single grade (appropriate level) | **2-6 hours per grade** |
 
 The diagnostic assessment ensures students start at their appropriate level, avoiding wasted time on already-mastered content.
 

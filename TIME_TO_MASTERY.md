@@ -135,11 +135,23 @@ Astro Math covers **77 levels** across 5 grades, requiring a total of **2,428 co
 
 - **Level timer**: 2 minutes per level
 - **3-star requirement**: 100% of mastery count with ≥85% accuracy
-- **Practical requirement**: Students must answer approximately mastery_count ÷ 0.85 total problems to account for allowed errors
+- **Dynamic difficulty**: Mastery counts are calibrated so a fluent student can complete them in 2 minutes. Higher mastery counts indicate simpler, faster questions; lower mastery counts indicate more complex questions.
+
+### Understanding Mastery Counts
+
+The mastery count reflects the expected CQPM (Correct Questions Per Minute) for a fluent student:
+
+| Mastery Count | Question Complexity | Examples |
+|---------------|--------------------| ---------|
+| 60-80 | Very simple (1-2 sec/question) | Basic single-digit facts |
+| 40-60 | Simple (2-3 sec/question) | Single-digit facts, simple comparisons |
+| 20-40 | Moderate (3-6 sec/question) | Extended facts, multi-step mental math |
+| 10-20 | Complex (6-12 sec/question) | Multi-digit operations, fractions |
+| 6-10 | Very complex (12-20 sec/question) | Multi-digit multiplication, fraction operations |
 
 ### Scenario 1: Fluent Student (Demonstrating Mastery)
 
-A student who already has automaticity with their math facts can complete levels at the minimum time of 2 minutes each:
+A student who already has automaticity can complete each level in approximately 2 minutes:
 
 | Grade | Levels | Minimum Time |
 |-------|--------|--------------|
@@ -152,30 +164,27 @@ A student who already has automaticity with their math facts can complete levels
 
 ### Scenario 2: Learning Student (Building Fluency)
 
-For students who need to learn and build automaticity with math facts, research suggests approximately **4 minutes per fact** to achieve mastery (based on math fluency intervention research).
+For students building fluency, the time per level depends on how many attempts they need before achieving mastery. Because mastery counts are calibrated to 2-minute completion times, students spend roughly the same amount of time per level regardless of complexity—they just answer fewer, harder questions or more, easier questions.
 
-**Unique Facts by Operation:**
+**Estimated attempts per level for a learning student:**
 
-| Operation | Approximate Unique Facts |
-|-----------|-------------------------|
-| Addition (basic facts) | ~100 facts |
-| Subtraction (basic facts) | ~150 facts |
-| Multiplication (0-12) | ~145 facts |
-| Division (0-12) | ~144 facts |
-| Advanced operations (multi-digit, fractions, decimals) | ~200 problems |
-| **Total unique facts** | **~775 facts** |
+| Student Profile | Avg. Attempts per Level | Time per Level |
+|-----------------|------------------------|----------------|
+| Fast learner | 2-3 attempts | 6-10 minutes |
+| Average learner | 3-5 attempts | 10-15 minutes |
+| Struggling learner | 5-8 attempts | 15-25 minutes |
 
 ### Scenario 3: Grade-Appropriate Placement
 
-Students starting at their appropriate grade level with partial prior knowledge:
+Students starting at their appropriate grade level:
 
 | Starting Grade | Prior Knowledge Assumed | Est. Time to 3-Star Grade |
 |----------------|------------------------|---------------------------|
-| Grade 1 | None | 8-12 hours |
-| Grade 2 | Basic add/sub to 10 | 6-10 hours |
-| Grade 3 | Add/sub fluency | 10-15 hours |
-| Grade 4 | Add/sub/mult/div basics | 8-12 hours |
-| Grade 5 | All basic operations | 6-10 hours |
+| Grade 1 | None | 2-4 hours |
+| Grade 2 | Basic add/sub to 10 | 2-4 hours |
+| Grade 3 | Add/sub fluency | 4-6 hours |
+| Grade 4 | Add/sub/mult/div basics | 2-4 hours |
+| Grade 5 | All basic operations | 2-3 hours |
 
 ---
 
@@ -184,19 +193,19 @@ Students starting at their appropriate grade level with partial prior knowledge:
 | Student Profile | Estimated Time |
 |-----------------|----------------|
 | Already fluent (demonstrating mastery) | **2.5 hours** |
-| Above-average learner (75th percentile) | **40-50 hours** |
-| Average learner (50th percentile) | **60-80 hours** |
-| Below-average learner | **100+ hours** |
+| Fast learner | **8-12 hours** |
+| Average learner | **15-25 hours** |
+| Below-average learner | **30-50 hours** |
 
-### Per-Grade Estimates (Starting from Zero)
+### Per-Grade Estimates
 
-| Grade | Fluent Student | Average Student |
+| Grade | Fluent Student | Average Learner |
 |-------|----------------|-----------------|
-| Grade 1 | 22 min | 8-12 hours |
-| Grade 2 | 30 min | 6-10 hours |
-| Grade 3 | 38 min | 10-15 hours |
-| Grade 4 | 34 min | 8-12 hours |
-| Grade 5 | 30 min | 6-10 hours |
+| Grade 1 | 22 min | 2-4 hours |
+| Grade 2 | 30 min | 2-4 hours |
+| Grade 3 | 38 min | 4-6 hours |
+| Grade 4 | 34 min | 2-4 hours |
+| Grade 5 | 30 min | 2-3 hours |
 
 ---
 
@@ -204,8 +213,10 @@ Students starting at their appropriate grade level with partial prior knowledge:
 
 1. **For placement/diagnostic purposes**: A fluent student can demonstrate mastery of all 77 levels in approximately 2.5 hours.
 
-2. **For learning purposes**: Students building fluency from scratch should expect 40-80 hours of practice across all grades.
+2. **For learning purposes**: Students building fluency from scratch should expect 15-25 hours of practice across all grades.
 
-3. **Overlap benefits**: Many facts are reinforced across grades (e.g., basic addition appears in Grades 1-5), so cumulative time is less than the sum of individual grade times.
+3. **Consistent time per level**: Because mastery counts are calibrated to difficulty, students spend roughly the same time per level regardless of content—the difference is the number of attempts needed.
 
-4. **Grade-appropriate starting points**: Using the diagnostic assessment to place students at their appropriate starting level significantly reduces wasted time on already-mastered content.
+4. **Overlap benefits**: Facts learned in earlier grades transfer forward, so cumulative time is less than the sum of individual grade times.
+
+5. **Grade-appropriate starting points**: The diagnostic assessment places students at their appropriate level, avoiding wasted time on already-mastered content.
