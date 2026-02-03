@@ -192,6 +192,11 @@ var accuracy_color_2star = Color(1, 1, 0)  # Yellow for >= 70%
 var accuracy_color_1star = Color(1, 0.5, 0)  # Orange for >= 55%
 var accuracy_color_0star = Color(1, 0, 0)  # Red for < 55%
 
+# Progress bar visibility toggles (the three lines shown during gameplay)
+var show_progress_line = false  # Shows progress towards mastery_count (questions answered)
+var show_timer_line = false  # Shows remaining time
+var show_accuracy_line = false  # Shows current accuracy percentage
+
 # Level unlock requirements
 var stars_required_to_unlock_next_level = 3  # Stars needed on a level to unlock the next level in the pack
 

@@ -529,11 +529,11 @@ func update_normal_mode_ui_visibility():
 	if accuracy_label:
 		accuracy_label.visible = true
 	if progress_line:
-		progress_line.visible = true
+		progress_line.visible = GameConfig.show_progress_line
 	if timer_line:
-		timer_line.visible = true
+		timer_line.visible = GameConfig.show_timer_line
 	if accuracy_line:
-		accuracy_line.visible = true
+		accuracy_line.visible = GameConfig.show_accuracy_line
 	if drill_timer_label:
 		drill_timer_label.visible = false
 	if drill_score_label:
