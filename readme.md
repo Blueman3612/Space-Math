@@ -210,16 +210,19 @@ To discourage farming already-mastered content, XP is scaled based on previously
 
 ## ⏱️ Time to Mastery
 
-Astro Math contains **77 levels** across Grades 1-5, requiring **2,428 correct answers** for full 3-star completion. Mastery counts are calibrated so that fluent students complete each level in ~2 minutes—higher counts mean simpler questions, lower counts mean fewer but more complex questions.
+Astro Math is a **fluency training tool**—it builds automaticity with math facts, not conceptual understanding. Students are expected to understand operations; Astro Math trains them to perform those operations automatically by improving their **CQPM (Correct Questions Per Minute)**.
 
-| Student Profile | Time to Master All Grades (1-5) |
-|-----------------|--------------------------------|
-| Already fluent (demonstrating mastery) | **2.5 hours** |
-| Fast learner | **8-12 hours** |
-| Average learner | **15-25 hours** |
-| Single grade (appropriate level) | **2-6 hours per grade** |
+The game contains **77 levels** across Grades 1-5, requiring **2,428 total correct answers**. Time to mastery depends on a student's average time per correct answer (including practice and building speed):
 
-The diagnostic assessment ensures students start at their appropriate level, avoiding wasted time on already-mastered content.
+| Student Profile | Avg. Time/Answer | Time to Master All Grades |
+|-----------------|------------------|---------------------------|
+| Already fluent | ~3 sec | **2.5 hours** |
+| Near fluent | ~15 sec | **~10 hours** |
+| Developing fluency | ~30 sec | **~20 hours** |
+| Building from baseline | ~1 min | **~40 hours** |
+| Single grade (developing) | — | **3-6 hours per grade** |
+
+The diagnostic assessment identifies fluency gaps and places students appropriately, avoiding repetition of already-mastered content.
 
 ---
 

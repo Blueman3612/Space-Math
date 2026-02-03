@@ -1,12 +1,17 @@
 # Astro Math: Time to Mastery Analysis
 
-This document provides a detailed breakdown of the time required for students to achieve 3-star mastery on all levels in Astro Math, across Grades 1-5.
+This document provides a breakdown of the time required for students to achieve 3-star mastery (full CQPM targets) on all levels in Astro Math.
 
 ---
 
-## Overview
+## What Astro Math Does
 
-Astro Math covers **77 levels** across 5 grades, requiring a total of **2,428 correct answers** to achieve full 3-star mastery. The time required varies significantly based on whether a student is demonstrating existing fluency or learning facts for the first time.
+Astro Math is a **fluency training tool** that builds automaticity with math facts. It does not teach mathematical concepts—students are expected to already understand the operations. Instead, Astro Math improves **CQPM (Correct Questions Per Minute)** through timed practice until students achieve automatic recall.
+
+**Assumptions:**
+- Students entering a grade have conceptual mastery of prior grade standards
+- Students understand the operations but need to build speed
+- The goal is automaticity, not comprehension
 
 ---
 
@@ -27,196 +32,185 @@ Astro Math covers **77 levels** across 5 grades, requiring a total of **2,428 co
 
 ### Grade 1 (11 levels, 385 mastery count)
 
-| Category | Level Name | Mastery Count |
-|----------|-----------|---------------|
-| Addition | Sums to 6 | 40 |
-| Addition | Sums to 12 | 26 |
-| Addition | Sums to 20 | 22 |
-| Subtraction | Subtraction 0-5 | 40 |
-| Subtraction | Subtraction 0-9 | 40 |
-| Subtraction | Subtraction 0-12 | 39 |
-| Subtraction | Subtraction 0-15 | 37 |
-| Subtraction | Subtraction 0-20 | 33 |
-| Add./Sub. | Add/Subtract 0-5 | 40 |
-| Add./Sub. | Add/Subtract 0-9 | 40 |
-| Add./Sub. | Add/Subtract 0-20 | 28 |
+| Category | Level Name | Mastery Count | Target CQPM |
+|----------|-----------|---------------|-------------|
+| Addition | Sums to 6 | 40 | 20 |
+| Addition | Sums to 12 | 26 | 13 |
+| Addition | Sums to 20 | 22 | 11 |
+| Subtraction | Subtraction 0-5 | 40 | 20 |
+| Subtraction | Subtraction 0-9 | 40 | 20 |
+| Subtraction | Subtraction 0-12 | 39 | 19.5 |
+| Subtraction | Subtraction 0-15 | 37 | 18.5 |
+| Subtraction | Subtraction 0-20 | 33 | 16.5 |
+| Add./Sub. | Add/Subtract 0-5 | 40 | 20 |
+| Add./Sub. | Add/Subtract 0-9 | 40 | 20 |
+| Add./Sub. | Add/Subtract 0-20 | 28 | 14 |
 
 ### Grade 2 (15 levels, 372 mastery count)
 
-| Category | Level Name | Mastery Count |
-|----------|-----------|---------------|
-| Addition | Sums to 20 | 22 |
-| Subtraction | Subtraction 0-9 | 40 |
-| Subtraction | Subtraction 0-12 | 39 |
-| Subtraction | Subtraction 0-15 | 37 |
-| Subtraction | Subtraction 0-20 | 33 |
-| Add./Sub. | Compare Sums and Differences to 20 | 13 |
-| Add./Sub. | Add/Subtract 0-20 | 33 |
-| 2-Digit | Add 2-Digit without Regrouping | 16 |
-| 2-Digit | Subtract 2-Digit without Regrouping | 20 |
-| 2-Digit | Add 2-Digit with Regrouping | 10 |
-| 2-Digit | Subtract 2-Digit with Regrouping | 10 |
-| Equivalence | Associative Property | 40 |
-| Equivalence | Place Value | 40 |
-| 3-Digit | Add 3-Digit Numbers | 9 |
-| 3-Digit | Subtract 3-Digit Numbers | 10 |
+*Assumes mastery of Grade 1 standards (addition/subtraction to 20)*
+
+| Category | Level Name | Mastery Count | Target CQPM |
+|----------|-----------|---------------|-------------|
+| Addition | Sums to 20 | 22 | 11 |
+| Subtraction | Subtraction 0-9 | 40 | 20 |
+| Subtraction | Subtraction 0-12 | 39 | 19.5 |
+| Subtraction | Subtraction 0-15 | 37 | 18.5 |
+| Subtraction | Subtraction 0-20 | 33 | 16.5 |
+| Add./Sub. | Compare Sums and Differences to 20 | 13 | 6.5 |
+| Add./Sub. | Add/Subtract 0-20 | 33 | 16.5 |
+| 2-Digit | Add 2-Digit without Regrouping | 16 | 8 |
+| 2-Digit | Subtract 2-Digit without Regrouping | 20 | 10 |
+| 2-Digit | Add 2-Digit with Regrouping | 10 | 5 |
+| 2-Digit | Subtract 2-Digit with Regrouping | 10 | 5 |
+| Equivalence | Associative Property | 40 | 20 |
+| Equivalence | Place Value | 40 | 20 |
+| 3-Digit | Add 3-Digit Numbers | 9 | 4.5 |
+| 3-Digit | Subtract 3-Digit Numbers | 10 | 5 |
 
 ### Grade 3 (19 levels, 679 mastery count)
 
-| Category | Level Name | Mastery Count |
-|----------|-----------|---------------|
-| Add./Sub. | Sums to 20 | 33 |
-| Add./Sub. | Subtraction 0-9 | 60 |
-| Add./Sub. | Add/Subtract 0-9 | 60 |
-| Add./Sub. | Add/Subtract 0-20 | 42 |
-| 3-Digit | Add 3-Digit Numbers | 14 |
-| 3-Digit | Subtract 3-Digit Numbers | 15 |
-| 3-Digit | Add/Subtract 3-Digit Numbers | 16 |
-| Multiplication | Multiply 0-9 | 39 |
-| Multiplication | Multiply 5-9 | 30 |
-| Multiplication | Multiply 0-12 | 35 |
-| Multiplication | 1-Digit × 2-3-Digit (no regrouping) | 19 |
-| Multiplication | 1-Digit × 2-3-Digit (with regrouping) | 18 |
-| Division | Divide 0-5 | 60 |
-| Division | Divide 0-9 | 60 |
-| Division | Divide 5-9 | 60 |
-| Division | Divide 0-12 | 48 |
-| Division | Divide 2-3-Digit by 1-Digit | 9 |
-| Mul./Div. | Multiply/Divide 0-9 | 51 |
-| Fractions | Place Fractions on Number Line (den. 2, 4, 8) | 20 |
+*Assumes mastery of Grade 2 standards (add/sub fluency, 2-3 digit operations)*
+
+| Category | Level Name | Mastery Count | Target CQPM |
+|----------|-----------|---------------|-------------|
+| Add./Sub. | Sums to 20 | 33 | 16.5 |
+| Add./Sub. | Subtraction 0-9 | 60 | 30 |
+| Add./Sub. | Add/Subtract 0-9 | 60 | 30 |
+| Add./Sub. | Add/Subtract 0-20 | 42 | 21 |
+| 3-Digit | Add 3-Digit Numbers | 14 | 7 |
+| 3-Digit | Subtract 3-Digit Numbers | 15 | 7.5 |
+| 3-Digit | Add/Subtract 3-Digit Numbers | 16 | 8 |
+| Multiplication | Multiply 0-9 | 39 | 19.5 |
+| Multiplication | Multiply 5-9 | 30 | 15 |
+| Multiplication | Multiply 0-12 | 35 | 17.5 |
+| Multiplication | 1-Digit × 2-3-Digit (no regrouping) | 19 | 9.5 |
+| Multiplication | 1-Digit × 2-3-Digit (with regrouping) | 18 | 9 |
+| Division | Divide 0-5 | 60 | 30 |
+| Division | Divide 0-9 | 60 | 30 |
+| Division | Divide 5-9 | 60 | 30 |
+| Division | Divide 0-12 | 48 | 24 |
+| Division | Divide 2-3-Digit by 1-Digit | 9 | 4.5 |
+| Mul./Div. | Multiply/Divide 0-9 | 51 | 25.5 |
+| Fractions | Place Fractions on Number Line (den. 2, 4, 8) | 20 | 10 |
 
 ### Grade 4 (17 levels, 562 mastery count)
 
-| Category | Level Name | Mastery Count |
-|----------|-----------|---------------|
-| Addition | Sums to 20 | 44 |
-| Addition | Add 3-Digit Numbers | 19 |
-| Subtraction | Subtraction 0-9 | 80 |
-| Subtraction | Subtract 3-Digit Numbers | 20 |
-| Multiplication | Multiplication 0-12 | 46 |
-| Multiplication | 1-Digit × 2-3-Digit | 25 |
-| Multiplication | 2-Digit × 2-Digit (no regrouping) | 11 |
-| Multiplication | 2-Digit × 2-Digit (with regrouping) | 9 |
-| Multiplication | Equivalence by Factoring | 22 |
-| Division | Division 0-12 | 64 |
-| Division | Divide 2-3-Digit by 1-Digit | 12 |
-| Mul./Div. | Multiplication/Division 0-12 | 56 |
-| Decimals | Compare Decimals to Hundredths | 80 |
-| Decimals | Add/Subtract Decimals | 15 |
-| Fractions | Number Line (den. 2, 3, 4, 5, 6, 8, 10) | 20 |
-| Fractions | Fraction Comparison | 20 |
-| Fractions | Mixed Numbers (like denominators) | 19 |
+*Assumes mastery of Grade 3 standards (multiplication/division fluency)*
+
+| Category | Level Name | Mastery Count | Target CQPM |
+|----------|-----------|---------------|-------------|
+| Addition | Sums to 20 | 44 | 22 |
+| Addition | Add 3-Digit Numbers | 19 | 9.5 |
+| Subtraction | Subtraction 0-9 | 80 | 40 |
+| Subtraction | Subtract 3-Digit Numbers | 20 | 10 |
+| Multiplication | Multiplication 0-12 | 46 | 23 |
+| Multiplication | 1-Digit × 2-3-Digit | 25 | 12.5 |
+| Multiplication | 2-Digit × 2-Digit (no regrouping) | 11 | 5.5 |
+| Multiplication | 2-Digit × 2-Digit (with regrouping) | 9 | 4.5 |
+| Multiplication | Equivalence by Factoring | 22 | 11 |
+| Division | Division 0-12 | 64 | 32 |
+| Division | Divide 2-3-Digit by 1-Digit | 12 | 6 |
+| Mul./Div. | Multiplication/Division 0-12 | 56 | 28 |
+| Decimals | Compare Decimals to Hundredths | 80 | 40 |
+| Decimals | Add/Subtract Decimals | 15 | 7.5 |
+| Fractions | Number Line (den. 2, 3, 4, 5, 6, 8, 10) | 20 | 10 |
+| Fractions | Fraction Comparison | 20 | 10 |
+| Fractions | Mixed Numbers (like denominators) | 19 | 9.5 |
 
 ### Grade 5 (15 levels, 430 mastery count)
 
-| Category | Level Name | Mastery Count |
-|----------|-----------|---------------|
-| Addition | Sums to 20 | 44 |
-| Addition | Add 3-Digit Numbers | 19 |
-| Subtraction | Subtraction 0-9 | 80 |
-| Subtraction | Subtract 3-Digit Numbers | 20 |
-| Decimals | Add/Subtract Decimals | 15 |
-| Decimals | Multiply/Divide Decimals | 11 |
-| Multiplication | Multiplication 0-12 | 46 |
-| Multiplication | 2-Digit × 2-Digit | 10 |
-| Division | Division 0-12 | 46 |
-| Mul./Div. | Fact Families: Mul./Div. 0-12 | 56 |
-| Fractions | Unlike Denominators | 6 |
-| Fractions | Mixed to Improper | 24 |
-| Fractions | Improper to Mixed | 23 |
-| Fractions | Mixed Numbers (like denominators) | 19 |
-| Fractions | Multiply/Divide Fractions | 11 |
+*Assumes mastery of Grade 4 standards (all operations, basic fractions/decimals)*
+
+| Category | Level Name | Mastery Count | Target CQPM |
+|----------|-----------|---------------|-------------|
+| Addition | Sums to 20 | 44 | 22 |
+| Addition | Add 3-Digit Numbers | 19 | 9.5 |
+| Subtraction | Subtraction 0-9 | 80 | 40 |
+| Subtraction | Subtract 3-Digit Numbers | 20 | 10 |
+| Decimals | Add/Subtract Decimals | 15 | 7.5 |
+| Decimals | Multiply/Divide Decimals | 11 | 5.5 |
+| Multiplication | Multiplication 0-12 | 46 | 23 |
+| Multiplication | 2-Digit × 2-Digit | 10 | 5 |
+| Division | Division 0-12 | 46 | 23 |
+| Mul./Div. | Fact Families: Mul./Div. 0-12 | 56 | 28 |
+| Fractions | Unlike Denominators | 6 | 3 |
+| Fractions | Mixed to Improper | 24 | 12 |
+| Fractions | Improper to Mixed | 23 | 11.5 |
+| Fractions | Mixed Numbers (like denominators) | 19 | 9.5 |
+| Fractions | Multiply/Divide Fractions | 11 | 5.5 |
 
 ---
 
-## Time Estimates
+## Time to Mastery
 
-### Game Mechanics
+### How Mastery Counts Work
 
-- **Level timer**: 2 minutes per level
-- **3-star requirement**: 100% of mastery count with ≥85% accuracy
-- **Dynamic difficulty**: Mastery counts are calibrated so a fluent student can complete them in 2 minutes. Higher mastery counts indicate simpler, faster questions; lower mastery counts indicate more complex questions.
+Each level's mastery count represents the number of correct answers a fluent student should achieve in 2 minutes at 85% accuracy. The target CQPM is simply mastery_count ÷ 2.
 
-### Understanding Mastery Counts
+| Mastery Count | Target CQPM | Question Type |
+|---------------|-------------|---------------|
+| 60-80 | 30-40 | Basic facts with automatic recall |
+| 40-60 | 20-30 | Single-digit operations |
+| 20-40 | 10-20 | Extended facts, mental math |
+| 10-20 | 5-10 | Multi-digit operations |
+| 6-10 | 3-5 | Complex multi-step problems |
 
-The mastery count reflects the expected CQPM (Correct Questions Per Minute) for a fluent student:
+### Estimating Time to Mastery
 
-| Mastery Count | Question Complexity | Examples |
-|---------------|--------------------| ---------|
-| 60-80 | Very simple (1-2 sec/question) | Basic single-digit facts |
-| 40-60 | Simple (2-3 sec/question) | Single-digit facts, simple comparisons |
-| 20-40 | Moderate (3-6 sec/question) | Extended facts, multi-step mental math |
-| 10-20 | Complex (6-12 sec/question) | Multi-digit operations, fractions |
-| 6-10 | Very complex (12-20 sec/question) | Multi-digit multiplication, fraction operations |
+The key variable for students building fluency is their **average time per correct answer** (including practice, retries, and building speed). Time to mastery can be estimated as:
 
-### Scenario 1: Fluent Student (Demonstrating Mastery)
+**Total time = mastery_count × average time per correct answer**
 
-A student who already has automaticity can complete each level in approximately 2 minutes:
+| Avg. Time per Correct Answer | Student Profile | Description |
+|------------------------------|-----------------|-------------|
+| ~3 seconds | Already fluent | Automatic recall, just demonstrating mastery |
+| ~15 seconds | Near fluent | Minor gaps, occasional hesitation |
+| ~30 seconds | Developing fluency | Needs practice to build speed |
+| ~1 minute | Building from baseline | Working toward automaticity |
 
-| Grade | Levels | Minimum Time |
-|-------|--------|--------------|
-| Grade 1 | 11 | 22 minutes |
-| Grade 2 | 15 | 30 minutes |
-| Grade 3 | 19 | 38 minutes |
-| Grade 4 | 17 | 34 minutes |
-| Grade 5 | 15 | 30 minutes |
-| **TOTAL** | **77** | **154 minutes (~2.5 hours)** |
+### Time Estimates by Grade
 
-### Scenario 2: Learning Student (Building Fluency)
+| Grade | Mastery Count | Already Fluent | Near Fluent | Developing | Building from Baseline |
+|-------|---------------|----------------|-------------|------------|------------------------|
+| Grade 1 | 385 | 22 min | ~1.5 hr | ~3 hr | ~6 hr |
+| Grade 2 | 372 | 30 min | ~1.5 hr | ~3 hr | ~6 hr |
+| Grade 3 | 679 | 38 min | ~3 hr | ~5.5 hr | ~11 hr |
+| Grade 4 | 562 | 34 min | ~2.5 hr | ~4.5 hr | ~9 hr |
+| Grade 5 | 430 | 30 min | ~2 hr | ~3.5 hr | ~7 hr |
+| **TOTAL** | **2,428** | **2.5 hr** | **~10 hr** | **~20 hr** | **~40 hr** |
 
-For students building fluency, the time per level depends on how many attempts they need before achieving mastery. Because mastery counts are calibrated to 2-minute completion times, students spend roughly the same amount of time per level regardless of complexity—they just answer fewer, harder questions or more, easier questions.
+### Time Estimates by Profile (All Grades)
 
-**Estimated attempts per level for a learning student:**
-
-| Student Profile | Avg. Attempts per Level | Time per Level |
-|-----------------|------------------------|----------------|
-| Fast learner | 2-3 attempts | 6-10 minutes |
-| Average learner | 3-5 attempts | 10-15 minutes |
-| Struggling learner | 5-8 attempts | 15-25 minutes |
-
-### Scenario 3: Grade-Appropriate Placement
-
-Students starting at their appropriate grade level:
-
-| Starting Grade | Prior Knowledge Assumed | Est. Time to 3-Star Grade |
-|----------------|------------------------|---------------------------|
-| Grade 1 | None | 2-4 hours |
-| Grade 2 | Basic add/sub to 10 | 2-4 hours |
-| Grade 3 | Add/sub fluency | 4-6 hours |
-| Grade 4 | Add/sub/mult/div basics | 2-4 hours |
-| Grade 5 | All basic operations | 2-3 hours |
+| Student Profile | Avg. Time/Answer | Total Time (All Grades) |
+|-----------------|------------------|------------------------|
+| Already fluent | ~3 sec | **2.5 hours** |
+| Near fluent | ~15 sec | **~10 hours** |
+| Developing fluency | ~30 sec | **~20 hours** |
+| Building from baseline | ~1 min | **~40 hours** |
 
 ---
 
-## Summary: Time to Full Mastery (All Grades 1-5)
+## Summary
 
-| Student Profile | Estimated Time |
-|-----------------|----------------|
-| Already fluent (demonstrating mastery) | **2.5 hours** |
-| Fast learner | **8-12 hours** |
-| Average learner | **15-25 hours** |
-| Below-average learner | **30-50 hours** |
-
-### Per-Grade Estimates
-
-| Grade | Fluent Student | Average Learner |
-|-------|----------------|-----------------|
-| Grade 1 | 22 min | 2-4 hours |
-| Grade 2 | 30 min | 2-4 hours |
-| Grade 3 | 38 min | 4-6 hours |
-| Grade 4 | 34 min | 2-4 hours |
-| Grade 5 | 30 min | 2-3 hours |
+| Student Profile | Time to Master All Grades (1-5) |
+|-----------------|--------------------------------|
+| Already fluent | **2.5 hours** |
+| Near fluent (minor gaps) | **~10 hours** |
+| Developing fluency | **~20 hours** |
+| Building from grade-level baseline | **~40 hours** |
+| Single grade (developing fluency) | **3-6 hours per grade** |
 
 ---
 
-## Key Takeaways
+## Key Points
 
-1. **For placement/diagnostic purposes**: A fluent student can demonstrate mastery of all 77 levels in approximately 2.5 hours.
+1. **Astro Math builds fluency, not conceptual understanding.** Students should already know how to perform operations; the game trains them to do so automatically.
 
-2. **For learning purposes**: Students building fluency from scratch should expect 15-25 hours of practice across all grades.
+2. **Mastery counts are CQPM targets.** A mastery count of 40 means the student should answer 20 questions correctly per minute (40 in 2 minutes at 85% accuracy).
 
-3. **Consistent time per level**: Because mastery counts are calibrated to difficulty, students spend roughly the same time per level regardless of content—the difference is the number of attempts needed.
+3. **Prior-grade fluency is assumed.** Time estimates assume students entering Grade N have mastered Grade N-1 content.
 
-4. **Overlap benefits**: Facts learned in earlier grades transfer forward, so cumulative time is less than the sum of individual grade times.
+4. **Time is driven by fluency gaps.** Students close to target CQPM will progress quickly; those building fluency from baseline will need more repetition.
 
-5. **Grade-appropriate starting points**: The diagnostic assessment places students at their appropriate level, avoiding wasted time on already-mastered content.
+5. **The diagnostic assessment identifies gaps.** Students don't need to work through content they've already mastered—the assessment places them appropriately.
