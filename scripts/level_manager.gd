@@ -645,18 +645,33 @@ func create_grade_level_button_in_container(container: Control, global_number: i
 	return button
 
 func _on_level_button_hover_enter(level_data: Dictionary):
-	"""Show XP warning when hovering over a level with 3 stars"""
+	"""Show status message when hovering over a gated level"""
 	if not xp_warning_label:
 		return
 	
 	var level_id = level_data.get("id", "")
 	var stars = SaveManager.get_grade_level_stars(level_id)
+	var is_completed = stars >= 3
 	
-	# Show warning if level has 3 stars (reduced XP for replay)
-	xp_warning_label.visible = (stars >= 3)
+	if is_completed:
+		# Level is completed - can't be played again
+		xp_warning_label.text = "Level already complete"
+		xp_warning_label.visible = true
+	elif stars == 0:
+		# Check if level is gated (not unlocked)
+		# We need to check if the button is disabled to know if it's gated
+		# Find the button for this level
+		for page_index in all_level_buttons.keys():
+			for button_data in all_level_buttons[page_index]:
+				if button_data.level_data.id == level_id:
+					if button_data.button.disabled:
+						xp_warning_label.text = "Level not unlocked"
+						xp_warning_label.visible = true
+					return
+	# Available levels with 1-2 stars: no message
 
 func _on_level_button_hover_exit():
-	"""Hide XP warning when mouse leaves level button"""
+	"""Hide status message when mouse leaves level button"""
 	if xp_warning_label:
 		xp_warning_label.visible = false
 
@@ -949,12 +964,18 @@ func update_level_availability():
 			var level_id = level_data.id
 			var level_index = button_data.level_index
 			
+			# Check current stars for this level
+			var current_stars = SaveManager.get_grade_level_stars(level_id)
+			var is_completed = current_stars >= 3  # Level is completed with 3 stars
+			
 			var should_be_available = true
 			
-			# First level of each category is always available
-			if level_index > 0:
+			# Completed levels (3 stars) are not playable
+			if is_completed:
+				should_be_available = false
+			# First level of each category is always available (if not completed)
+			elif level_index > 0:
 				# Check if current level has at least 1 star (already unlocked)
-				var current_stars = SaveManager.get_grade_level_stars(level_id)
 				if current_stars > 0:
 					should_be_available = true
 				else:
@@ -975,10 +996,13 @@ func update_level_availability():
 			# Update visual state
 			var contents = button.get_node("Contents")
 			if contents:
-				if should_be_available:
-					contents.modulate = Color(1, 1, 1, 1)  # Fully opaque
+				if is_completed:
+					# Completed levels: heavily grayed out (more than gated)
+					contents.modulate = Color(1, 1, 1, GameConfig.level_button_alpha_completed)
+				elif should_be_available:
+					contents.modulate = Color(1, 1, 1, GameConfig.level_button_alpha_available)
 				else:
-					contents.modulate = Color(1, 1, 1, 0.5)  # Half transparent
+					contents.modulate = Color(1, 1, 1, GameConfig.level_button_alpha_gated)
 	
 	# Update drill mode button availability
 	update_drill_mode_availability()

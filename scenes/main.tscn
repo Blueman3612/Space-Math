@@ -360,6 +360,8 @@ offset_bottom = 416.0
 grow_horizontal = 2
 text = "YOU WILL RECEIVE MINIMAL XP FROM PLAYING A COMPLETED LEVEL"
 label_settings = ExtResource("9_85g3d")
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="PlayButton" type="Button" parent="MainMenu"]
 visible = false

@@ -195,6 +195,11 @@ var accuracy_color_0star = Color(1, 0, 0)  # Red for < 55%
 # Level unlock requirements
 var stars_required_to_unlock_next_level = 3  # Stars needed on a level to unlock the next level in the pack
 
+# Level button visibility (alpha values for grayed out states)
+var level_button_alpha_available = 1.0  # Fully visible - can be played
+var level_button_alpha_gated = 0.3  # Moderately faded - not yet unlocked
+var level_button_alpha_completed = 0.15  # Heavily faded - already completed (3 stars)
+
 # ============================================
 # Legacy Level Packs (kept for reference, no longer loaded)
 # ============================================
