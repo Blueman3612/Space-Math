@@ -132,12 +132,51 @@ After the assessment completes:
 
 ## ⭐ XP & TimeBack Integration
 
-Astro Math uses **TimeBack** for XP tracking:
+Astro Math uses **TimeBack** for XP tracking, rewarding students for genuine learning progress while discouraging repetitive farming of easy content.
 
-| Action | XP Earned |
-|--------|-----------|
-| First-time level completion (3 stars) | **Full XP** |
-| Replaying mastered content | **Minimal XP** |
+### XP Components
+
+| Component | XP Value |
+|-----------|----------|
+| Base time XP | **0.5 XP per minute** of active play |
+| First star earned | **+0.25 XP** bonus |
+| Second star earned | **+0.25 XP** bonus |
+| Third star earned (mastery) | **+0.5 XP** bonus |
+
+### Star Requirements
+
+Stars are earned based on correct answers and accuracy within the 2-minute level timer:
+
+| Stars | Requirement |
+|-------|-------------|
+| ☆☆☆ (0 stars) | Did not meet 1-star threshold |
+| ⭐☆☆ (1 star) | 50% of mastery count + 55% accuracy |
+| ⭐⭐☆ (2 stars) | 75% of mastery count + 70% accuracy |
+| ⭐⭐⭐ (3 stars) | 100% of mastery count + 85% accuracy |
+
+### Mastery Guarantee
+
+When a student achieves **3 stars** (mastery) on a level, they are guaranteed a **minimum of 2 XP** for that level. If their cumulative XP from time + star bonuses is below 2 XP, they receive a top-up to reach this minimum.
+
+### Replay XP Scaling
+
+To discourage farming already-mastered content, XP is scaled based on previously earned stars:
+
+| Previous Stars | XP Multiplier |
+|----------------|---------------|
+| 0 stars (first attempt) | **100%** |
+| 1 star | **75%** |
+| 2 stars | **50%** |
+| 3 stars (already mastered) | **25%** |
+
+### Example XP Scenarios
+
+| Scenario | Calculation | XP Earned |
+|----------|-------------|-----------|
+| First attempt, earns 3 stars in 1.5 min | (0.75 time + 1.0 star bonus) × 100% = 1.75 → **2.0 XP** (mastery minimum) |
+| First attempt, earns 1 star in 2 min | (1.0 time + 0.25 star bonus) × 100% = **1.25 XP** |
+| Replay (had 1 star), earns 3 stars | (1.0 time + 0.75 new stars) × 75% = **1.31 XP** |
+| Replay (had 3 stars), earns 3 stars | (1.0 time + 0 new stars) × 25% = **0.25 XP** |
 
 ---
 
