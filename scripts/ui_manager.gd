@@ -335,12 +335,15 @@ func initialize_star_states():
 	star2_sprite.scale = Vector2.ZERO
 	star3_sprite.scale = Vector2.ZERO
 	
-	# Set star labels to transparent for Star1-3
+	# Set star labels to transparent for Star1-3 (and ensure they're visible - may have been hidden by assessment)
 	star1_correct_label.self_modulate.a = 0.0
+	star1_accuracy_label.visible = true
 	star1_accuracy_label.self_modulate.a = 0.0
 	star2_correct_label.self_modulate.a = 0.0
+	star2_accuracy_label.visible = true
 	star2_accuracy_label.self_modulate.a = 0.0
 	star3_correct_label.self_modulate.a = 0.0
+	star3_accuracy_label.visible = true
 	star3_accuracy_label.self_modulate.a = 0.0
 	
 	# Ensure Grade labels are hidden for normal levels
