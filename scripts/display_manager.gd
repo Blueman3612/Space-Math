@@ -2211,6 +2211,17 @@ func cleanup_problem_labels():
 
 func cleanup_all_labels():
 	"""Full cleanup including the prompt label. Called when leaving a level."""
+	# Free all current problem nodes (they may not have been animated off screen, e.g., when timer runs out)
+	for node in current_problem_nodes:
+		if node and is_instance_valid(node):
+			node.queue_free()
+	
+	# Free correct answer nodes as well (shown during incorrect answer feedback)
+	for node in correct_answer_nodes:
+		if node and is_instance_valid(node):
+			node.queue_free()
+	correct_answer_nodes.clear()
+	
 	cleanup_problem_labels()
 	
 	# Free the prompt label
