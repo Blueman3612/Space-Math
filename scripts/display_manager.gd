@@ -1260,32 +1260,46 @@ func create_multiple_choice_problem():
 		right_width = right_node.current_divisor_width
 		is_fraction_display = true
 	
-	# Create "?" label first so we can measure its actual size
-	var question_mark_label = Label.new()
-	question_mark_label.label_settings = label_settings_resource
-	question_mark_label.text = "?"
-	question_mark_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	question_mark_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	question_mark_label.self_modulate = Color(0.75, 0.75, 0.75)
-	question_mark_label.z_index = -1
-	play_node.add_child(question_mark_label)
-	question_mark_label.reset_size()
-	var question_mark_width = question_mark_label.size.x
+	# Check if this is a comparison question type (for subtitle display on buttons)
+	var is_comparison_question = question_type in ["decimal_comparison", "fraction_comparison", "expression_comparison_20", "Compare unlike denominators (4.NF.A)"]
 	
-	# Calculate expression layout - center the "?" with equal spacing on both sides
-	# Question mark is centered at center_x
-	var question_mark_x = center_x + GameConfig.multiple_choice_prompt_x_offset
+	# Create placeholder square (outlined blue box) instead of "?"
+	var placeholder_size = 128.0  # Size of the square
+	var border_width = 16.0
 	
-	# Calculate "?" position (left edge, so center is at question_mark_x)
-	var qmark_left_edge = question_mark_x - (question_mark_width / 2.0)
-	var qmark_right_edge = question_mark_x + (question_mark_width / 2.0)
+	var placeholder_panel = Panel.new()
+	placeholder_panel.custom_minimum_size = Vector2(placeholder_size, placeholder_size)
+	placeholder_panel.size = Vector2(placeholder_size, placeholder_size)
 	
-	# Left operand: right edge should be at qmark_left_edge - spacing
-	var left_right_edge = qmark_left_edge - GameConfig.multiple_choice_element_spacing
+	var style = StyleBoxFlat.new()
+	style.set_corner_radius_all(0)
+	style.bg_color = Color(0, 0, 0, 0)  # Transparent fill
+	style.border_width_left = int(border_width)
+	style.border_width_right = int(border_width)
+	style.border_width_top = int(border_width)
+	style.border_width_bottom = int(border_width)
+	style.border_color = Color(0, 0, 1)  # Pure blue
+	
+	placeholder_panel.add_theme_stylebox_override("panel", style)
+	placeholder_panel.z_index = -1
+	play_node.add_child(placeholder_panel)
+	
+	var placeholder_width = placeholder_size
+	
+	# Calculate expression layout - center the placeholder with equal spacing on both sides
+	# Placeholder is centered at center_x
+	var placeholder_x = center_x + GameConfig.multiple_choice_prompt_x_offset
+	
+	# Calculate placeholder position (left edge, so center is at placeholder_x)
+	var placeholder_left_edge = placeholder_x - (placeholder_width / 2.0)
+	var placeholder_right_edge = placeholder_x + (placeholder_width / 2.0)
+	
+	# Left operand: right edge should be at placeholder_left_edge - spacing
+	var left_right_edge = placeholder_left_edge - GameConfig.multiple_choice_element_spacing
 	var left_left_edge = left_right_edge - left_width
 	
-	# Right operand: left edge should be at qmark_right_edge + spacing  
-	var right_left_edge = qmark_right_edge + GameConfig.multiple_choice_element_spacing
+	# Right operand: left edge should be at placeholder_right_edge + spacing  
+	var right_left_edge = placeholder_right_edge + GameConfig.multiple_choice_element_spacing
 	
 	# Position operand nodes (off-screen initially)
 	if is_fraction_display:
@@ -1305,18 +1319,19 @@ func create_multiple_choice_problem():
 	current_problem_nodes.append(left_node)
 	current_problem_nodes.append(right_node)
 	
-	# Position "?" label
+	# Position placeholder panel (centered both horizontally and vertically)
 	if is_fraction_display:
 		# Position relative to left fraction for fraction display
-		# Only subtract y component of fraction_offset since we're not using x
 		var left_center = left_left_edge + (left_width / 2.0)
-		question_mark_label.position = Vector2(qmark_left_edge - left_center, 0) + GameConfig.operator_offset - Vector2(0, GameConfig.fraction_offset.y)
-		question_mark_label.get_parent().remove_child(question_mark_label)
-		left_node.add_child(question_mark_label)
+		# Panel position is top-left, so offset by half size to center
+		var panel_offset = Vector2(placeholder_left_edge - left_center - placeholder_size / 2.0, -placeholder_size / 2.0) + GameConfig.operator_offset - Vector2(0, GameConfig.fraction_offset.y)
+		placeholder_panel.position = panel_offset
+		placeholder_panel.get_parent().remove_child(placeholder_panel)
+		left_node.add_child(placeholder_panel)
 	else:
-		# Position at calculated left edge
-		question_mark_label.position = Vector2(qmark_left_edge, start_y_prompt - 64)
-	current_problem_nodes.append(question_mark_label)
+		# Position at calculated left edge, centered vertically with text
+		placeholder_panel.position = Vector2(placeholder_left_edge, start_y_prompt - placeholder_size / 2.0)
+	current_problem_nodes.append(placeholder_panel)
 	
 	# Create answer buttons
 	var button_scene = load("res://scenes/answer_button.tscn")
@@ -1334,6 +1349,19 @@ func create_multiple_choice_problem():
 		var key_label = button_instance.get_node("Key")
 		if i < GameConfig.multiple_choice_keybind_labels.size():
 			key_label.text = GameConfig.multiple_choice_keybind_labels[i]
+		
+		# Configure Subtitle label for comparison questions
+		var subtitle_label = button_instance.get_node("Subtitle")
+		if is_comparison_question:
+			subtitle_label.visible = true
+			if answer_choices[i] == "<":
+				subtitle_label.text = "Less"
+			elif answer_choices[i] == ">":
+				subtitle_label.text = "Greater"
+			else:
+				subtitle_label.visible = false  # Hide for "=" or other choices
+		else:
+			subtitle_label.visible = false
 		
 		button_instance.reset_size()
 		var button_width = max(button_instance.size.x, GameConfig.multiple_choice_button_min_size.x)
@@ -1366,7 +1394,7 @@ func create_multiple_choice_problem():
 	# Calculate target positions
 	var left_target: Vector2
 	var right_target: Vector2
-	var qmark_target: Vector2
+	var placeholder_target: Vector2
 	
 	if is_fraction_display:
 		# Only use y component of fraction_offset since we've calculated correct x positions
@@ -1377,7 +1405,7 @@ func create_multiple_choice_problem():
 	else:
 		left_target = Vector2(left_left_edge, target_y_prompt - 64)
 		right_target = Vector2(right_left_edge, target_y_prompt - 64)
-		qmark_target = Vector2(qmark_left_edge, target_y_prompt - 64)
+		placeholder_target = Vector2(placeholder_left_edge, target_y_prompt - placeholder_size / 2.0)
 	
 	# Animate all elements
 	var tween = create_tween()
@@ -1389,7 +1417,7 @@ func create_multiple_choice_problem():
 	tween.tween_property(right_node, "position", right_target, GameConfig.animation_duration)
 	
 	if not is_fraction_display:
-		tween.tween_property(question_mark_label, "position", qmark_target, GameConfig.animation_duration)
+		tween.tween_property(placeholder_panel, "position", placeholder_target, GameConfig.animation_duration)
 	
 	# Animate buttons
 	current_x = buttons_start_x
