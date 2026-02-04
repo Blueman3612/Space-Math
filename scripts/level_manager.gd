@@ -758,8 +758,8 @@ func _on_level_button_hover_enter(level_data: Dictionary):
 	var stars = SaveManager.get_grade_level_stars(level_id)
 	var is_completed = stars >= 3
 	
-	if is_completed:
-		# Level is completed - can't be played again
+	if is_completed and GameConfig.strict_grade_progression:
+		# Level is completed - can't be played again (only in strict mode)
 		xp_warning_label.text = "Level already complete"
 		xp_warning_label.visible = true
 	elif stars == 0:
@@ -1075,10 +1075,10 @@ func update_level_availability():
 			
 			var should_be_available = true
 			
-			# Completed levels (3 stars) are not playable
-			if is_completed:
+			# Completed levels (3 stars) are not playable only in strict mode
+			if is_completed and GameConfig.strict_grade_progression:
 				should_be_available = false
-			# First level of each category is always available (if not completed)
+			# First level of each category is always available (if not completed or not in strict mode)
 			elif level_index > 0:
 				# Check if current level has at least 1 star (already unlocked)
 				if current_stars > 0:
@@ -1101,8 +1101,8 @@ func update_level_availability():
 			# Update visual state
 			var contents = button.get_node("Contents")
 			if contents:
-				if is_completed:
-					# Completed levels: heavily grayed out (more than gated)
+				if is_completed and GameConfig.strict_grade_progression:
+					# Completed levels: heavily grayed out (only in strict mode)
 					contents.modulate = Color(1, 1, 1, GameConfig.level_button_alpha_completed)
 				elif should_be_available:
 					contents.modulate = Color(1, 1, 1, GameConfig.level_button_alpha_available)
