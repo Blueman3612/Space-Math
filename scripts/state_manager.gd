@@ -452,15 +452,19 @@ func _on_reset_data_button_pressed():
 	LevelManager.update_level_availability()
 
 func _on_unlock_all_button_pressed():
-	"""Handle unlock all button press - unlock all levels with 3 stars (DEV ONLY)"""
+	"""Handle unlock all button press - unlock current grade with 3 stars and advance to next (DEV ONLY)"""
 	if current_state != GameConfig.GameState.MENU:
 		return
 	
 	SaveManager.unlock_all_levels()
 	
+	# Recreate level buttons for the new grade (if changed)
+	LevelManager.create_level_buttons()
+	
 	# Update menu display with unlocked levels
 	LevelManager.update_menu_stars()
 	LevelManager.update_level_availability()
+	LevelManager.update_grade_display()
 	UIManager.update_drill_mode_high_score_display()
 
 func _on_drill_mode_button_pressed():

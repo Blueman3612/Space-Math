@@ -194,6 +194,15 @@ func has_next_screen() -> bool:
 	"""Check if there's a next screen available"""
 	return current_global_page_index < get_total_global_pages() - 1
 
+func has_previous_page_in_same_grade() -> bool:
+	"""Check if there's a previous page within the current grade"""
+	return GameConfig.current_grade_page > 1
+
+func has_next_page_in_same_grade() -> bool:
+	"""Check if there's a next page within the current grade"""
+	var total_pages = get_current_grade_total_pages()
+	return GameConfig.current_grade_page < total_pages
+
 func go_to_previous_screen() -> bool:
 	"""Go to the previous screen. Returns true if successful."""
 	if has_previous_screen():
@@ -422,6 +431,22 @@ func update_grade_display():
 	"""Update the grade label and navigation button states"""
 	var assessment_completed = SaveManager.is_assessment_completed()
 	
+	# In strict grade progression mode, enforce showing only the first non-mastered grade
+	if GameConfig.strict_grade_progression and assessment_completed:
+		var target_grade = SaveManager.get_first_non_mastered_grade()
+		if target_grade > 0 and target_grade != GameConfig.current_grade:
+			# Switch to the first non-mastered grade
+			GameConfig.current_grade = target_grade
+			GameConfig.current_grade_page = 1
+			current_global_page_index = get_global_page_index(target_grade, 1)
+			# Clear existing pages and load the new grade's page
+			clear_all_pages()
+			load_page(current_global_page_index)
+			position_page_container(current_global_page_index, 0)
+			# Update stars and availability for the new page
+			update_menu_stars()
+			update_level_availability()
+	
 	if grade_label:
 		if not assessment_completed:
 			# New player - hide grade label
@@ -435,10 +460,21 @@ func update_grade_display():
 			else:
 				grade_label.text = "Grade " + str(GameConfig.current_grade)
 	
-	# Update navigation buttons visibility based on assessment completion
+	# Update navigation buttons visibility based on assessment completion and strict mode
+	var strict_mode = GameConfig.strict_grade_progression and assessment_completed
+	var total_pages_in_grade = get_current_grade_total_pages()
+	
 	if left_button:
 		if not assessment_completed:
 			left_button.visible = false
+		elif strict_mode:
+			# In strict mode, only show if there are multiple pages in the current grade
+			left_button.visible = total_pages_in_grade > 1
+			var can_go_left = has_previous_page_in_same_grade()
+			left_button.disabled = not can_go_left
+			var left_icon = left_button.get_node_or_null("Icon")
+			if left_icon:
+				left_icon.modulate.a = 0.5 if left_button.disabled else 1.0
 		else:
 			left_button.visible = true
 			var can_go_left = has_previous_screen()
@@ -450,6 +486,14 @@ func update_grade_display():
 	if right_button:
 		if not assessment_completed:
 			right_button.visible = false
+		elif strict_mode:
+			# In strict mode, only show if there are multiple pages in the current grade
+			right_button.visible = total_pages_in_grade > 1
+			var can_go_right = has_next_page_in_same_grade()
+			right_button.disabled = not can_go_right
+			var right_icon = right_button.get_node_or_null("Icon")
+			if right_icon:
+				right_icon.modulate.a = 0.5 if right_button.disabled else 1.0
 		else:
 			right_button.visible = true
 			var can_go_right = has_next_screen()
@@ -464,7 +508,11 @@ func update_grade_display():
 
 func switch_to_previous_grade():
 	"""Switch to the previous page with smooth animation"""
-	if not has_previous_screen():
+	# In strict mode, only allow navigation within the same grade
+	if GameConfig.strict_grade_progression and SaveManager.is_assessment_completed():
+		if not has_previous_page_in_same_grade():
+			return
+	elif not has_previous_screen():
 		return
 	
 	# Update current page index
@@ -490,7 +538,11 @@ func switch_to_previous_grade():
 
 func switch_to_next_grade():
 	"""Switch to the next page with smooth animation"""
-	if not has_next_screen():
+	# In strict mode, only allow navigation within the same grade
+	if GameConfig.strict_grade_progression and SaveManager.is_assessment_completed():
+		if not has_next_page_in_same_grade():
+			return
+	elif not has_next_screen():
 		return
 	
 	# Update current page index

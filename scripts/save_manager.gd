@@ -349,6 +349,26 @@ func get_grade_level_stars(level_id: String) -> int:
 		return 0
 	return save_data.grade_levels[level_id].get("highest_stars", 0)
 
+func is_grade_fully_mastered(grade: int) -> bool:
+	"""Check if all levels in a grade have 3 stars (fully mastered)"""
+	if not GameConfig.GRADE_LEVELS.has(grade):
+		return false
+	
+	var grade_data = GameConfig.GRADE_LEVELS[grade]
+	for category in grade_data.categories:
+		for level_data in category.levels:
+			var stars = get_grade_level_stars(level_data.id)
+			if stars < 3:
+				return false
+	return true
+
+func get_first_non_mastered_grade() -> int:
+	"""Get the first grade that is not fully mastered. Returns -1 if all grades are mastered."""
+	for grade in GameConfig.GRADES:
+		if not is_grade_fully_mastered(grade):
+			return grade
+	return -1  # All grades mastered
+
 func get_grade_level_data(level_id: String) -> Dictionary:
 	"""Get all saved data for a grade-based level"""
 	if not save_data.has("grade_levels"):
@@ -450,9 +470,11 @@ func reset_all_data():
 	
 	print("Save data reset complete!")
 
-func unlock_all_levels():
-	"""Unlock all levels with 3 stars (DEV ONLY)"""
-	print("Unlocking all levels...")
+func unlock_current_grade() -> bool:
+	"""Unlock all levels in the current grade with 3 stars (DEV ONLY).
+	Returns true if there is a next grade to advance to."""
+	var grade = GameConfig.current_grade
+	print("Unlocking Grade %d levels..." % grade)
 	
 	# Ensure grade_levels dict exists
 	if not save_data.has("grade_levels"):
@@ -461,8 +483,8 @@ func unlock_all_levels():
 	# Mark assessment as completed
 	save_data.assessment_completed = true
 	
-	# Unlock all grade-based levels
-	for grade in GameConfig.GRADES:
+	# Unlock all levels in the current grade only
+	if GameConfig.GRADE_LEVELS.has(grade):
 		var grade_data = GameConfig.GRADE_LEVELS[grade]
 		for category in grade_data.categories:
 			for level_data in category.levels:
@@ -478,7 +500,26 @@ func unlock_all_levels():
 				}
 	
 	save_save_data()
-	print("All levels unlocked (including assessment)!")
+	print("Grade %d levels unlocked!" % grade)
+	
+	# Check if there's a next grade
+	var grade_index = GameConfig.GRADES.find(grade)
+	return grade_index >= 0 and grade_index < GameConfig.GRADES.size() - 1
+
+func unlock_all_levels():
+	"""Unlock all levels with 3 stars (DEV ONLY) - unlocks current grade and advances to next"""
+	var has_next_grade = unlock_current_grade()
+	
+	if has_next_grade:
+		# Move to next grade
+		var grade_index = GameConfig.GRADES.find(GameConfig.current_grade)
+		if grade_index >= 0 and grade_index < GameConfig.GRADES.size() - 1:
+			var next_grade = GameConfig.GRADES[grade_index + 1]
+			GameConfig.current_grade = next_grade
+			GameConfig.current_grade_page = 1
+			print("Advanced to Grade %d" % next_grade)
+	else:
+		print("All grades completed!")
 
 func volume_to_db(volume: float) -> float:
 	"""Convert volume (0.0-1.0) to decibels (-48 to 0) using moderately exponential scale"""
