@@ -176,21 +176,26 @@ var pack_outline_vertical_height = 128.0  # Height of ShapeVertical
 # Level Timer and Mastery Configuration
 # ============================================
 var level_timer_duration = 120.0  # 2 minutes countdown timer for each level
-var mastery_accuracy_threshold = 0.85  # 85% accuracy required to achieve mastery
+var mastery_accuracy_threshold = 0.90  # 90% accuracy required to achieve mastery (3 stars)
 
 # Star requirements (percentage of mastery_count for correct answers, accuracy percentage)
-var star1_correct_percent = 0.50  # 50% of mastery_count
-var star1_accuracy_threshold = 0.55  # 55% accuracy
-var star2_correct_percent = 0.75  # 75% of mastery_count
-var star2_accuracy_threshold = 0.70  # 70% accuracy
+# Players must meet BOTH thresholds for each star tier
+# Below 80% accuracy = 0 stars AND 0 XP
+var star1_correct_percent = 0.33  # 33% of mastery_count
+var star1_accuracy_threshold = 0.80  # 80% accuracy
+var star2_correct_percent = 0.66  # 66% of mastery_count
+var star2_accuracy_threshold = 0.85  # 85% accuracy
 var star3_correct_percent = 1.0  # 100% of mastery_count
-var star3_accuracy_threshold = 0.85  # 85% accuracy
+var star3_accuracy_threshold = 0.90  # 90% accuracy
+
+# XP multiplier for perfect accuracy + earning a new star
+var perfect_accuracy_xp_multiplier = 1.25
 
 # Accuracy line colors (based on star threshold proximity)
-var accuracy_color_3star = Color(0, 1, 0)  # Green for >= 85%
-var accuracy_color_2star = Color(1, 1, 0)  # Yellow for >= 70%
-var accuracy_color_1star = Color(1, 0.5, 0)  # Orange for >= 55%
-var accuracy_color_0star = Color(1, 0, 0)  # Red for < 55%
+var accuracy_color_3star = Color(0, 1, 0)  # Green for >= 90%
+var accuracy_color_2star = Color(1, 1, 0)  # Yellow for >= 85%
+var accuracy_color_1star = Color(1, 0.5, 0)  # Orange for >= 80%
+var accuracy_color_0star = Color(1, 0, 0)  # Red for < 80%
 
 # Progress bar visibility toggles (the three lines shown during gameplay)
 var show_progress_line = false  # Shows progress towards mastery_count (questions answered)
@@ -569,39 +574,15 @@ var number_line_answer_tolerance = 80.0  # Pixel tolerance for correct answer in
 # ============================================
 # TimeBack / XP System Configuration
 # ============================================
-var timeback_base_xp_per_minute = 0.5  # Base XP: 0.5 XP per minute of active play
+# XP Formula: Base XP = 2 × (correct_answers / mastery_count)
+# - If accuracy < 80%: 0 XP (and 0 stars)
+# - If 100% accuracy + new star earned: Base XP × 1.25
+
 var timeback_idle_threshold = 10.0  # Seconds of no input before considered idle
 var timeback_min_session_duration = 5.0  # Minimum seconds for a session to count
 
-# XP bonus for newly earned stars (only awarded for stars not previously earned)
-var timeback_star1_bonus = 0.25  # +0.25 XP for earning first star
-var timeback_star2_bonus = 0.25  # +0.25 XP for earning second star
-var timeback_star3_bonus = 0.5   # +0.5 XP for earning third star
-
-# Minimum XP guarantee for mastery (3 stars)
-# If a player masters a level and their cumulative XP for that level is still below this,
-# they will receive a top-up to reach this minimum
-var timeback_mastery_min_xp = 2.0
-
-# XP multiplier based on previously earned stars (discourages farming)
-# Applied to (base_time_xp + new_star_bonus)
-var timeback_previous_star_multipliers = {
-	0: 1.0,   # 0 stars previously = 100% XP
-	1: 0.75,  # 1 star previously = 75% XP
-	2: 0.5,   # 2 stars previously = 50% XP
-	3: 0.25   # 3 stars previously = 25% XP
-}
-
-# Drill mode CQPM multiplier scale (kept for drill mode only)
-var timeback_drill_mode_multipliers = [
-	[60.0, 3.0],   # 60+ CQPM = 3x multiplier
-	[50.0, 2.0],   # 50+ CQPM = 2x multiplier
-	[40.0, 1.5],   # 40+ CQPM = 1.5x multiplier
-	[30.0, 1.0],   # 30+ CQPM = 1x multiplier
-	[20.0, 0.5],   # 20+ CQPM = 0.5x multiplier
-	[10.0, 0.25],  # 10+ CQPM = 0.25x multiplier
-	[0.0, 0.1]     # < 10 CQPM = 0.1x multiplier
-]
+# Assessment mode: 1 XP per minute of active play (unchanged)
+var timeback_assessment_xp_per_minute = 1.0
 
 # ============================================
 # Assessment Mode Configuration

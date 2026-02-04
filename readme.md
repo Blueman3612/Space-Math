@@ -132,51 +132,43 @@ After the assessment completes:
 
 ## ⭐ XP & TimeBack Integration
 
-Astro Math uses **TimeBack** for XP tracking, rewarding students for genuine learning progress while discouraging repetitive farming of easy content.
-
-### XP Components
-
-| Component | XP Value |
-|-----------|----------|
-| Base time XP | **0.5 XP per minute** of active play |
-| First star earned | **+0.25 XP** bonus |
-| Second star earned | **+0.25 XP** bonus |
-| Third star earned (mastery) | **+0.5 XP** bonus |
+Astro Math uses **TimeBack** for XP tracking with a simple, performance-based system.
 
 ### Star Requirements
 
-Stars are earned based on correct answers and accuracy within the 2-minute level timer:
+Stars are earned based on **both** correct answers and accuracy within the 2-minute level timer:
 
-| Stars | Requirement |
-|-------|-------------|
-| ☆☆☆ (0 stars) | Did not meet 1-star threshold |
-| ⭐☆☆ (1 star) | 50% of mastery count + 55% accuracy |
-| ⭐⭐☆ (2 stars) | 75% of mastery count + 70% accuracy |
-| ⭐⭐⭐ (3 stars) | 100% of mastery count + 85% accuracy |
+| Stars | Correct Answers | Accuracy |
+|-------|-----------------|----------|
+| ☆☆☆ (0 stars) | Below thresholds | Below 80% |
+| ⭐☆☆ (1 star) | ≥33% of mastery count | ≥80% |
+| ⭐⭐☆ (2 stars) | ≥66% of mastery count | ≥85% |
+| ⭐⭐⭐ (3 stars) | 100% of mastery count | ≥90% |
 
-### Mastery Guarantee
+**Important:** If accuracy falls below 80%, the player earns **0 stars and 0 XP** regardless of correct answers.
 
-When a student achieves **3 stars** (mastery) on a level, they are guaranteed a **minimum of 2 XP** for that level. If their cumulative XP from time + star bonuses is below 2 XP, they receive a top-up to reach this minimum.
+### XP Formula
 
-### Replay XP Scaling
+XP is calculated based on progress toward the level's mastery count:
 
-To discourage farming already-mastered content, XP is scaled based on previously earned stars:
+```
+Base XP = 2 × (correct_answers / mastery_count)
+```
 
-| Previous Stars | XP Multiplier |
-|----------------|---------------|
-| 0 stars (first attempt) | **100%** |
-| 1 star | **75%** |
-| 2 stars | **50%** |
-| 3 stars (already mastered) | **25%** |
+| Condition | XP Awarded |
+|-----------|------------|
+| Accuracy < 80% | **0 XP** |
+| Accuracy ≥ 80% | **Base XP** |
+| 100% accuracy + new star earned | **Base XP × 1.25** |
 
 ### Example XP Scenarios
 
 | Scenario | Calculation | XP Earned |
 |----------|-------------|-----------|
-| First attempt, earns 3 stars in 1.5 min | (0.75 time + 1.0 star bonus) × 100% = 1.75 → **2.0 XP** (mastery minimum) |
-| First attempt, earns 1 star in 2 min | (1.0 time + 0.25 star bonus) × 100% = **1.25 XP** |
-| Replay (had 1 star), earns 3 stars | (1.0 time + 0.75 new stars) × 75% = **1.31 XP** |
-| Replay (had 3 stars), earns 3 stars | (1.0 time + 0 new stars) × 25% = **0.25 XP** |
+| 12/20 correct, 85% accuracy | 2 × (12/20) = **1.2 XP** |
+| 20/20 correct, 100% accuracy, new star | 2 × (20/20) × 1.25 = **2.5 XP** |
+| 15/20 correct, 75% accuracy | Below 80% threshold = **0 XP** |
+| 8/20 correct, 90% accuracy | 2 × (8/20) = **0.8 XP** |
 
 ---
 
@@ -200,7 +192,7 @@ To discourage farming already-mastered content, XP is scaled based on previously
 │  │  └─────────┘ └─────────┘ └─────────┘               │   │
 │  │                                                     │   │
 │  │  Each level: 2-minute timed challenge               │   │
-│  │  Stars earned by: Correct answers + Speed (CQPM)    │   │
+│  │  Stars earned by: Correct answers + Accuracy        │   │
 │  └─────────────────────────────────────────────────────┘   │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
@@ -233,4 +225,4 @@ The diagnostic assessment identifies fluency gaps and places students appropriat
 | **Assessment** | 40-standard diagnostic, adapts via prerequisites |
 | **Placement** | Auto-unlocks mastered content |
 | **Progression** | Grade 1-5 levels with 3-star mastery system |
-| **XP System** | Rewards new learning, not repetition |
+| **XP System** | Simple formula: 2 × (correct/mastery_count), requires 80%+ accuracy |

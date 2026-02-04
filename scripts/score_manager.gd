@@ -46,7 +46,8 @@ func calculate_cqpm(correct_answers_in_level, time_in_seconds):
 
 func evaluate_stars_for_mastery_count(mastery_count: int) -> Array:
 	"""Evaluate which stars the player has earned based on mastery_count.
-	This uses the new scoring system with correct count thresholds and accuracy percentages."""
+	Players must meet BOTH correct answer count AND accuracy thresholds for each star.
+	Below 80% accuracy = 0 stars (and 0 XP)."""
 	var stars_earned = []
 	
 	# Calculate current accuracy percentage
@@ -59,26 +60,26 @@ func evaluate_stars_for_mastery_count(mastery_count: int) -> Array:
 	var star2_correct = int(ceil(mastery_count * GameConfig.star2_correct_percent))
 	var star3_correct = int(ceil(mastery_count * GameConfig.star3_correct_percent))
 	
-	# Check Star 1: correct answers >= 50% of mastery_count AND accuracy >= 55%
+	# Check Star 1: correct answers >= 33% of mastery_count AND accuracy >= 80%
 	if correct_answers >= star1_correct and accuracy >= GameConfig.star1_accuracy_threshold:
 		stars_earned.append(1)
 	
-	# Check Star 2: correct answers >= 75% of mastery_count AND accuracy >= 70%
+	# Check Star 2: correct answers >= 66% of mastery_count AND accuracy >= 85%
 	if correct_answers >= star2_correct and accuracy >= GameConfig.star2_accuracy_threshold:
 		stars_earned.append(2)
 	
-	# Check Star 3: correct answers >= 100% of mastery_count AND accuracy >= 85%
+	# Check Star 3: correct answers >= 100% of mastery_count AND accuracy >= 90%
 	if correct_answers >= star3_correct and accuracy >= GameConfig.star3_accuracy_threshold:
 		stars_earned.append(3)
 	
 	return stars_earned
 
 func check_mastery_complete(mastery_count: int) -> bool:
-	"""Check if the player has achieved mastery (reached mastery_count correct with >= 85% accuracy)"""
+	"""Check if the player has achieved mastery (reached mastery_count correct with >= 90% accuracy)"""
 	if correct_answers < mastery_count:
 		return false
 	
-	# Check if accuracy is >= 85%
+	# Check if accuracy meets mastery threshold (90%)
 	if total_answers == 0:
 		return false
 	

@@ -1,136 +1,100 @@
 # TimeBack XP System Implementation
 
 ## Overview
-This document describes the enhanced TimeBack integration that awards XP based on active play time with CQPM (Correct Questions Per Minute) multipliers.
 
-## Core Principle
-**1 minute of active time = 1 base XP**, multiplied by a performance-based CQPM multiplier.
+Astro Math uses a simplified XP system based purely on **accuracy** and **progress toward mastery**.
 
-## Key Features
+## Core Formula
 
-### 1. Wall-Clock Session Tracking
-- Sessions tracked using Unix timestamps (not paused game timer)
-- Start timestamp recorded when level/drill mode begins
-- End timestamp recorded when level/drill mode completes
+```
+Base XP = 2 × (correct_answers / mastery_count)
+```
 
-### 2. Idle Time Detection
-- Tracks time between player inputs
-- After 10 seconds (configurable) of no input, time is considered "idle"
-- Idle time is subtracted from total session duration
-- Only active time counts toward XP
+**Conditions:**
+- If accuracy < 80%: **0 XP** (and 0 stars)
+- If accuracy ≥ 80%: **Base XP**
+- If 100% accuracy AND at least 1 new star earned: **Base XP × 1.25**
 
-### 3. Individual Level Multipliers
-#Note: ALL MULTIPLIER/CQPM THRESHOLDS ARE JUST FOR EXAMPLE PURPOSES
+## Star Requirements
 
-Each of the 11 levels has its own CQPM multiplier scale:
-- **Addition Levels (1-3)**: 30+ CQPM = 3x, 20+ = 2x, 15+ = 1.5x, etc.
-- **Subtraction Levels (4-5)**: 25+ CQPM = 3x, 18+ = 2x, 12+ = 1.5x, etc.
-- **Multiplication Levels (6-7)**: 20+ CQPM = 3x, 15+ = 2x, 10+ = 1.5x, etc.
-- **Division Level (8)**: 15+ CQPM = 3x, 12+ = 2x, 8+ = 1.5x, etc.
-- **Fraction Levels (9-11)**: 10+ CQPM = 3x (Level 9), scales down for harder levels
+Stars require meeting **BOTH** correct answer count AND accuracy thresholds:
 
-### 4. Star-Based XP Gating (Normal Levels Only)
-Reduces XP rewards for mastered levels to encourage progression:
-- **0-1 stars**: 100% XP (still learning)
-- **2 stars**: 75% XP (getting good)
-- **3 stars**: 25% XP (mastered, move on to harder content)
+| Stars | Correct Answers | Accuracy |
+|-------|-----------------|----------|
+| 0 stars | Below thresholds | Below 80% |
+| 1 star | ≥33% of mastery_count | ≥80% |
+| 2 stars | ≥66% of mastery_count | ≥85% |
+| 3 stars | 100% of mastery_count | ≥90% |
 
-This prevents farming easy/mastered levels for XP.
-
-### 5. Drill Mode Multiplier
-Separate multiplier scale for drill mode (no star gating):
-- 25+ CQPM = 3x
-- 18+ CQPM = 2.5x
-- 12+ CQPM = 2x
-- 8+ CQPM = 1.5x
-- 5+ CQPM = 1.2x
-- 2+ CQPM = 1x
-- <2 CQPM = 0.5x
+**Important:** Accuracy below 80% results in 0 stars AND 0 XP, regardless of correct answer count.
 
 ## Configuration Variables
 
 All settings in `scripts/game_config.gd`:
 
 ```gdscript
-# Core Settings
-timeback_base_xp_per_minute = 1.0     # Base XP rate
-timeback_idle_threshold = 10.0         # Seconds before idle
-timeback_min_session_duration = 5.0    # Minimum session to count
-timeback_max_multiplier = 4.0          # Cap on multiplier
-timeback_min_multiplier = 0.1          # Floor for multiplier
+# Star requirements - correct answers (percentage of mastery_count)
+var star1_correct_percent = 0.33  # 33% for 1 star
+var star2_correct_percent = 0.66  # 66% for 2 stars
+var star3_correct_percent = 1.0   # 100% for 3 stars
 
-# Star-based XP gating (normal levels only)
-timeback_star_multipliers = {
-    0: 1.0,   # 0 stars = 100% XP
-    1: 1.0,   # 1 star = 100% XP
-    2: 0.75,  # 2 stars = 75% XP
-    3: 0.25   # 3 stars = 25% XP
-}
+# Star requirements - accuracy thresholds
+var star1_accuracy_threshold = 0.80  # 80% for 1 star
+var star2_accuracy_threshold = 0.85  # 85% for 2 stars
+var star3_accuracy_threshold = 0.90  # 90% for 3 stars
 
-# Level-specific multipliers
-timeback_level_multipliers = {
-    1: [[60.0, 4.0], [45.0, 2.0], ...],
-    2: [[60.0, 4.0], [45.0, 2.0], ...],
-    # ... for all 11 levels
-}
-
-# Drill mode multipliers
-timeback_drill_mode_multipliers = [
-    [60.0, 3.0], [50.0, 2.0], ...
-]
+# XP multiplier for perfect accuracy + new star
+var perfect_accuracy_xp_multiplier = 1.25
 ```
 
-## XP Calculation Formula
+## XP Calculation Examples
+
+### Example 1: Good Performance
+- Mastery count: 20
+- Correct answers: 15
+- Accuracy: 88%
 
 ```
-Active Time = Total Session Time - Idle Time
-Active Minutes = Active Time / 60
-Game Time = In-game timer (pauses during transitions)
-CQPM = (Correct Answers / Game Time) × 60
-CQPM Multiplier = lookup from level-specific scale based on CQPM
-Star Multiplier = lookup from star count (normal levels only, drill = 1.0)
-Base XP = Active Minutes × Base XP Per Minute (1.0)
-XP After CQPM = Base XP × CQPM Multiplier
-Final XP = XP After CQPM × Star Multiplier (rounded to nearest integer)
+Base XP = 2 × (15/20) = 2 × 0.75 = 1.5 XP
+Stars: 2 (meets 66% correct + 85% accuracy)
+Final XP: 1.5 XP
 ```
 
-**Key distinction:**
-- **Active Time** (wall clock - idle) is used for base XP calculation (rewards engagement)
-  - Measures real time player was present and active
-  - Subtracts idle time but includes transition delays
-- **Game Time** (in-game timer) is used for CQPM calculation (rewards pure performance)
-  - Only counts active gameplay time (pauses during transitions)
-  - Provides fair measure of problem-solving speed
-  - Matches the timer displayed to the player
-
-## Example Output
-
-When a level completes, you'll see detailed metrics:
+### Example 2: Perfect Performance with New Star
+- Mastery count: 20
+- Correct answers: 20
+- Accuracy: 100%
+- Previous stars: 2, New stars: 3 (earned 1 new star)
 
 ```
-============================================================
-[TimeBack] LEVEL COMPLETION METRICS
-============================================================
-Level: Addition - Level 1 (Global Level 1)
-Stars Earned: 3
+Base XP = 2 × (20/20) = 2 × 1.0 = 2.0 XP
+Perfect accuracy bonus: 2.0 × 1.25 = 2.5 XP
+Stars: 3 (meets 100% correct + 90% accuracy)
+Final XP: 2.5 XP
+```
 
-TIME METRICS:
-  Total session duration: 85.3s (1.42 minutes)
-  Idle time subtracted:   12.5s (0.21 minutes)
-  Active time counted:    72.8s (1.21 minutes) [for XP base]
-  Game timer (in-game):   68.0s (1.13 minutes) [for CQPM]
+### Example 3: Low Accuracy
+- Mastery count: 20
+- Correct answers: 18
+- Accuracy: 72%
 
-PERFORMANCE METRICS:
-  Correct answers: 35
-  CQPM (35 / 68.0s × 60): 30.88
-  CQPM Multiplier for Level 1: 2.00x
-  Star Multiplier (3 stars): 0.25x
+```
+Accuracy below 80% threshold
+Stars: 0
+Final XP: 0 XP
+```
 
-XP CALCULATION:
-  Base XP (1.21 min × 1.0 XP/min) = 1.21
-  After CQPM (1.21 × 2.00x) = 2.42
-  After Star Gate (2.42 × 0.25x) = 1 XP
-============================================================
+### Example 4: High Accuracy, Low Progress
+- Mastery count: 20
+- Correct answers: 5
+- Accuracy: 100%
+- Previous stars: 0, New stars: 0 (didn't reach 33% for 1 star)
+
+```
+Base XP = 2 × (5/20) = 2 × 0.25 = 0.5 XP
+No new star earned, so no perfect accuracy bonus
+Stars: 0 (below 33% correct threshold)
+Final XP: 0.5 XP
 ```
 
 ## Implementation Details
@@ -138,117 +102,58 @@ XP CALCULATION:
 ### Session Lifecycle
 
 1. **Session Start** (`state_manager.gd`)
-   - Called when level begins: `PlaycademyManager.start_session_tracking(pack_name, level_index)`
-   - Records start timestamp, resets idle tracking
+   - Called when level begins
+   - Records start timestamp for idle detection
 
 2. **Input Tracking** (`input_manager.gd`)
-   - Every input calls: `PlaycademyManager.record_player_input()`
-   - Checks time since last input
-   - If > idle threshold, adds to idle time accumulator
+   - Tracks player inputs for idle time detection
+   - Idle time (>10 seconds no input) is subtracted from session
 
 3. **Session End** (`state_manager.gd`)
-   - Called when level completes: `PlaycademyManager.end_session_and_award_xp(...)`
-   - Calculates all metrics
-   - Prints detailed breakdown
+   - Calculates correct answers, accuracy, and stars
+   - Computes XP using simplified formula
    - Awards XP through Playcademy TimeBack API
 
 ### Key Functions
 
 **In `playcademy_manager.gd`:**
 
-- `start_session_tracking(pack_name, level_index)` - Begin tracking
-- `record_player_input()` - Track each input, detect idle time
-- `end_session_and_award_xp(...)` - Calculate and award XP for normal levels
-- `end_drill_session_and_award_xp()` - Calculate and award XP for drill mode
-- `get_cqpm_multiplier_for_level(level_number, cqpm)` - Get level-specific multiplier
-- `get_cqpm_multiplier_for_drill_mode(cqpm)` - Get drill mode multiplier
+- `start_session_tracking()` - Begin tracking
+- `record_player_input()` - Track inputs for idle detection
+- `end_grade_level_session_and_award_xp()` - Calculate and award XP
 
-## Tuning the System
+**In `score_manager.gd`:**
 
-### To adjust difficulty/generosity:
+- `evaluate_stars_for_mastery_count()` - Determine stars earned based on correct answers + accuracy
+- `get_star_requirements()` - Get thresholds for each star tier
 
-1. **Change base XP rate**: Modify `timeback_base_xp_per_minute` (default: 1.0)
-2. **Change idle threshold**: Modify `timeback_idle_threshold` (default: 10.0 seconds)
-3. **Adjust level multipliers**: Edit the arrays in `timeback_level_multipliers`
-4. **Cap multipliers**: Change `timeback_max_multiplier` or `timeback_min_multiplier`
-5. **Adjust star gating**: Modify `timeback_star_multipliers` to change how much mastered levels are penalized
+## Assessment Mode XP
 
-### To make a level more rewarding:
-- Lower the CQPM thresholds for higher multipliers
-- Example: Change `[20.0, 2.0]` to `[15.0, 2.0]` to give 2x at 15 CQPM instead of 20
+Assessment mode uses a simplified calculation:
+- **1 XP per minute of active play time**
+- No performance multipliers
+- Idle time is subtracted (10-second threshold)
 
-### To reduce/increase farming penalties:
-- Increase star multipliers for more XP on replays (e.g., 3 stars: 0.25 → 0.5)
-- Decrease star multipliers to further discourage farming (e.g., 3 stars: 0.25 → 0.1)
+## Idle Time Detection
 
-### To make drill mode more challenging:
-- Raise the CQPM thresholds in `timeback_drill_mode_multipliers`
-
-## Testing Recommendations
-
-1. Play a full level and verify the metrics printout
-2. Test with deliberate idle time (stop playing for 15+ seconds)
-3. Check that idle time is properly subtracted
-4. Verify CQPM calculation matches expectations
-5. Test both fast and slow play to see multiplier changes
-6. Confirm XP is awarded to Playcademy platform
+- Tracks time between player inputs
+- After 10 seconds of no input, time is considered "idle"
+- Idle time is subtracted from session duration
+- Only affects assessment mode XP (grade levels use performance-based XP)
 
 ## Integration with Playcademy
 
 The system sends progress data including:
 - XP earned
 - Correct/total questions
-- Time spent (active time only)
 - Stars earned
-- Metadata: CQPM, multiplier, idle time, etc.
+- Accuracy percentage
 
-This data is sent to `PlaycademySdk.timeback.record_progress()` and appears in the Playcademy dashboard for analytics.
-
-## Assessment Mode XP
-
-Assessment mode uses a simplified XP calculation:
-- **1 XP per minute of active play time**
-- Idle time is still subtracted (same 10-second threshold)
-- **No performance multipliers** - XP is awarded regardless of how well the student performs
-- **No star bonuses** - the assessment is diagnostic, not rewarded based on results
-
-### Assessment XP Formula
-
-```
-Active Time = Total Session Time - Idle Time
-Active Minutes = Active Time / 60
-Final XP = Active Minutes × 1.0 (rounded to nearest integer)
-```
-
-### Example Assessment Output
-
-```
-============================================================
-[TimeBack] ASSESSMENT COMPLETION METRICS
-============================================================
-Standards Tested: 12
-Standards Mastered: 8
-
-TIME METRICS:
-  Total session duration: 420.0s (7.00 minutes)
-  Idle time subtracted:   30.0s (0.50 minutes)
-  Active time counted:    390.0s (6.50 minutes)
-
-XP CALCULATION (Simple: 1 XP per minute):
-  Active minutes: 6.50
-  XP per minute: 1.0
-  Final XP: 7 XP
-============================================================
-```
+This data is sent to `PlaycademySdk.timeback.record_progress()` for analytics.
 
 ## Notes
 
-- Minimum session duration (5 seconds) prevents trivial sessions from awarding XP
-- Session tracking is independent of the game's paused timer
-- Idle time detection starts after the configurable threshold (10 seconds)
-- All CQPM multipliers are clamped between min (0.1x) and max (4.0x)
-- Star-based gating only applies to normal levels, NOT drill mode or assessment mode
-- Star gating encourages players to progress to new content rather than farm mastered levels
-- Assessment mode awards XP purely based on time spent, not performance
-- The system gracefully handles missing SDK or network issues
-
+- The 80% accuracy threshold ensures players are answering carefully, not rushing
+- The 1.25x perfect accuracy bonus rewards precision
+- No penalty for replaying levels - XP is always based on current performance
+- Maximum possible XP per level: 2.5 XP (100% correct + 100% accuracy + new star)

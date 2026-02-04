@@ -235,12 +235,10 @@ func end_session_and_award_xp(pack_name: String, pack_level_index: int, current_
 	return details
 
 func end_grade_level_session_and_award_xp(level_data: Dictionary, previous_stars: int, new_stars: int) -> Dictionary:
-	"""End session tracking for grade-based levels and calculate XP to award using the new simplified system.
-	XP = (base_time_xp + new_star_bonus) × previous_star_multiplier
-	- base_time_xp: 0.5 XP per minute of active play (excluding idle time)
-	- new_star_bonus: +0.25 for 1st star, +0.25 for 2nd star, +0.5 for 3rd star (only for newly earned stars)
-	- previous_star_multiplier: x1.0 (0 stars), x0.75 (1 star), x0.5 (2 stars), x0.25 (3 stars)
-	- No XP is awarded if player didn't earn at least 1 star this playthrough"""
+	"""End session tracking for grade-based levels and calculate XP using simplified formula.
+	XP = 2 × (correct_answers / mastery_count)
+	- If accuracy < 80%: 0 XP (and 0 stars)
+	- If 100% accuracy + new star earned: XP × 1.25"""
 	if not is_session_active:
 		return {"xp_awarded": 0, "details": "No active session"}
 	
@@ -250,78 +248,45 @@ func end_grade_level_session_and_award_xp(level_data: Dictionary, previous_stars
 	# Calculate total session duration (wall clock time)
 	var total_duration = session_end_timestamp - session_start_timestamp
 	
-	# Check for final idle period (from last input to session end)
-	var time_since_last_input = session_end_timestamp - last_input_timestamp
-	if time_since_last_input > GameConfig.timeback_idle_threshold:
-		var final_idle = time_since_last_input - GameConfig.timeback_idle_threshold
-		total_idle_time += final_idle
-		print("[TimeBack] Final idle period: %.1fs" % final_idle)
-	
-	# Calculate active time (total - idle)
-	var active_time = max(0.0, total_duration - total_idle_time)
-	var active_minutes = active_time / 60.0
-	
-	# Get performance stats for logging
+	# Get performance stats
 	var correct_answers = ScoreManager.correct_answers
 	var total_answers = ScoreManager.total_answers
-	var game_time = ScoreManager.current_level_time
-	var cqpm = 0.0
-	if game_time > 0:
-		cqpm = (float(correct_answers) / game_time) * 60.0
+	var mastery_count = level_data.mastery_count
+	var accuracy = 0.0
+	if total_answers > 0:
+		accuracy = float(correct_answers) / float(total_answers)
 	
-	# Calculate base XP from time spent (0.5 XP per minute, rounded to nearest hundredth)
-	var base_time_xp = snapped(active_minutes * GameConfig.timeback_base_xp_per_minute, 0.01)
+	# Calculate base XP: 2 × (correct_answers / mastery_count)
+	var progress_ratio = float(correct_answers) / float(mastery_count)
+	var base_xp = 2.0 * progress_ratio
 	
-	# Calculate star bonus for newly earned stars
-	var new_star_bonus = 0.0
-	if new_stars >= 1 and previous_stars < 1:
-		new_star_bonus += GameConfig.timeback_star1_bonus
-	if new_stars >= 2 and previous_stars < 2:
-		new_star_bonus += GameConfig.timeback_star2_bonus
-	if new_stars >= 3 and previous_stars < 3:
-		new_star_bonus += GameConfig.timeback_star3_bonus
-	
-	# Get multiplier based on previously earned stars
-	var previous_star_multiplier = GameConfig.timeback_previous_star_multipliers.get(previous_stars, 1.0)
-	
-	# Calculate final XP: (base + bonus) × multiplier
-	# NO XP if player didn't earn at least 1 star this playthrough
+	# Apply accuracy threshold - if accuracy < 80%, no XP
 	var final_xp = 0.0
-	var calculated_xp = 0.0
-	var xp_top_up = 0.0
-	if new_stars >= 1:
-		calculated_xp = snapped((base_time_xp + new_star_bonus) * previous_star_multiplier, 0.01)
-		final_xp = calculated_xp
+	var perfect_bonus_applied = false
+	if accuracy >= GameConfig.star1_accuracy_threshold:  # 80%
+		final_xp = base_xp
+		
+		# Apply perfect accuracy bonus if 100% accuracy AND earned at least 1 new star
+		var earned_new_star = new_stars > previous_stars
+		if accuracy >= 1.0 and earned_new_star:
+			final_xp = base_xp * GameConfig.perfect_accuracy_xp_multiplier
+			perfect_bonus_applied = true
 	
-	# Apply minimum XP guarantee for mastery (3 stars)
-	# If player masters the level and their cumulative XP would still be below minimum, top up to reach it
-	var previous_xp_earned = SaveManager.get_grade_level_xp_earned(level_data.id)
-	var mastery_min_xp = GameConfig.timeback_mastery_min_xp
-	if new_stars >= 3:
-		var projected_total = previous_xp_earned + calculated_xp
-		if projected_total < mastery_min_xp:
-			xp_top_up = mastery_min_xp - projected_total
-			final_xp = calculated_xp + xp_top_up
+	# Round to nearest hundredth
+	final_xp = snapped(final_xp, 0.01)
 	
 	# Build detailed breakdown
 	var details = {
 		"total_duration": total_duration,
-		"idle_time": total_idle_time,
-		"active_time": active_time,
-		"active_minutes": active_minutes,
-		"game_time": game_time,
 		"correct_answers": correct_answers,
 		"total_answers": total_answers,
-		"cqpm": cqpm,
-		"base_time_xp": base_time_xp,
-		"new_star_bonus": new_star_bonus,
+		"mastery_count": mastery_count,
+		"accuracy": accuracy,
+		"progress_ratio": progress_ratio,
+		"base_xp": base_xp,
+		"perfect_bonus_applied": perfect_bonus_applied,
 		"previous_stars": previous_stars,
 		"new_stars": new_stars,
-		"previous_star_multiplier": previous_star_multiplier,
-		"calculated_xp": calculated_xp,
-		"previous_xp_earned": previous_xp_earned,
-		"mastery_min_xp": mastery_min_xp,
-		"xp_top_up": xp_top_up,
 		"final_xp": final_xp,
 		"level_id": level_data.id,
 		"level_name": level_data.name
@@ -334,47 +299,25 @@ func end_grade_level_session_and_award_xp(level_data: Dictionary, previous_stars
 	print("Level: %s (ID: %s)" % [level_data.name, level_data.id])
 	print("Stars: %d previously, %d earned this session" % [previous_stars, new_stars])
 	print("")
-	print("TIME METRICS:")
-	print("  Total session duration: %.1fs (%.2f minutes)" % [total_duration, total_duration / 60.0])
-	print("  Idle time subtracted:   %.1fs (%.2f minutes)" % [total_idle_time, total_idle_time / 60.0])
-	print("  Active time counted:    %.1fs (%.2f minutes)" % [active_time, active_minutes])
-	print("  Game timer (in-game):   %.1fs (%.2f minutes)" % [game_time, game_time / 60.0])
-	print("")
 	print("PERFORMANCE METRICS:")
-	print("  Correct answers: %d / %d" % [correct_answers, total_answers])
-	print("  CQPM (%.0f / %.1fs × 60): %.2f" % [correct_answers, game_time, cqpm])
+	print("  Correct answers: %d / %d (answered)" % [correct_answers, total_answers])
+	print("  Mastery count: %d" % mastery_count)
+	print("  Progress: %.0f%% of mastery count" % (progress_ratio * 100))
+	print("  Accuracy: %.0f%%" % (accuracy * 100))
 	print("")
 	print("XP CALCULATION:")
-	print("  Base time XP (%.2f min × %.1f XP/min) = %.2f" % [active_minutes, GameConfig.timeback_base_xp_per_minute, base_time_xp])
-	print("  New star bonus: +%.2f" % new_star_bonus)
-	print("  Previous star multiplier (%d stars): %.2fx" % [previous_stars, previous_star_multiplier])
-	if new_stars >= 1:
-		print("  Calculated XP ((%.2f + %.2f) × %.2fx) = %.2f XP" % [base_time_xp, new_star_bonus, previous_star_multiplier, calculated_xp])
+	print("  Base XP = 2 × (%d / %d) = %.2f" % [correct_answers, mastery_count, base_xp])
+	if accuracy < GameConfig.star1_accuracy_threshold:
+		print("  Accuracy below 80%% threshold - 0 XP awarded")
+	elif perfect_bonus_applied:
+		print("  Perfect accuracy (100%%) + new star → %.2f × %.2f = %.2f XP" % [base_xp, GameConfig.perfect_accuracy_xp_multiplier, final_xp])
 	else:
-		print("  Calculated XP: 0 (no stars earned this playthrough)")
-	print("")
-	print("MASTERY XP GUARANTEE (min %.1f XP):" % mastery_min_xp)
-	print("  Previous XP earned for this level: %.2f" % previous_xp_earned)
-	if new_stars >= 3:
-		var projected_total = previous_xp_earned + calculated_xp
-		print("  Projected total (%.2f + %.2f) = %.2f" % [previous_xp_earned, calculated_xp, projected_total])
-		if xp_top_up > 0:
-			print("  Top-up to reach minimum %.1f XP: +%.2f" % [mastery_min_xp, xp_top_up])
-		else:
-			print("  Already at or above %.1f XP minimum, no top-up needed" % mastery_min_xp)
-	else:
-		print("  Mastery (3 stars) not achieved, minimum XP guarantee does not apply")
-	print("  Final XP awarded this session: %.2f" % final_xp)
-	print("  New cumulative XP for level: %.2f" % (previous_xp_earned + final_xp))
+		print("  Final XP: %.2f" % final_xp)
 	print("=".repeat(60) + "\n")
 	
-	# Only award if session meets minimum duration and player earned at least 1 star
-	if total_duration >= GameConfig.timeback_min_session_duration and new_stars >= 1:
-		award_grade_level_timeback_xp(int(round(final_xp)), details, level_data.mastery_count)
-		# Update cumulative XP earned for this level in KV storage
-		SaveManager.add_grade_level_xp_earned(level_data.id, final_xp)
-	elif new_stars < 1:
-		print("[TimeBack] ⚠ No stars earned this playthrough, no XP awarded")
+	# Only award if session meets minimum duration
+	if total_duration >= GameConfig.timeback_min_session_duration:
+		award_grade_level_timeback_xp(int(round(final_xp)), details, mastery_count)
 	else:
 		print("[TimeBack] ⚠ Session too short (%.1fs < %.1fs minimum), no XP awarded" % [total_duration, GameConfig.timeback_min_session_duration])
 	
@@ -386,23 +329,12 @@ func award_grade_level_timeback_xp(xp: int, details: Dictionary, _mastery_count:
 		print("[TimeBack] SDK not ready, cannot award XP")
 		return
 	
-	# Calculate newly earned stars (additive mastery units)
-	# e.g., if player got 3 stars but already had 2, masteredUnits = 1
-	var previous_stars = details.get("previous_stars", 0)
-	var new_stars = details.get("new_stars", 0)
-	var mastered_units = max(0, new_stars - previous_stars)
-	
-	# Prepare score data with manual XP override
+	# Prepare score data
 	var score_data = {
 		"correctQuestions": details.correct_answers,
 		"totalQuestions": details.total_answers,
 		"xpAwarded": xp
 	}
-	
-	# Only include masteredUnits if new stars were earned
-	if mastered_units > 0:
-		score_data["masteredUnits"] = mastered_units
-		print("[TimeBack] New stars earned: %d (was %d, now %d)" % [mastered_units, previous_stars, new_stars])
 	
 	print("[TimeBack] Ending grade level activity with score_data: ", score_data)
 	PlaycademySdk.timeback.end_activity(score_data)
