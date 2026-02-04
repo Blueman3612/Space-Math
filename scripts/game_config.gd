@@ -155,6 +155,11 @@ var prompt_label_position = Vector2(960, 32)  # Top center of screen
 var prompt_label_settings_path = "res://assets/label settings/GravityBold64.tres"
 var default_prompt_text = "SOLVE"  # Default prompt when no custom prompt is specified
 
+# Prompt label flash animation (flashes when appearing or changing text)
+var prompt_flash_color = Color(0, 1, 1)  # Turquoise flash color
+var prompt_base_color = Color(0, 0, 1)  # Blue base color
+var prompt_flash_duration = 0.5  # Duration of flash fade in seconds
+
 # ============================================
 # Level Button Layout
 # ============================================

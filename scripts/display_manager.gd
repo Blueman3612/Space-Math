@@ -165,7 +165,8 @@ func update_fraction_problem_display(user_answer: String, answer_submitted: bool
 
 func create_prompt_label():
 	"""Create or update the prompt label at the top of the screen for the current question.
-	The prompt label persists across questions and is only animated off on level complete."""
+	The prompt label persists across questions and is only animated off on level complete.
+	Flashes turquoise and fades to blue when appearing or changing text."""
 	# Skip if label settings not loaded
 	if not prompt_label_settings:
 		return
@@ -183,13 +184,18 @@ func create_prompt_label():
 	elif QuestionManager.current_question and QuestionManager.current_question.has("prompt"):
 		prompt_text = QuestionManager.current_question.prompt
 	
-	# If prompt label already exists, just update the text
+	# If prompt label already exists, check if text changed
 	if current_prompt_label and is_instance_valid(current_prompt_label):
+		var text_changed = current_prompt_label.text != prompt_text
 		current_prompt_label.text = prompt_text
 		# Re-center if text changed
 		current_prompt_label.reset_size()
 		if current_prompt_label.size.x > 0:
 			current_prompt_label.position.x = GameConfig.prompt_label_position.x - current_prompt_label.size.x / 2
+		
+		# Flash animation if text changed
+		if text_changed:
+			flash_prompt_label()
 		return
 	
 	# Create new prompt label
@@ -199,7 +205,7 @@ func create_prompt_label():
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	prompt.autowrap_mode = TextServer.AUTOWRAP_OFF
-	prompt.self_modulate = Color(0, 0, 1)  # Blue color, doesn't change with feedback
+	prompt.self_modulate = GameConfig.prompt_flash_color  # Start with flash color
 	
 	# Set initial position at configured Y, with approximate X centering
 	prompt.position = GameConfig.prompt_label_position
@@ -213,6 +219,23 @@ func create_prompt_label():
 	
 	# Track reference (but DON'T add to current_problem_nodes - prompt persists across questions)
 	current_prompt_label = prompt
+	
+	# Flash animation for new label
+	flash_prompt_label()
+
+func flash_prompt_label():
+	"""Flash the prompt label from turquoise to blue with ease out animation"""
+	if not current_prompt_label or not is_instance_valid(current_prompt_label):
+		return
+	
+	# Set to flash color immediately
+	current_prompt_label.self_modulate = GameConfig.prompt_flash_color
+	
+	# Animate to base color
+	var tween = current_prompt_label.create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(current_prompt_label, "self_modulate", GameConfig.prompt_base_color, GameConfig.prompt_flash_duration)
 
 func include_prompt_in_animation():
 	"""Add the prompt label to current_problem_nodes so it animates off with the last question"""
