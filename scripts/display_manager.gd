@@ -1147,7 +1147,9 @@ func show_number_line_incorrect_feedback():
 		number_line_fraction_label.modulate = GameConfig.color_incorrect
 
 func create_multiple_choice_problem():
-	"""Create a multiple choice problem display (handles all comparison question types)"""
+	"""Create a comparison question display with two answer buttons showing the values to compare.
+	Text comparisons (expression, decimal): buttons stacked vertically
+	Fraction comparisons: buttons stacked horizontally with fraction displays"""
 	if not QuestionManager.current_question or not QuestionManager.is_multiple_choice_display_type(QuestionManager.current_question.get("type", "")):
 		return
 	
@@ -1160,299 +1162,180 @@ func create_multiple_choice_problem():
 	multiple_choice_correct_index = -1
 	
 	var question_type = QuestionManager.current_question.get("type", "")
-	var correct_answer = QuestionManager.current_question.result
+	var result = QuestionManager.current_question.result  # "<" or ">"
+	var operands = QuestionManager.current_question.get("operands", [])
 	
-	# Get answer choices (dynamically sized based on question type)
-	var answer_choices = QuestionManager.get_multiple_choice_answers(QuestionManager.current_question)
+	if operands.size() < 2:
+		print("Error: Comparison requires 2 operands")
+		return
 	
-	# Find correct answer index
-	for i in range(answer_choices.size()):
-		if answer_choices[i] == correct_answer:
-			multiple_choice_correct_index = i
-			break
+	# Determine if this is a fraction comparison
+	var is_fraction_comparison = question_type in ["fraction_comparison", "Compare unlike denominators (4.NF.A)"]
 	
-	# Calculate screen center and positions
-	var center_x = 960.0
-	var center_y = 540.0
-	var target_y_prompt = center_y + GameConfig.multiple_choice_prompt_y_offset
-	var target_y_answers = center_y + GameConfig.multiple_choice_answers_y_offset
-	var common_start_y = GameConfig.off_screen_bottom.y
-	var prompt_delta_y = target_y_prompt - common_start_y
-	var answers_delta_y = target_y_answers - common_start_y
-	var start_y_prompt = common_start_y
-	var start_y_answers = common_start_y + (answers_delta_y - prompt_delta_y)
+	# Get display text/data for each operand
+	var operand_displays = []  # Array of display strings or fraction data dicts
+	var operand_values = []  # Array of numeric values for comparison
 	
-	# Variables for the operand display nodes
-	var left_node: Node
-	var right_node: Node
-	var left_width: float
-	var right_width: float
-	var is_fraction_display = false  # Whether left/right are fraction nodes
-	
-	# Check what type of operand display we need
 	if question_type == "expression_comparison_20":
-		# Expression comparison - use labels with expression text (e.g., "19 + 1")
-		var operands = QuestionManager.current_question.get("operands", [])
-		if operands.size() < 2:
-			print("Error: Expression comparison requires 2 operands")
-			return
-		
-		var expr1 = operands[0]
-		var expr2 = operands[1]
-		
-		left_node = Label.new()
-		left_node.label_settings = label_settings_resource
-		left_node.text = str(expr1.a) + " " + expr1.op + " " + str(expr1.b)
-		left_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		left_node.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		play_node.add_child(left_node)
-		left_node.reset_size()
-		left_width = left_node.get_minimum_size().x
-		
-		right_node = Label.new()
-		right_node.label_settings = label_settings_resource
-		right_node.text = str(expr2.a) + " " + expr2.op + " " + str(expr2.b)
-		right_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		right_node.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		play_node.add_child(right_node)
-		right_node.reset_size()
-		right_width = right_node.get_minimum_size().x
-		
+		# Expression comparison - display as "a + b" or "a - b"
+		for expr in operands:
+			var display_text = str(expr.a) + " " + expr.op + " " + str(expr.b)
+			operand_displays.append(display_text)
+			# Calculate numeric value
+			var value = expr.a + expr.b if expr.op == "+" else expr.a - expr.b
+			operand_values.append(value)
 	elif question_type == "decimal_comparison":
-		# Decimal comparison - use labels with decimal operands
-		var operands = QuestionManager.current_question.get("operands", [])
-		if operands.size() < 2:
-			print("Error: Decimal comparison requires 2 operands")
-			return
-		
-		left_node = Label.new()
-		left_node.label_settings = label_settings_resource
-		left_node.text = str(operands[0])
-		left_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		left_node.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		play_node.add_child(left_node)
-		left_node.reset_size()
-		left_width = left_node.get_minimum_size().x
-		
-		right_node = Label.new()
-		right_node.label_settings = label_settings_resource
-		right_node.text = str(operands[1])
-		right_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		right_node.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		play_node.add_child(right_node)
-		right_node.reset_size()
-		right_width = right_node.get_minimum_size().x
-		
+		# Decimal comparison - display as-is
+		for op in operands:
+			operand_displays.append(str(op))
+			operand_values.append(float(op))
 	elif question_type == "fraction_comparison":
-		# New fraction comparison - use operands array with dict format
-		var operands = QuestionManager.current_question.get("operands", [])
-		if operands.size() < 2:
-			print("Error: Fraction comparison requires 2 operands")
-			return
-		
-		var left_data = operands[0]
-		var right_data = operands[1]
-		
-		left_node = create_fraction(Vector2(0, 0), left_data.numerator, left_data.denominator, play_node)
-		right_node = create_fraction(Vector2(0, 0), right_data.numerator, right_data.denominator, play_node)
-		
-		left_width = left_node.current_divisor_width
-		right_width = right_node.current_divisor_width
-		is_fraction_display = true
-		
+		# Fraction comparison - store fraction data for later rendering
+		for op in operands:
+			operand_displays.append({"numerator": op.numerator, "denominator": op.denominator})
+			operand_values.append(float(op.numerator) / float(op.denominator))
 	else:
 		# Legacy fraction comparison - parse from expression string
 		var expr = QuestionManager.current_question.get("expression", "")
 		if expr == "":
-			print("Error: No expression for multiple choice problem")
+			print("Error: No expression for comparison problem")
 			return
-		
 		var prompt_expr = expr.split(" = ")[0]
 		var parts = prompt_expr.split(" ? ")
 		if parts.size() != 2:
-			print("Error: Invalid multiple choice expression format")
+			print("Error: Invalid comparison expression format")
 			return
-		
-		var left_fraction_data = parse_mixed_fraction_from_string(parts[0])
-		var right_fraction_data = parse_mixed_fraction_from_string(parts[1])
-		
-		left_node = create_fraction(Vector2(0, 0), left_fraction_data[1], left_fraction_data[2], play_node)
-		right_node = create_fraction(Vector2(0, 0), right_fraction_data[1], right_fraction_data[2], play_node)
-		
-		left_width = left_node.current_divisor_width
-		right_width = right_node.current_divisor_width
-		is_fraction_display = true
+		for part in parts:
+			var frac_data = parse_mixed_fraction_from_string(part)
+			operand_displays.append({"numerator": frac_data[1], "denominator": frac_data[2]})
+			operand_values.append(float(frac_data[1]) / float(frac_data[2]))
+		is_fraction_comparison = true
 	
-	# Check if this is a comparison question type (for subtitle display on buttons)
-	var is_comparison_question = question_type in ["decimal_comparison", "fraction_comparison", "expression_comparison_20", "Compare unlike denominators (4.NF.A)"]
+	# Determine correct answer index (which operand is greater)
+	# result is "<" means first < second, so second is greater (index 1)
+	# result is ">" means first > second, so first is greater (index 0)
+	multiple_choice_correct_index = 1 if result == "<" else 0
 	
-	# Create placeholder square (outlined blue box) instead of "?"
-	var placeholder_size = 128.0  # Size of the square
-	var border_width = 16.0
-	
-	var placeholder_panel = Panel.new()
-	placeholder_panel.custom_minimum_size = Vector2(placeholder_size, placeholder_size)
-	placeholder_panel.size = Vector2(placeholder_size, placeholder_size)
-	
-	var style = StyleBoxFlat.new()
-	style.set_corner_radius_all(0)
-	style.bg_color = Color(0, 0, 0, 0)  # Transparent fill
-	style.border_width_left = int(border_width)
-	style.border_width_right = int(border_width)
-	style.border_width_top = int(border_width)
-	style.border_width_bottom = int(border_width)
-	style.border_color = Color(0, 0, 1)  # Pure blue
-	
-	placeholder_panel.add_theme_stylebox_override("panel", style)
-	placeholder_panel.z_index = -1
-	play_node.add_child(placeholder_panel)
-	
-	var placeholder_width = placeholder_size
-	
-	# Calculate expression layout - center the placeholder with equal spacing on both sides
-	# Placeholder is centered at center_x
-	var placeholder_x = center_x + GameConfig.multiple_choice_prompt_x_offset
-	
-	# Calculate placeholder position (left edge, so center is at placeholder_x)
-	var placeholder_left_edge = placeholder_x - (placeholder_width / 2.0)
-	var placeholder_right_edge = placeholder_x + (placeholder_width / 2.0)
-	
-	# Left operand: right edge should be at placeholder_left_edge - spacing
-	var left_right_edge = placeholder_left_edge - GameConfig.multiple_choice_element_spacing
-	var left_left_edge = left_right_edge - left_width
-	
-	# Right operand: left edge should be at placeholder_right_edge + spacing  
-	var right_left_edge = placeholder_right_edge + GameConfig.multiple_choice_element_spacing
-	
-	# Position operand nodes (off-screen initially)
-	if is_fraction_display:
-		# For fractions, position is the center
-		# Only use y component of fraction_offset since we've calculated correct x positions
-		var left_center = left_left_edge + (left_width / 2.0)
-		var right_center = right_left_edge + (right_width / 2.0)
-		left_node.position = Vector2(left_center, start_y_prompt + GameConfig.fraction_offset.y)
-		right_node.position = Vector2(right_center, start_y_prompt + GameConfig.fraction_offset.y)
-	else:
-		# For labels, position is the left edge
-		left_node.position = Vector2(left_left_edge, start_y_prompt - 64)
-		right_node.position = Vector2(right_left_edge, start_y_prompt - 64)
-	
-	left_node.z_index = -1
-	right_node.z_index = -1
-	current_problem_nodes.append(left_node)
-	current_problem_nodes.append(right_node)
-	
-	# Position placeholder panel (centered both horizontally and vertically)
-	if is_fraction_display:
-		# Position relative to left fraction for fraction display
-		var left_center = left_left_edge + (left_width / 2.0)
-		# Panel position is top-left, so offset by half size to center
-		var panel_offset = Vector2(placeholder_left_edge - left_center - placeholder_size / 2.0, -placeholder_size / 2.0) + GameConfig.operator_offset - Vector2(0, GameConfig.fraction_offset.y)
-		placeholder_panel.position = panel_offset
-		placeholder_panel.get_parent().remove_child(placeholder_panel)
-		left_node.add_child(placeholder_panel)
-	else:
-		# Position at calculated left edge, centered vertically with text
-		placeholder_panel.position = Vector2(placeholder_left_edge, start_y_prompt - placeholder_size / 2.0)
-	current_problem_nodes.append(placeholder_panel)
+	# Screen positioning
+	var center_x = 960.0
+	var center_y = 540.0
+	var target_y = center_y + GameConfig.comparison_button_y_offset
+	var start_y = GameConfig.off_screen_bottom.y
 	
 	# Create answer buttons
 	var button_scene = load("res://scenes/answer_button.tscn")
-	var total_buttons_width = 0.0
 	var button_instances = []
+	var button_sizes = []
 	
-	for i in range(answer_choices.size()):
+	for i in range(2):
 		var button_instance = button_scene.instantiate()
 		button_instance.visible = false
 		play_node.add_child(button_instance)
 		
 		var answer_label = button_instance.get_node("Answer")
-		answer_label.text = answer_choices[i]
-		
 		var key_label = button_instance.get_node("Key")
+		var subtitle_label = button_instance.get_node("Subtitle")
+		
+		# Hide subtitle - not used in new design
+		subtitle_label.visible = false
+		
+		# Set keybind label
 		if i < GameConfig.multiple_choice_keybind_labels.size():
 			key_label.text = GameConfig.multiple_choice_keybind_labels[i]
 		
-		# Configure Subtitle label for comparison questions
-		var subtitle_label = button_instance.get_node("Subtitle")
-		if is_comparison_question:
-			subtitle_label.visible = true
-			if answer_choices[i] == "<":
-				subtitle_label.text = "Less"
-			elif answer_choices[i] == ">":
-				subtitle_label.text = "Greater"
-			else:
-				subtitle_label.visible = false  # Hide for "=" or other choices
+		var button_width: float
+		var button_height: float
+		
+		if is_fraction_comparison:
+			# For fractions, hide the Answer label and add a fraction display
+			answer_label.visible = false
+			
+			var frac_data = operand_displays[i]
+			var fraction_node = create_fraction(Vector2(0, 0), frac_data.numerator, frac_data.denominator, button_instance)
+			
+			# Size button based on fraction + padding
+			var frac_width = fraction_node.current_divisor_width
+			var frac_height = fraction_node.get_total_height() if fraction_node.has_method("get_total_height") else 256.0
+			
+			button_width = max(frac_width + GameConfig.comparison_fraction_button_padding.x * 2, GameConfig.comparison_fraction_button_min_size.x)
+			button_height = max(frac_height + GameConfig.comparison_fraction_button_padding.y * 2, GameConfig.comparison_fraction_button_min_size.y)
+			
+			# Position fraction in center of button
+			fraction_node.position = Vector2(button_width / 2.0 + GameConfig.comparison_fraction_content_offset.x, 
+											  button_height / 2.0 + GameConfig.comparison_fraction_content_offset.y)
 		else:
-			subtitle_label.visible = false
+			# For text comparisons, set the Answer label text
+			answer_label.text = operand_displays[i]
+			answer_label.visible = true
+			
+			# Calculate button size based on text + padding
+			answer_label.reset_size()
+			var text_size = answer_label.get_minimum_size()
+			
+			button_width = text_size.x + GameConfig.comparison_button_padding.x * 2
+			button_height = max(text_size.y + GameConfig.comparison_button_padding.y * 2, GameConfig.comparison_button_min_height)
+			
+			# Resize answer label to match button
+			answer_label.offset_right = answer_label.offset_left + button_width
+			answer_label.offset_bottom = button_height
 		
-		button_instance.reset_size()
-		var button_width = max(button_instance.size.x, GameConfig.multiple_choice_button_min_size.x)
-		var button_height = max(button_instance.size.y, GameConfig.multiple_choice_button_min_size.y)
 		button_instance.custom_minimum_size = Vector2(button_width, button_height)
-		answer_label.offset_right = answer_label.offset_left + button_width
-		answer_label.offset_bottom = button_height
-		
-		total_buttons_width += button_width
-		button_instances.append(button_instance)
-	
-	total_buttons_width += GameConfig.multiple_choice_button_spacing * (answer_choices.size() - 1)
-	var buttons_start_x = center_x - (total_buttons_width / 2.0) + GameConfig.multiple_choice_button_x_offset
-	var current_x = buttons_start_x
-	
-	for i in range(button_instances.size()):
-		var button_instance = button_instances[i]
-		var button_width = button_instance.custom_minimum_size.x
-		button_instance.position = Vector2(current_x, start_y_answers)
-		button_instance.visible = true
+		button_instance.size = Vector2(button_width, button_height)
 		button_instance.z_index = -1
 		
-		var answer_index = i
-		button_instance.pressed.connect(_on_multiple_choice_answer_selected.bind(answer_index))
+		# Connect button press
+		button_instance.pressed.connect(_on_multiple_choice_answer_selected.bind(i))
 		
+		button_instances.append(button_instance)
+		button_sizes.append(Vector2(button_width, button_height))
 		multiple_choice_buttons.append(button_instance)
 		current_problem_nodes.append(button_instance)
-		current_x += button_width + GameConfig.multiple_choice_button_spacing
 	
-	# Calculate target positions
-	var left_target: Vector2
-	var right_target: Vector2
-	var placeholder_target: Vector2
+	# Position buttons based on layout type
+	var button_start_positions = []
+	var button_target_positions = []
 	
-	if is_fraction_display:
-		# Only use y component of fraction_offset since we've calculated correct x positions
-		var left_center = left_left_edge + (left_width / 2.0)
-		var right_center = right_left_edge + (right_width / 2.0)
-		left_target = Vector2(left_center, target_y_prompt + GameConfig.fraction_offset.y)
-		right_target = Vector2(right_center, target_y_prompt + GameConfig.fraction_offset.y)
+	if is_fraction_comparison:
+		# Horizontal layout for fractions
+		var total_width = button_sizes[0].x + button_sizes[1].x + GameConfig.comparison_button_horizontal_spacing
+		var start_x = center_x - total_width / 2.0
+		
+		var current_x = start_x
+		for i in range(2):
+			var btn_y = target_y - button_sizes[i].y / 2.0
+			button_start_positions.append(Vector2(current_x, start_y))
+			button_target_positions.append(Vector2(current_x, btn_y))
+			current_x += button_sizes[i].x + GameConfig.comparison_button_horizontal_spacing
 	else:
-		left_target = Vector2(left_left_edge, target_y_prompt - 64)
-		right_target = Vector2(right_left_edge, target_y_prompt - 64)
-		placeholder_target = Vector2(placeholder_left_edge, target_y_prompt - placeholder_size / 2.0)
+		# Vertical layout for text comparisons
+		var total_height = button_sizes[0].y + button_sizes[1].y + GameConfig.comparison_button_vertical_spacing
+		var start_button_y = target_y - total_height / 2.0
+		
+		var current_button_y = start_button_y
+		for i in range(2):
+			var btn_x = center_x - button_sizes[i].x / 2.0
+			button_start_positions.append(Vector2(btn_x, start_y))
+			button_target_positions.append(Vector2(btn_x, current_button_y))
+			current_button_y += button_sizes[i].y + GameConfig.comparison_button_vertical_spacing
 	
-	# Animate all elements
+	# Set initial positions and make visible
+	for i in range(2):
+		button_instances[i].position = button_start_positions[i]
+		button_instances[i].visible = true
+	
+	# Animate buttons to target positions
 	var tween = create_tween()
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_EXPO)
 	tween.set_parallel(true)
 	
-	tween.tween_property(left_node, "position", left_target, GameConfig.animation_duration)
-	tween.tween_property(right_node, "position", right_target, GameConfig.animation_duration)
-	
-	if not is_fraction_display:
-		tween.tween_property(placeholder_panel, "position", placeholder_target, GameConfig.animation_duration)
-	
-	# Animate buttons
-	current_x = buttons_start_x
-	for button_instance in button_instances:
-		var button_target = Vector2(current_x, target_y_answers)
-		tween.tween_property(button_instance, "position", button_target, GameConfig.animation_duration)
-		current_x += button_instance.custom_minimum_size.x + GameConfig.multiple_choice_button_spacing
+	for i in range(2):
+		tween.tween_property(button_instances[i], "position", button_target_positions[i], GameConfig.animation_duration)
 	
 	tween.set_parallel(false)
 	tween.tween_callback(ScoreManager.start_question_timing)
 	
-	# Create prompt label at the end (after nodes are added to current_problem_nodes)
+	# Create prompt label
 	create_prompt_label()
 
 func _on_multiple_choice_answer_selected(answer_index: int):

@@ -71,16 +71,20 @@ var fraction_problem_x_offset = -64.0  # Horizontal offset from primary_position
 var fraction_problem_min_x = 32.0  # Minimum x position for fraction problems to prevent going off-screen
 
 # ============================================
-# Multiple Choice Question Layout
+# Multiple Choice / Comparison Question Layout
 # ============================================
-var multiple_choice_prompt_y_offset = -256.0  # Vertical offset from center for prompt display
-var multiple_choice_prompt_x_offset = 0.0  # Horizontal offset for prompt (fractions and question mark)
-var multiple_choice_answers_y_offset = 64.0  # Vertical offset from center for answer buttons
-var multiple_choice_button_spacing = 64.0  # Horizontal spacing between answer buttons
-var multiple_choice_button_min_size = Vector2(256, 256)  # Minimum size for answer buttons
-var multiple_choice_button_x_offset = 0.0  # Horizontal offset for answer buttons
-var multiple_choice_element_spacing = 80.0  # Spacing between fractions and question mark in multiple choice
 var multiple_choice_keybind_labels = ["Q", "W", "E", "R", "T"]  # Keybind labels for answer buttons
+
+# Comparison question layout (vertical stacking for text, horizontal for fractions)
+var comparison_prompt_text = "WHICH IS GREATER?"  # Prompt text for comparison questions
+var comparison_button_vertical_spacing = 128.0  # Vertical spacing between buttons (non-fraction)
+var comparison_button_horizontal_spacing = 128.0  # Horizontal spacing between buttons (fractions)
+var comparison_button_y_offset = 0.0  # Vertical offset from center for button group
+var comparison_button_min_height = 192.0  # Minimum button height (text comparisons)
+var comparison_button_padding = Vector2(64, 64)  # Padding around text content in buttons (x, y)
+var comparison_fraction_button_padding = Vector2(64, 64)  # Padding around fraction content in buttons
+var comparison_fraction_button_min_size = Vector2(200, 256)  # Minimum size for fraction buttons
+var comparison_fraction_content_offset = Vector2(0, 0)  # Offset for fraction content inside button
 
 # ============================================
 # Star Animation
@@ -211,7 +215,7 @@ var show_accuracy_line = false  # Shows current accuracy percentage
 var stars_required_to_unlock_next_level = 3  # Stars needed on a level to unlock the next level in the pack
 
 # Strict grade progression - when true, only shows the earliest non-mastered grade
-var strict_grade_progression = true  # Hides navigation buttons and locks player to current grade until mastered
+var strict_grade_progression = false  # Hides navigation buttons and locks player to current grade until mastered
 
 # Level button visibility (alpha values for grayed out states)
 var level_button_alpha_available = 1.0  # Fully visible - can be played
@@ -327,7 +331,7 @@ const GRADE_LEVELS = {
 		{
 			"name": "Add./Sub.",
 			"levels": [
-				{"id": "grade2_expression_comparison_20", "name": "Compare Sums and Differences to 20", "mastery_count": 13, "config": {"type": "expression_comparison_20", "prompt": "LESS THAN OR GREATER THAN?"}},
+				{"id": "grade2_expression_comparison_20", "name": "Compare Sums and Differences to 20", "mastery_count": 13, "config": {"type": "expression_comparison_20", "prompt": "WHICH IS GREATER?"}},
 				{"id": "grade2_fact_families_0_20", "name": "Add/Subtract 0-20", "mastery_count": 33, "config": {"operators": ["+", "-"], "sum_max": 20, "range_max": 20}}
 			]
 		},
@@ -451,7 +455,7 @@ const GRADE_LEVELS = {
 			{
 				"name": "Decimals",
 				"levels": [
-					{"id": "grade4_decimal_comparison", "name": "Quantity Comparison of Decimals to Hundredths", "mastery_count": 80, "config": {"type": "decimal_comparison", "prompt": "LESS THAN OR GREATER THAN?"}},
+					{"id": "grade4_decimal_comparison", "name": "Quantity Comparison of Decimals to Hundredths", "mastery_count": 80, "config": {"type": "decimal_comparison", "prompt": "WHICH IS GREATER?"}},
 					{"id": "grade4_decimal_add_sub", "name": "Add and Subtract Decimals to the Hundredths", "mastery_count": 15, "config": {"type": "decimal_add_sub", "operators": ["+", "-"]}}
 				]
 			},
@@ -459,7 +463,7 @@ const GRADE_LEVELS = {
 				"name": "Fractions",
 				"levels": [
 					{"id": "grade4_number_line_fractions", "name": "Place Fractions on Number Line (den. 2, 3, 4, 5, 6, 8, 10)", "mastery_count": 20, "config": {"type": "number_line_fractions_extended", "prompt": "PLACE ON NUMBER LINE", "denominators": [2, 3, 4, 5, 6, 8, 10], "total_pips": 13, "frame": 1, "control_mode": "continuous", "lower_limit": 0, "upper_limit": 3}},
-					{"id": "grade4_fraction_comparison", "name": "Quantity Comparison of Fractions with Unlike Denominators", "mastery_count": 20, "config": {"type": "fraction_comparison", "prompt": "LESS THAN OR GREATER THAN?"}},
+					{"id": "grade4_fraction_comparison", "name": "Quantity Comparison of Fractions with Unlike Denominators", "mastery_count": 20, "config": {"type": "fraction_comparison", "prompt": "WHICH IS GREATER?"}},
 					{"id": "grade4_mixed_numbers", "name": "Add/Subtract Mixed Numbers with Like Denominators", "mastery_count": 19, "config": {"type": "mixed_numbers_like_denom", "operators": ["+", "-"]}}
 				]
 			}
@@ -700,7 +704,7 @@ const ASSESSMENT_STANDARDS = [
 		"prerequisites": ["assess_sums_to_20", "assess_subtraction_16_20"],
 		"error_tolerance": 0,
 		"level_ids": ["grade2_expression_comparison_20"],
-		"config": {"type": "expression_comparison_20", "prompt": "LESS THAN OR GREATER THAN?"}
+		"config": {"type": "expression_comparison_20", "prompt": "WHICH IS GREATER?"}
 	},
 	{
 		"id": "assess_2digit_add_no_regroup",
@@ -934,7 +938,7 @@ const ASSESSMENT_STANDARDS = [
 		"prerequisites": ["assess_expression_comparison_20"],
 		"error_tolerance": 1,
 		"level_ids": ["grade4_decimal_comparison"],
-		"config": {"type": "decimal_comparison", "prompt": "LESS THAN OR GREATER THAN?"}
+		"config": {"type": "decimal_comparison", "prompt": "WHICH IS GREATER?"}
 	},
 	{
 		"id": "assess_decimal_add_sub",
@@ -966,7 +970,7 @@ const ASSESSMENT_STANDARDS = [
 		"prerequisites": ["assess_expression_comparison_20", "assess_number_line_fractions_extended"],
 		"error_tolerance": 0,
 		"level_ids": ["grade4_fraction_comparison"],
-		"config": {"type": "fraction_comparison", "prompt": "LESS THAN OR GREATER THAN?"}
+		"config": {"type": "fraction_comparison", "prompt": "WHICH IS GREATER?"}
 	},
 	{
 		"id": "assess_mixed_numbers_like_denom",

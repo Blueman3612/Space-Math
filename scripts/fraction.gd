@@ -392,3 +392,12 @@ func clear_mixed_fraction():
 	if whole_number_label:
 		whole_number_label.visible = false
 	current_total_width = current_divisor_width
+
+func get_total_height() -> float:
+	"""Get the total height of the fraction display (numerator + divisor + denominator)"""
+	# Based on the label offsets in fraction.tscn:
+	# Numerator: -200 to -72 (128 pixels above divisor)
+	# Denominator: 72 to 200 (128 pixels below divisor)
+	# Divisor line width: 32 pixels
+	# Total: ~400 pixels for standard fraction
+	return 400.0
