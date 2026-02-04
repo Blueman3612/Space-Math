@@ -987,8 +987,10 @@ func animate_assessment_5star(star_index: int, stars_earned: int):
 	# Set sprite frame to earned (always shows filled star)
 	star_sprite_ref.frame = 1
 	
-	# Update Correct label with stars earned for this grade
-	correct_label_ref.text = str(stars_earned)
+	# Update Correct label with stars earned / total stars for this grade
+	var grade = star_index + 1  # star_index 0 = Grade 1, etc.
+	var total_stars = LevelManager.get_grade_total_stars(grade)
+	correct_label_ref.text = "%d/%d" % [stars_earned, total_stars]
 	
 	# Show Grade label
 	grade_label_ref.visible = true

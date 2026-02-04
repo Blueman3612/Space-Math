@@ -29,6 +29,7 @@ var play_button: Button = null
 var xp_warning_label: Label = null  # Reference to the XpWarning label
 
 # Star Progress display
+var star_progress_node: Node2D = null  # Reference to the StarProgress node
 var star_progress_label: Label = null  # Reference to the StarProgress/Label node
 
 func initialize(main_node: Control):
@@ -46,8 +47,8 @@ func initialize(main_node: Control):
 	if xp_warning_label:
 		xp_warning_label.visible = false
 	
-	# Get star progress label reference
-	var star_progress_node = main_menu_node.get_node_or_null("StarProgress")
+	# Get star progress node and label references
+	star_progress_node = main_menu_node.get_node_or_null("StarProgress")
 	if star_progress_node:
 		star_progress_label = star_progress_node.get_node_or_null("Label")
 	
@@ -519,7 +520,14 @@ func update_grade_display():
 
 func update_star_progress_display():
 	"""Update the star progress label to show stars earned / total stars for current grade"""
-	if not star_progress_label:
+	if not star_progress_node:
+		return
+	
+	# Only show star progress when viewing grade level packs (assessment completed)
+	var assessment_completed = SaveManager.is_assessment_completed()
+	star_progress_node.visible = assessment_completed
+	
+	if not assessment_completed or not star_progress_label:
 		return
 	
 	var grade = GameConfig.current_grade
