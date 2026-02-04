@@ -10,6 +10,10 @@ signal resume_activity_failed(error_message)
 signal user_fetch_succeeded(user_data: Dictionary)
 signal user_fetch_failed(error_message: String)
 
+# Signals for XP operations
+signal xp_fetch_succeeded(xp_data: Dictionary)
+signal xp_fetch_failed(error_message: String)
+
 var _main_client: JavaScriptObject
 
 # To keep JS callbacks alive for ongoing operations
@@ -17,6 +21,8 @@ var _end_activity_resolve_cb_js: JavaScriptObject = null
 var _end_activity_reject_cb_js: JavaScriptObject = null
 var _user_fetch_resolve_cb_js: JavaScriptObject = null
 var _user_fetch_reject_cb_js: JavaScriptObject = null
+var _xp_fetch_resolve_cb_js: JavaScriptObject = null
+var _xp_fetch_reject_cb_js: JavaScriptObject = null
 
 # Internal state for tracking current activity
 var _activity_start_time: int = 0
@@ -25,6 +31,10 @@ var _activity_in_progress: bool = false
 
 # User context object
 var _user: TimebackUser
+
+# XP cache state (5 second TTL)
+const XP_CACHE_TTL_MS: int = 5000
+var _xp_cache: Dictionary = {}  # { cache_key: { "data": Dictionary, "timestamp": int } }
 
 func _init(client_js_object: JavaScriptObject):
 	_main_client = client_js_object
@@ -41,9 +51,11 @@ func _init(client_js_object: JavaScriptObject):
 #   - user.role: String - student, parent, teacher, administrator
 #   - user.enrollments: Array - [{ subject, grade, courseId }]
 #   - user.organizations: Array - [{ id, name, type }]
+#   - user.xp: TimebackUserXp - XP data accessor
 #
 # Methods:
 #   - user.fetch() - Fetch fresh data from server (emits user_fetch_succeeded/failed)
+#   - user.xp.fetch() - Fetch XP data from server (emits xp_fetch_succeeded/failed)
 # ============================================================================
 var user: TimebackUser:
 	get:
@@ -345,8 +357,110 @@ func _clear_user_fetch_callbacks():
 	_user_fetch_reject_cb_js = null
 
 # ============================================================================
+# XP FETCH CALLBACKS
+# ============================================================================
+
+func _on_xp_fetch_resolved_with_cache(args: Array, cache_key: String):
+	if args.size() > 0:
+		var result = args[0]
+		if result == null or not result is JavaScriptObject:
+			emit_signal("xp_fetch_failed", "INVALID_XP_RESPONSE")
+			_clear_xp_fetch_callbacks()
+			return
+		var xp_data = _convert_js_xp_response(result)
+		var emit_xp_data = xp_data.duplicate(true)
+		if not cache_key.is_empty():
+			_set_cached_xp(cache_key, xp_data)
+		emit_signal("xp_fetch_succeeded", emit_xp_data)
+	else:
+		emit_signal("xp_fetch_failed", "XP_FETCH_RESOLVED_NO_DATA")
+	_clear_xp_fetch_callbacks()
+
+func _on_xp_fetch_rejected(args: Array):
+	var error_message = "XP_FETCH_PROMISE_REJECTED"
+	
+	if args.size() > 0:
+		var error_obj = args[0]
+		if error_obj is JavaScriptObject and "message" in error_obj:
+			error_message = str(error_obj.message)
+		else:
+			error_message = str(error_obj)
+		printerr("[TimebackAPI] XP fetch failed: ", error_message)
+	else:
+		printerr("[TimebackAPI] XP fetch failed: Unknown error")
+	
+	emit_signal("xp_fetch_failed", error_message)
+	_clear_xp_fetch_callbacks()
+
+func _clear_xp_fetch_callbacks():
+	_xp_fetch_resolve_cb_js = null
+	_xp_fetch_reject_cb_js = null
+
+# ============================================================================
 # HELPER METHODS
 # ============================================================================
+
+func _convert_js_xp_response(js_result) -> Dictionary:
+	var xp_data: Dictionary = {}
+	
+	if js_result == null or not js_result is JavaScriptObject:
+		return xp_data
+	
+	xp_data["totalXp"] = int(js_result.totalXp) if 'totalXp' in js_result and js_result.totalXp != null else 0
+	if 'todayXp' in js_result and js_result.todayXp != null:
+		xp_data["todayXp"] = int(js_result.todayXp)
+	if 'courses' in js_result and js_result.courses != null:
+		xp_data["courses"] = _convert_js_array_to_courses(js_result.courses)
+	
+	return xp_data
+
+func _convert_js_array_to_courses(js_array) -> Array:
+	var result: Array = []
+	if js_array == null or not js_array is JavaScriptObject:
+		return result
+	
+	var length = js_array.length if 'length' in js_array else 0
+	for i in range(length):
+		var item = js_array[i]
+		if item is JavaScriptObject:
+			var course: Dictionary = {
+				"grade": int(item.grade) if 'grade' in item else 0,
+				"subject": str(item.subject) if 'subject' in item else "",
+				"title": str(item.title) if 'title' in item else "",
+				"totalXp": int(item.totalXp) if 'totalXp' in item else 0
+			}
+			if 'todayXp' in item and item.todayXp != null:
+				course["todayXp"] = int(item.todayXp)
+			result.append(course)
+	return result
+
+func _get_xp_cache_key(options: Dictionary) -> String:
+	var grade_str = str(options.get("grade", ""))
+	var subject_str = str(options.get("subject", ""))
+	var include_arr = options.get("include", [])
+	var include_sorted = include_arr.duplicate()
+	include_sorted.sort()
+	var include_str = ",".join(include_sorted)
+	return "%s:%s:%s" % [grade_str, subject_str, include_str]
+
+func _get_cached_xp(cache_key: String) -> Dictionary:
+	if not _xp_cache.has(cache_key):
+		return {}
+	var entry = _xp_cache[cache_key]
+	var now = Time.get_ticks_msec()
+	if now - entry["timestamp"] > XP_CACHE_TTL_MS:
+		_xp_cache.erase(cache_key)
+		return {}
+	var data = entry.get("data", {})
+	if data is Dictionary:
+		return data.duplicate(true)
+	return {}
+
+func _set_cached_xp(cache_key: String, data: Dictionary):
+	_xp_cache[cache_key] = {
+		"data": data.duplicate(true),
+		"timestamp": Time.get_ticks_msec()
+	}
 
 func _convert_js_array_to_enrollments(js_array) -> Array:
 	var result: Array = []
@@ -387,9 +501,17 @@ func _convert_js_array_to_organizations(js_array) -> Array:
 # ============================================================================
 class TimebackUser extends RefCounted:
 	var _api: TimebackAPI
+	var _xp: TimebackUserXp
 	
 	func _init(api: TimebackAPI):
 		_api = api
+		_xp = TimebackUserXp.new(api)
+	
+	# XP data access for the current user
+	# Call xp.fetch() to get XP from the server
+	var xp: TimebackUserXp:
+		get:
+			return _xp
 	
 	# Get the user's TimeBack ID
 	var id: String:
@@ -529,3 +651,95 @@ class TimebackUser extends RefCounted:
 		
 		promise.then(_api._user_fetch_resolve_cb_js, _api._user_fetch_reject_cb_js)
 		print("[TimebackAPI] Fetching fresh user data...")
+
+# ============================================================================
+# TIMEBACK USER XP CLASS
+# ============================================================================
+# Provides access to TimeBack XP data matching TypeScript SDK's client.timeback.user.xp
+# ============================================================================
+class TimebackUserXp extends RefCounted:
+	var _api: TimebackAPI
+	
+	func _init(api: TimebackAPI):
+		_api = api
+	
+	# Fetch XP data from the server
+	# Emits xp_fetch_succeeded(xp_data: Dictionary) or xp_fetch_failed(error_message: String)
+	# The xp_data dictionary contains: { totalXp: int, todayXp?: int, courses?: Array }
+	# Each course in courses array: { grade: int, subject: String, title: String, totalXp: int, todayXp?: int }
+	#
+	# @param options - Optional dictionary with:
+	#   - grade: int (must be used with subject)
+	#   - subject: String (must be used with grade)
+	#   - include: Array of Strings ("perCourse", "today")
+	#   - force: bool - bypass 5s cache
+	func fetch(options: Dictionary = {}):
+		var has_grade = options.has("grade")
+		var has_subject = options.has("subject")
+		if has_grade != has_subject:
+			printerr("[TimebackAPI] XP fetch: Both grade and subject must be provided together.")
+			_api.emit_signal("xp_fetch_failed", "GRADE_SUBJECT_MISMATCH")
+			return
+		
+		var force = options.get("force", false)
+		var cache_key = _api._get_xp_cache_key(options)
+		if not force:
+			var cached = _api._get_cached_xp(cache_key)
+			if not cached.is_empty():
+				print("[TimebackAPI] Returning cached XP data")
+				_api.emit_signal("xp_fetch_succeeded", cached)
+				return
+		
+		if _api._main_client == null:
+			printerr("[TimebackAPI] Main client not set. Cannot fetch XP data.")
+			_api.emit_signal("xp_fetch_failed", "MAIN_CLIENT_NULL")
+			return
+		
+		if not ('timeback' in _api._main_client and 
+				_api._main_client.timeback is JavaScriptObject and 
+				'user' in _api._main_client.timeback):
+			printerr("[TimebackAPI] client.timeback.user path not found.")
+			_api.emit_signal("xp_fetch_failed", "USER_PATH_NOT_FOUND")
+			return
+		
+		var user_obj = _api._main_client.timeback.user
+		if not (user_obj is JavaScriptObject and 'xp' in user_obj):
+			printerr("[TimebackAPI] client.timeback.user.xp not found.")
+			_api.emit_signal("xp_fetch_failed", "XP_PATH_NOT_FOUND")
+			return
+		
+		var xp_obj = user_obj.xp
+		if not (xp_obj is JavaScriptObject and 'fetch' in xp_obj):
+			printerr("[TimebackAPI] client.timeback.user.xp.fetch() not found.")
+			_api.emit_signal("xp_fetch_failed", "FETCH_METHOD_NOT_FOUND")
+			return
+		
+		var js_options = JavaScriptBridge.create_object("Object")
+		if has_grade:
+			js_options["grade"] = int(options.get("grade"))
+		if has_subject:
+			js_options["subject"] = str(options.get("subject"))
+		if options.has("include"):
+			var include_arr = options.get("include")
+			var js_include = JavaScriptBridge.create_object("Array")
+			for i in range(include_arr.size()):
+				js_include.push(include_arr[i])
+			js_options["include"] = js_include
+		if force:
+			js_options["force"] = true
+		
+		var promise = xp_obj.fetch(js_options)
+		
+		if promise == null or not promise is JavaScriptObject:
+			printerr("[TimebackAPI] xp.fetch() did not return a Promise.")
+			_api.emit_signal("xp_fetch_failed", "NOT_A_PROMISE")
+			return
+		
+		var on_resolve = Callable(_api, "_on_xp_fetch_resolved_with_cache").bind(cache_key)
+		var on_reject = Callable(_api, "_on_xp_fetch_rejected").bind()
+		
+		_api._xp_fetch_resolve_cb_js = JavaScriptBridge.create_callback(on_resolve)
+		_api._xp_fetch_reject_cb_js = JavaScriptBridge.create_callback(on_reject)
+		
+		promise.then(_api._xp_fetch_resolve_cb_js, _api._xp_fetch_reject_cb_js)
+		print("[TimebackAPI] Fetching XP data...")

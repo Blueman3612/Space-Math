@@ -30,6 +30,23 @@ The SDK provides the necessary tools and libraries to connect your Godot game wi
 
 Refer to the [SDK documentation](https://docs.playcademy.net/platform-guides/godot.html) for details on how to integrate these features into your game logic.
 
+Example: fetching TimeBack XP from a game:
+
+```gdscript
+PlaycademySdk.timeback.xp_fetch_succeeded.connect(func(xp_data: Dictionary):
+	print("Total XP:", xp_data.get("totalXp", 0))
+)
+
+PlaycademySdk.timeback.xp_fetch_failed.connect(func(error_message: String):
+	printerr("XP fetch failed:", error_message)
+)
+
+PlaycademySdk.timeback.user.xp.fetch({
+	"include": ["today"],
+	"force": false
+})
+```
+
 ### Required HTML Shell (`shell.html`) for Web Exports
 
 When deploying your game to the Playcademy web platform, the SDK relies critically on the provided `shell.html`. This HTML file is not just a template but a **vital component** specifically configured to:

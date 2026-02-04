@@ -12,6 +12,10 @@ signal resume_activity_failed(error_message: String)
 signal user_fetch_succeeded(user_data: Dictionary)
 signal user_fetch_failed(error_message: String)
 
+# Signals for XP operations
+signal xp_fetch_succeeded(xp_data: Dictionary)
+signal xp_fetch_failed(error_message: String)
+
 var _timeback_api
 
 func _init(playcademy_client: JavaScriptObject):
@@ -22,6 +26,8 @@ func _init(playcademy_client: JavaScriptObject):
 	_timeback_api.resume_activity_failed.connect(_on_original_resume_activity_failed)
 	_timeback_api.user_fetch_succeeded.connect(_on_original_user_fetch_succeeded)
 	_timeback_api.user_fetch_failed.connect(_on_original_user_fetch_failed)
+	_timeback_api.xp_fetch_succeeded.connect(_on_original_xp_fetch_succeeded)
+	_timeback_api.xp_fetch_failed.connect(_on_original_xp_fetch_failed)
 
 # ============================================================================
 # USER PROPERTY
@@ -34,9 +40,11 @@ func _init(playcademy_client: JavaScriptObject):
 #   - user.role: String - student, parent, teacher, administrator
 #   - user.enrollments: Array - [{ subject, grade, courseId }]
 #   - user.organizations: Array - [{ id, name, type }]
+#   - user.xp: TimebackUserXp - XP data accessor
 #
 # Methods:
 #   - user.fetch() - Fetch fresh data from server (emits user_fetch_succeeded/failed)
+#   - user.xp.fetch() - Fetch XP data from server (emits xp_fetch_succeeded/failed)
 # ============================================================================
 var user:
 	get:
@@ -94,3 +102,9 @@ func _on_original_user_fetch_succeeded(user_data: Dictionary):
 
 func _on_original_user_fetch_failed(error_message: String):
 	emit_signal("user_fetch_failed", error_message)
+
+func _on_original_xp_fetch_succeeded(xp_data: Dictionary):
+	emit_signal("xp_fetch_succeeded", xp_data)
+
+func _on_original_xp_fetch_failed(error_message: String):
+	emit_signal("xp_fetch_failed", error_message)

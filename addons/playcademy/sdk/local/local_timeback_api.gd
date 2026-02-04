@@ -12,6 +12,10 @@ signal resume_activity_failed(error_message)
 signal user_fetch_succeeded(user_data: Dictionary)
 signal user_fetch_failed(error_message: String)
 
+# Signals for XP operations
+signal xp_fetch_succeeded(xp_data: Dictionary)
+signal xp_fetch_failed(error_message: String)
+
 var _base_url: String
 var _sandbox_url: String = ""
 
@@ -32,6 +36,10 @@ var _pause_start_time: int = 0  # When current pause started (0 if not paused)
 # User context object
 var _user: LocalTimebackUser
 
+# XP cache state (5 second TTL)
+const XP_CACHE_TTL_MS: int = 5000
+var _xp_cache: Dictionary = {}  # { cache_key: { "data": Dictionary, "timestamp": int } }
+
 func _init(base_url: String, sandbox_url: String = ""):
 	_base_url = base_url.rstrip("/")
 	_sandbox_url = sandbox_url.rstrip("/") if sandbox_url else ""
@@ -48,9 +56,11 @@ func _init(base_url: String, sandbox_url: String = ""):
 #   - user.role: String - student, parent, teacher, administrator
 #   - user.enrollments: Array - [{ subject, grade, courseId }]
 #   - user.organizations: Array - [{ id, name, type }]
+#   - user.xp: LocalTimebackUserXp - XP data accessor
 #
 # Methods:
 #   - user.fetch() - Fetch fresh data from server (emits user_fetch_succeeded/failed)
+#   - user.xp.fetch() - Fetch XP data from server (emits xp_fetch_succeeded/failed)
 # ============================================================================
 var user: LocalTimebackUser:
 	get:
@@ -290,15 +300,192 @@ func _on_user_fetch_completed(result: int, response_code: int, headers: PackedSt
 	emit_signal("user_fetch_succeeded", user_data)
 
 # ============================================================================
+# XP FETCH HANDLER
+# ============================================================================
+
+func _get_xp_cache_key(options: Dictionary) -> String:
+	var grade_str = str(options.get("grade", ""))
+	var subject_str = str(options.get("subject", ""))
+	var include_arr = options.get("include", [])
+	var include_sorted = include_arr.duplicate()
+	include_sorted.sort()
+	var include_str = ",".join(include_sorted)
+	return "%s:%s:%s" % [grade_str, subject_str, include_str]
+
+func _get_cached_xp(cache_key: String) -> Dictionary:
+	if not _xp_cache.has(cache_key):
+		return {}
+	var entry = _xp_cache[cache_key]
+	var now = Time.get_ticks_msec()
+	if now - entry["timestamp"] > XP_CACHE_TTL_MS:
+		_xp_cache.erase(cache_key)
+		return {}
+	var data = entry.get("data", {})
+	if data is Dictionary:
+		return data.duplicate(true)
+	return {}
+
+func _set_cached_xp(cache_key: String, data: Dictionary):
+	_xp_cache[cache_key] = {
+		"data": data.duplicate(true),
+		"timestamp": Time.get_ticks_msec()
+	}
+
+func _is_timeback_not_configured_response(data: Dictionary) -> bool:
+	return data.get("__playcademyDevWarning", "") == "timeback-not-configured"
+
+func _fetch_xp_from_backend(options: Dictionary = {}):
+	# Validate grade/subject pairing
+	var has_grade = options.has("grade")
+	var has_subject = options.has("subject")
+	if has_grade != has_subject:
+		printerr("[LocalTimebackAPI] XP fetch: Both grade and subject must be provided together.")
+		emit_signal("xp_fetch_failed", "GRADE_SUBJECT_MISMATCH")
+		return
+	
+	# Check cache unless force is true
+	var force = options.get("force", false)
+	var cache_key = _get_xp_cache_key(options)
+	if not force:
+		var cached = _get_cached_xp(cache_key)
+		if not cached.is_empty():
+			print("[LocalTimebackAPI] Returning cached XP data")
+			emit_signal("xp_fetch_succeeded", cached)
+			return
+	
+	print("[LocalTimebackAPI] Fetching XP data...")
+	var http := HTTPRequest.new()
+	add_child(http)
+	http.request_completed.connect(_on_xp_fetch_completed.bind(http, cache_key))
+	
+	var query_parts: Array = []
+	if has_grade:
+		query_parts.append("grade=%s" % str(options.get("grade")).uri_encode())
+	if has_subject:
+		query_parts.append("subject=%s" % str(options.get("subject")).uri_encode())
+	if options.has("include"):
+		var include_arr = options.get("include")
+		if include_arr.size() > 0:
+			query_parts.append("include=%s" % ",".join(include_arr).uri_encode())
+	
+	var query_string = "&".join(query_parts)
+	var url = "%s/integrations/timeback/xp" % _base_url
+	if not query_string.is_empty():
+		url = "%s?%s" % [url, query_string]
+	
+	var headers = ["Authorization: Bearer sandbox-demo-token"]
+	var err := http.request(url, headers)
+	
+	if err != OK:
+		printerr("[LocalTimebackAPI] Failed to make GET %s request. Error code: %s" % [url, err])
+		emit_signal("xp_fetch_failed", "HTTP_REQUEST_FAILED")
+		http.queue_free()
+
+func _on_xp_fetch_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, http: HTTPRequest, cache_key: String):
+	http.queue_free()
+	
+	if response_code != 200:
+		emit_signal("xp_fetch_failed", "HTTP_%d" % response_code)
+		return
+	
+	var json = JSON.new()
+	var parse_result = json.parse(body.get_string_from_utf8())
+	if parse_result != OK:
+		emit_signal("xp_fetch_failed", "JSON_PARSE_ERROR")
+		return
+	
+	var data = json.data
+	if data is Dictionary:
+		# If backend is running without Timeback integration enabled, it returns a stub response
+		# with __playcademyDevWarning=timeback-not-configured. In local dev, fall back to the
+		# sandbox mock endpoint so XP demos work out of the box.
+		if _is_timeback_not_configured_response(data):
+			print("[LocalTimebackAPI] Backend Timeback not configured; falling back to sandbox XP")
+			_fetch_xp_from_sandbox(cache_key)
+			return
+		
+		_set_cached_xp(cache_key, data)
+		var emit_data: Dictionary = data.duplicate(true)
+		emit_signal("xp_fetch_succeeded", emit_data)
+	else:
+		emit_signal("xp_fetch_failed", "INVALID_XP_RESPONSE")
+
+func _fetch_xp_from_sandbox(cache_key: String):
+	if _sandbox_url.is_empty():
+		emit_signal("xp_fetch_failed", "NO_SANDBOX_URL")
+		return
+	if _user_id.is_empty():
+		emit_signal("xp_fetch_failed", "NO_USER_ID")
+		return
+	
+	# cache_key format: "<grade>:<subject>:<includeCsv>"
+	var parts = cache_key.split(":", false)
+	var grade_str = parts[0] if parts.size() > 0 else ""
+	var subject_str = parts[1] if parts.size() > 1 else ""
+	var include_str = parts[2] if parts.size() > 2 else ""
+	
+	var query_parts: Array = []
+	if not grade_str.is_empty() and not subject_str.is_empty():
+		query_parts.append("grade=%s" % grade_str.uri_encode())
+		query_parts.append("subject=%s" % subject_str.uri_encode())
+	if not include_str.is_empty():
+		query_parts.append("include=%s" % include_str.uri_encode())
+	
+	var query_string = "&".join(query_parts)
+	var url = "%s/timeback/student-xp/%s" % [_sandbox_url, _user_id]
+	if not query_string.is_empty():
+		url = "%s?%s" % [url, query_string]
+	
+	var http := HTTPRequest.new()
+	add_child(http)
+	http.request_completed.connect(_on_xp_fetch_completed_from_sandbox.bind(http, cache_key))
+	
+	var headers = ["Authorization: Bearer sandbox-demo-token"]
+	var err := http.request(url, headers)
+	if err != OK:
+		printerr("[LocalTimebackAPI] Failed to make GET %s request. Error code: %s" % [url, err])
+		emit_signal("xp_fetch_failed", "HTTP_REQUEST_FAILED")
+		http.queue_free()
+
+func _on_xp_fetch_completed_from_sandbox(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, http: HTTPRequest, cache_key: String):
+	http.queue_free()
+	
+	if response_code != 200:
+		emit_signal("xp_fetch_failed", "HTTP_%d" % response_code)
+		return
+	
+	var json = JSON.new()
+	var parse_result = json.parse(body.get_string_from_utf8())
+	if parse_result != OK:
+		emit_signal("xp_fetch_failed", "JSON_PARSE_ERROR")
+		return
+	
+	var data = json.data
+	if data is Dictionary:
+		_set_cached_xp(cache_key, data)
+		var emit_data: Dictionary = data.duplicate(true)
+		emit_signal("xp_fetch_succeeded", emit_data)
+	else:
+		emit_signal("xp_fetch_failed", "INVALID_XP_RESPONSE")
+
+# ============================================================================
 # LOCAL TIMEBACK USER CLASS
 # ============================================================================
 # Provides access to TimeBack user data matching TypeScript SDK's client.timeback.user
 # ============================================================================
 class LocalTimebackUser extends RefCounted:
 	var _api: LocalTimebackAPI
+	var _xp: LocalTimebackUserXp
 	
 	func _init(api: LocalTimebackAPI):
 		_api = api
+		_xp = LocalTimebackUserXp.new(api)
+	
+	# XP data access for the current user
+	# Call xp.fetch() to get XP from the server
+	var xp: LocalTimebackUserXp:
+		get:
+			return _xp
 	
 	# Get the user's TimeBack ID
 	var id: String:
@@ -330,3 +517,27 @@ class LocalTimebackUser extends RefCounted:
 	func fetch(options: Dictionary = {}):
 		_api._fetch_user_from_sandbox(options)
 		print("[LocalTimebackAPI] Fetching fresh user data...")
+
+# ============================================================================
+# LOCAL TIMEBACK USER XP CLASS
+# ============================================================================
+# Provides access to TimeBack XP data matching TypeScript SDK's client.timeback.user.xp
+# ============================================================================
+class LocalTimebackUserXp extends RefCounted:
+	var _api: LocalTimebackAPI
+	
+	func _init(api: LocalTimebackAPI):
+		_api = api
+	
+	# Fetch XP data from the server
+	# Emits xp_fetch_succeeded(xp_data: Dictionary) or xp_fetch_failed(error_message: String)
+	# The xp_data dictionary contains: { totalXp: int, todayXp?: int, courses?: Array }
+	# Each course in courses array: { grade: int, subject: String, title: String, totalXp: int, todayXp?: int }
+	#
+	# @param options - Optional dictionary with:
+	#   - grade: int (must be used with subject)
+	#   - subject: String (must be used with grade)
+	#   - include: Array of Strings ("perCourse", "today")
+	#   - force: bool - bypass 5s cache
+	func fetch(options: Dictionary = {}):
+		_api._fetch_xp_from_backend(options)
