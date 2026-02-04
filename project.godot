@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Astro Math"
 config/description="Solve math problems in space!"
-config/version="1.3"
+config/version="1.3.1"
 run/main_scene="uid://dgsyvy33jqe6f"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 boot_splash/image="uid://b11flqxfam1db"

@@ -215,7 +215,7 @@ var show_accuracy_line = false  # Shows current accuracy percentage
 var stars_required_to_unlock_next_level = 3  # Stars needed on a level to unlock the next level in the pack
 
 # Strict grade progression - when true, only shows the earliest non-mastered grade
-var strict_grade_progression = false  # Hides navigation buttons and locks player to current grade until mastered
+var strict_grade_progression = true  # Hides navigation buttons and locks player to current grade until mastered
 
 # Level button visibility (alpha values for grayed out states)
 var level_button_alpha_available = 1.0  # Fully visible - can be played
