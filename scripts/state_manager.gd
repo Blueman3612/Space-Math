@@ -274,6 +274,9 @@ func return_to_menu():
 	LevelManager.update_level_availability()
 	UIManager.update_drill_mode_high_score_display()
 	
+	# Fetch and log Timeback XP data for testing
+	PlaycademyManager.fetch_and_log_xp()
+	
 	# MainMenu teleports to above screen, then animates down to center
 	main_menu_node.position = GameConfig.menu_above_screen
 	var menu_tween = main_menu_node.create_tween()

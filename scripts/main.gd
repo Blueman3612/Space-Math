@@ -51,6 +51,9 @@ func _on_save_data_loaded(success: bool):
 	LevelManager.initialize_with_assessment_check()
 	UIManager.update_drill_mode_high_score_display()
 	
+	# Fetch and log Timeback XP data for testing
+	PlaycademyManager.fetch_and_log_xp()
+	
 	# Connect menu buttons
 	connect_menu_buttons()
 	connect_game_over_buttons()

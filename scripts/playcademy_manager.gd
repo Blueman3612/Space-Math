@@ -35,6 +35,11 @@ func connect_playcademy_signals():
 				PlaycademySdk.timeback.pause_activity_failed.connect(_on_timeback_pause_activity_failed)
 			if not PlaycademySdk.timeback.resume_activity_failed.is_connected(_on_timeback_resume_activity_failed):
 				PlaycademySdk.timeback.resume_activity_failed.connect(_on_timeback_resume_activity_failed)
+			# Connect XP fetch signals
+			if not PlaycademySdk.timeback.xp_fetch_succeeded.is_connected(_on_timeback_xp_fetch_succeeded):
+				PlaycademySdk.timeback.xp_fetch_succeeded.connect(_on_timeback_xp_fetch_succeeded)
+			if not PlaycademySdk.timeback.xp_fetch_failed.is_connected(_on_timeback_xp_fetch_failed):
+				PlaycademySdk.timeback.xp_fetch_failed.connect(_on_timeback_xp_fetch_failed)
 
 func _on_pc_submit_succeeded(_score_data):
 	"""Handle successful Playcademy score submission"""
@@ -55,6 +60,31 @@ func _on_timeback_pause_activity_failed(error_message):
 func _on_timeback_resume_activity_failed(error_message):
 	"""Handle failed TimeBack activity resume"""
 	printerr("[TimeBack] Failed to resume activity: ", error_message)
+
+func _on_timeback_xp_fetch_succeeded(xp_data: Dictionary):
+	"""Handle successful TimeBack XP fetch"""
+	print("\n" + "=".repeat(60))
+	print("[TimeBack] XP DATA FETCHED")
+	print("=".repeat(60))
+	print("Total XP: ", xp_data.get("totalXp", 0))
+	if xp_data.has("todayXp"):
+		print("Today's XP: ", xp_data.get("todayXp", 0))
+	if xp_data.has("courses"):
+		print("Courses: ", xp_data.get("courses", []))
+	print("=".repeat(60) + "\n")
+
+func _on_timeback_xp_fetch_failed(error_message: String):
+	"""Handle failed TimeBack XP fetch"""
+	printerr("[TimeBack] Failed to fetch XP data: ", error_message)
+
+func fetch_and_log_xp():
+	"""Fetch the student's XP data (including today's XP) and log it to the console"""
+	if not PlaycademySdk or not PlaycademySdk.is_ready() or not PlaycademySdk.timeback:
+		print("[TimeBack] SDK not ready, cannot fetch XP data")
+		return
+	
+	print("[TimeBack] Fetching XP data with today's XP included...")
+	PlaycademySdk.timeback.user.xp.fetch({"include": ["today"]})
 
 func attempt_playcademy_auto_submit():
 	"""Attempt automatic Playcademy score submission for drill mode"""
