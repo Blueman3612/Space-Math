@@ -28,6 +28,9 @@ var play_button: Button = null
 # XP Warning
 var xp_warning_label: Label = null  # Reference to the XpWarning label
 
+# Star Progress display
+var star_progress_label: Label = null  # Reference to the StarProgress/Label node
+
 func initialize(main_node: Control):
 	"""Initialize level manager with references to needed nodes"""
 	main_menu_node = main_node.get_node("MainMenu")
@@ -42,6 +45,11 @@ func initialize(main_node: Control):
 	xp_warning_label = main_menu_node.get_node_or_null("XpWarning")
 	if xp_warning_label:
 		xp_warning_label.visible = false
+	
+	# Get star progress label reference
+	var star_progress_node = main_menu_node.get_node_or_null("StarProgress")
+	if star_progress_node:
+		star_progress_label = star_progress_node.get_node_or_null("Label")
 	
 	# Connect PlayButton if it exists
 	if play_button:
@@ -505,6 +513,43 @@ func update_grade_display():
 	# Update PlayButton visibility
 	if play_button:
 		play_button.visible = not assessment_completed
+	
+	# Update star progress display
+	update_star_progress_display()
+
+func update_star_progress_display():
+	"""Update the star progress label to show stars earned / total stars for current grade"""
+	if not star_progress_label:
+		return
+	
+	var grade = GameConfig.current_grade
+	var stars_earned = get_grade_stars_earned(grade)
+	var total_stars = get_grade_total_stars(grade)
+	
+	star_progress_label.text = "%d/%d" % [stars_earned, total_stars]
+
+func get_grade_stars_earned(grade: int) -> int:
+	"""Get the total number of stars earned for a grade"""
+	if not GameConfig.GRADE_LEVELS.has(grade):
+		return 0
+	
+	var total_stars = 0
+	var grade_data = GameConfig.GRADE_LEVELS[grade]
+	for category in grade_data.categories:
+		for level_data in category.levels:
+			total_stars += SaveManager.get_grade_level_stars(level_data.id)
+	return total_stars
+
+func get_grade_total_stars(grade: int) -> int:
+	"""Get the total number of possible stars for a grade (3 per level)"""
+	if not GameConfig.GRADE_LEVELS.has(grade):
+		return 0
+	
+	var total_levels = 0
+	var grade_data = GameConfig.GRADE_LEVELS[grade]
+	for category in grade_data.categories:
+		total_levels += category.levels.size()
+	return total_levels * 3  # 3 stars per level
 
 func switch_to_previous_grade():
 	"""Switch to the previous page with smooth animation"""
