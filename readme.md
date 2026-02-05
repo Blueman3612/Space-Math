@@ -134,6 +134,8 @@ After the assessment completes:
 │    grade is fully mastered (all levels at 3 stars)         │
 │  • Levels unlock sequentially within each category         │
 │    (3 stars required to unlock next level)                 │
+│  • After completing all levels in a grade, student takes   │
+│    an official test to confirm mastery before advancing    │
 └────────────────────────────────────────────────────────────┘
 ```
 
