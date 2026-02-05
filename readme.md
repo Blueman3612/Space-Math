@@ -4,6 +4,12 @@ Astro Math is an adaptive math fluency game covering **Grades 1-5** with 40+ ski
 
 ---
 
+## Who is it for?
+
+Astro Math is designed for **students rostered in grades 2-8** who have not yet mastered 5th grade FastMath. The diagnostic assessment places each student at their appropriate skill level, so students work on exactly the math facts they need to build fluency with — regardless of their rostered grade.
+
+---
+
 ## 🎯 The Assessment
 
 When a student first opens Astro Math, they take a **diagnostic assessment** before accessing any content. This assessment:
@@ -161,6 +167,18 @@ Base XP = 2 × (correct_answers / mastery_count)
 | Accuracy ≥ 80% | **Base XP** |
 | 100% accuracy + new star earned | **Base XP × 1.25** |
 
+### Replay XP Falloff
+
+When replaying a level **without earning a new star**, XP is reduced with diminishing returns to discourage farming:
+
+| Consecutive Replays Without New Star | XP Multiplier |
+|--------------------------------------|---------------|
+| 1st replay without new star | **0.5x** |
+| 2nd replay without new star | **0.25x** |
+| 3rd+ replay without new star | **0.1x** |
+
+Earning a new star **resets** the falloff counter back to full XP.
+
 ### Example XP Scenarios
 
 | Scenario | Calculation | XP Earned |
@@ -169,6 +187,8 @@ Base XP = 2 × (correct_answers / mastery_count)
 | 20/20 correct, 100% accuracy, new star | 2 × (20/20) × 1.25 = **2.5 XP** |
 | 15/20 correct, 75% accuracy | Below 80% threshold = **0 XP** |
 | 8/20 correct, 90% accuracy | 2 × (8/20) = **0.8 XP** |
+| 15/20 correct, 85% acc, 1st replay no new star | 2 × (15/20) × 0.5 = **0.75 XP** |
+| 15/20 correct, 85% acc, 3rd replay no new star | 2 × (15/20) × 0.1 = **0.15 XP** |
 
 ---
 
@@ -225,4 +245,4 @@ The diagnostic assessment identifies fluency gaps and places students appropriat
 | **Assessment** | 40-standard diagnostic, adapts via prerequisites |
 | **Placement** | Auto-unlocks mastered content |
 | **Progression** | Grade 1-5 levels with 3-star mastery system |
-| **XP System** | Simple formula: 2 × (correct/mastery_count), requires 80%+ accuracy |
+| **XP System** | Simple formula: 2 × (correct/mastery_count), requires 80%+ accuracy, diminishing returns on replays without new stars |

@@ -293,17 +293,38 @@ func end_grade_level_session_and_award_xp(level_data: Dictionary, previous_stars
 	# Apply accuracy threshold - if accuracy < 80%, no XP
 	var final_xp = 0.0
 	var perfect_bonus_applied = false
+	var earned_new_star = new_stars > previous_stars
+	var replay_falloff_multiplier = 1.0
+	var replay_falloff_applied = false
+	var no_new_star_replay_count = 0
+	
 	if accuracy >= GameConfig.star1_accuracy_threshold:  # 80%
 		final_xp = base_xp
 		
 		# Apply perfect accuracy bonus if 100% accuracy AND earned at least 1 new star
-		var earned_new_star = new_stars > previous_stars
 		if accuracy >= 1.0 and earned_new_star:
 			final_xp = base_xp * GameConfig.perfect_accuracy_xp_multiplier
 			perfect_bonus_applied = true
+		
+		# Apply replay falloff if no new star was earned
+		if not earned_new_star:
+			no_new_star_replay_count = SaveManager.get_no_new_star_replays(level_data.id)
+			var multipliers = GameConfig.replay_no_new_star_xp_multipliers
+			if no_new_star_replay_count < multipliers.size():
+				replay_falloff_multiplier = multipliers[no_new_star_replay_count]
+			else:
+				replay_falloff_multiplier = multipliers[multipliers.size() - 1]  # Use last value for all subsequent
+			final_xp = final_xp * replay_falloff_multiplier
+			replay_falloff_applied = true
 	
 	# Round to nearest hundredth
 	final_xp = snapped(final_xp, 0.01)
+	
+	# Update replay counter in save data
+	if earned_new_star:
+		SaveManager.reset_no_new_star_replays(level_data.id)
+	else:
+		SaveManager.increment_no_new_star_replays(level_data.id)
 	
 	# Build detailed breakdown
 	var details = {
@@ -315,6 +336,9 @@ func end_grade_level_session_and_award_xp(level_data: Dictionary, previous_stars
 		"progress_ratio": progress_ratio,
 		"base_xp": base_xp,
 		"perfect_bonus_applied": perfect_bonus_applied,
+		"replay_falloff_applied": replay_falloff_applied,
+		"replay_falloff_multiplier": replay_falloff_multiplier,
+		"no_new_star_replay_count": no_new_star_replay_count,
 		"previous_stars": previous_stars,
 		"new_stars": new_stars,
 		"final_xp": final_xp,
@@ -328,6 +352,10 @@ func end_grade_level_session_and_award_xp(level_data: Dictionary, previous_stars
 	print("=".repeat(60))
 	print("Level: %s (ID: %s)" % [level_data.name, level_data.id])
 	print("Stars: %d previously, %d earned this session" % [previous_stars, new_stars])
+	if earned_new_star:
+		print("  → NEW STAR EARNED! Replay falloff counter reset.")
+	else:
+		print("  → No new star. Replay falloff count: %d" % no_new_star_replay_count)
 	print("")
 	print("PERFORMANCE METRICS:")
 	print("  Correct answers: %d / %d (answered)" % [correct_answers, total_answers])
@@ -341,6 +369,8 @@ func end_grade_level_session_and_award_xp(level_data: Dictionary, previous_stars
 		print("  Accuracy below 80%% threshold - 0 XP awarded")
 	elif perfect_bonus_applied:
 		print("  Perfect accuracy (100%%) + new star → %.2f × %.2f = %.2f XP" % [base_xp, GameConfig.perfect_accuracy_xp_multiplier, final_xp])
+	elif replay_falloff_applied:
+		print("  No new star falloff (replay #%d): %.2f × %.2fx = %.2f XP" % [no_new_star_replay_count + 1, base_xp, replay_falloff_multiplier, final_xp])
 	else:
 		print("  Final XP: %.2f" % final_xp)
 	print("=".repeat(60) + "\n")

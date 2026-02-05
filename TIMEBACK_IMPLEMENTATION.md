@@ -151,9 +151,53 @@ The system sends progress data including:
 
 This data is sent to `PlaycademySdk.timeback.record_progress()` for analytics.
 
+## Replay XP Falloff
+
+When a player replays a level **without earning a new star** (e.g., they had 1 star and only earned 1 star again), XP is reduced with diminishing returns:
+
+| Consecutive Replays Without New Star | XP Multiplier |
+|--------------------------------------|---------------|
+| 1st replay | **0.5x** |
+| 2nd replay | **0.25x** |
+| 3rd+ replay | **0.1x** |
+
+**Key rules:**
+- The falloff counter is tracked **per level** in save data (`no_new_star_replays`)
+- When a player **earns a new star**, the counter resets to 0 (full XP on next play)
+- The falloff multiplier is applied **after** the base XP and perfect accuracy bonus calculations
+- If accuracy is below 80%, XP is 0 regardless (falloff doesn't apply to 0)
+
+### Configuration
+
+In `scripts/game_config.gd`:
+
+```gdscript
+# Replay XP falloff - multipliers applied when replaying without earning a NEW star
+# Index 0 = first replay without new star, index 1 = second, last value = all subsequent
+var replay_no_new_star_xp_multipliers = [0.5, 0.25, 0.1]
+```
+
+### Example: Replay Falloff
+
+- Mastery count: 20
+- Correct answers: 15
+- Accuracy: 88%
+- Previous stars: 2, New stars: 2 (no new star earned)
+- This is the player's 2nd consecutive replay without a new star
+
+```
+Base XP = 2 × (15/20) = 1.5 XP
+No new star (replay #2): 1.5 × 0.25 = 0.375 XP
+Stars: 2 (no change)
+Final XP: 0.38 XP
+```
+
+If the player then earns a 3rd star on their next attempt, the counter resets and they receive full XP (plus the perfect accuracy bonus if applicable).
+
 ## Notes
 
 - The 80% accuracy threshold ensures players are answering carefully, not rushing
 - The 1.25x perfect accuracy bonus rewards precision
-- No penalty for replaying levels - XP is always based on current performance
+- Replaying levels without earning new stars yields diminishing XP to discourage farming
+- Earning a new star resets the falloff counter, rewarding genuine improvement
 - Maximum possible XP per level: 2.5 XP (100% correct + 100% accuracy + new star)

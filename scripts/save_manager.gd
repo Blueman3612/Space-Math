@@ -398,13 +398,49 @@ func add_grade_level_xp_earned(level_id: String, xp_amount: float):
 			"best_accuracy": 0,
 			"best_time": 999999.0,
 			"best_cqpm": 0.0,
-			"xp_earned": 0.0
+			"xp_earned": 0.0,
+			"no_new_star_replays": 0
 		}
 	
 	# Add to cumulative XP (no maximum cap)
 	var current_xp = save_data.grade_levels[level_id].get("xp_earned", 0.0)
 	save_data.grade_levels[level_id].xp_earned = current_xp + xp_amount
 	has_unsaved_changes = true
+
+func get_no_new_star_replays(level_id: String) -> int:
+	"""Get the number of consecutive replays without earning a new star for a grade-based level"""
+	if not save_data.has("grade_levels"):
+		return 0
+	if not save_data.grade_levels.has(level_id):
+		return 0
+	return save_data.grade_levels[level_id].get("no_new_star_replays", 0)
+
+func increment_no_new_star_replays(level_id: String):
+	"""Increment the no-new-star replay counter for a grade-based level"""
+	_ensure_grade_level_exists(level_id)
+	var current_count = save_data.grade_levels[level_id].get("no_new_star_replays", 0)
+	save_data.grade_levels[level_id].no_new_star_replays = current_count + 1
+	has_unsaved_changes = true
+
+func reset_no_new_star_replays(level_id: String):
+	"""Reset the no-new-star replay counter for a grade-based level (called when a new star is earned)"""
+	_ensure_grade_level_exists(level_id)
+	save_data.grade_levels[level_id].no_new_star_replays = 0
+	has_unsaved_changes = true
+
+func _ensure_grade_level_exists(level_id: String):
+	"""Ensure the grade_levels dict and level entry exist with default values"""
+	if not save_data.has("grade_levels"):
+		save_data.grade_levels = {}
+	if not save_data.grade_levels.has(level_id):
+		save_data.grade_levels[level_id] = {
+			"highest_stars": 0,
+			"best_accuracy": 0,
+			"best_time": 999999.0,
+			"best_cqpm": 0.0,
+			"xp_earned": 0.0,
+			"no_new_star_replays": 0
+		}
 
 func update_grade_level_data(level_id: String, accuracy: int, time_taken: float, stars_earned: int):
 	"""Update the saved data for a grade-based level"""
@@ -419,7 +455,8 @@ func update_grade_level_data(level_id: String, accuracy: int, time_taken: float,
 			"best_accuracy": 0,
 			"best_time": 999999.0,
 			"best_cqpm": 0.0,
-			"xp_earned": 0.0
+			"xp_earned": 0.0,
+			"no_new_star_replays": 0
 		}
 	
 	var level_data = save_data.grade_levels[level_id]

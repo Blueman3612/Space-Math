@@ -200,6 +200,10 @@ var star3_accuracy_threshold = 0.90  # 90% accuracy
 # XP multiplier for perfect accuracy + earning a new star
 var perfect_accuracy_xp_multiplier = 1.25
 
+# Replay XP falloff - multipliers applied when replaying a level without earning a NEW star
+# Index 0 = first replay without new star, index 1 = second, last value = all subsequent
+var replay_no_new_star_xp_multipliers = [0.5, 0.25, 0.1]
+
 # Accuracy line colors (based on star threshold proximity)
 var accuracy_color_3star = Color(0, 1, 0)  # Green for >= 90%
 var accuracy_color_2star = Color(1, 1, 0)  # Yellow for >= 85%
