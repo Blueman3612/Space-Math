@@ -377,19 +377,19 @@ func end_grade_level_session_and_award_xp(level_data: Dictionary, previous_stars
 	
 	# Only award if session meets minimum duration
 	if total_duration >= GameConfig.timeback_min_session_duration:
-		award_grade_level_timeback_xp(int(round(final_xp)), details, mastery_count)
+		award_grade_level_timeback_xp(final_xp, details, mastery_count)
 	else:
 		print("[TimeBack] ⚠ Session too short (%.1fs < %.1fs minimum), no XP awarded" % [total_duration, GameConfig.timeback_min_session_duration])
 	
 	return details
 
-func award_grade_level_timeback_xp(xp: int, details: Dictionary, _mastery_count: int):
+func award_grade_level_timeback_xp(xp: float, details: Dictionary, _mastery_count: int):
 	"""Award XP through Playcademy TimeBack API for grade-based levels"""
 	if not PlaycademySdk or not PlaycademySdk.is_ready() or not PlaycademySdk.timeback:
 		print("[TimeBack] SDK not ready, cannot award XP")
 		return
 	
-	# Prepare score data
+	# Prepare score data (xpAwarded sent as float for precision)
 	var score_data = {
 		"correctQuestions": details.correct_answers,
 		"totalQuestions": details.total_answers,

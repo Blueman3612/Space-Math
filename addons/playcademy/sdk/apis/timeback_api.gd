@@ -183,7 +183,7 @@ func resume_activity():
 
 # End the current activity and submit results
 # XP is calculated server-side with attempt-aware multipliers
-# score_data should contain: { correctQuestions: int, totalQuestions: int, xpAwarded: int (optional), masteredUnits: int (optional) }
+# score_data should contain: { correctQuestions: int, totalQuestions: int, xpAwarded: float (optional), masteredUnits: int (optional) }
 func end_activity(score_data: Dictionary):
 	if not _activity_in_progress:
 		printerr("[TimebackAPI] No activity in progress. Call start_activity() first.")
@@ -213,7 +213,7 @@ func end_activity(score_data: Dictionary):
 	
 	var log_parts = ["[TimebackAPI] Ending activity: %.1f%% (%d/%d)" % [score_percentage, correct_questions, total_questions]]
 	if xp_awarded != null:
-		log_parts.append(" - XP Override: %d" % xp_awarded)
+		log_parts.append(" - XP Override: %.2f" % xp_awarded)
 	if mastered_units != null:
 		log_parts.append(" - Mastered Units: %d" % mastered_units)
 	print("".join(log_parts))
