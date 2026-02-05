@@ -118,19 +118,22 @@ After the assessment completes:
 ┌────────────────────────────────────────────────────────────┐
 │  For each MASTERED standard:                               │
 │  • Corresponding level(s) marked as 3-star complete        │
-│  • Student can replay for practice (minimal XP)            │
+│  • 3-star levels are grayed out and cannot be replayed     │
 └────────────────────────────────────────────────────────────┘
                             ↓
 ┌────────────────────────────────────────────────────────────┐
 │  For each FAILED/SKIPPED standard:                         │
-│  • Corresponding level(s) remain locked or 0-star          │
+│  • Corresponding level(s) remain at 0 stars                │
 │  • Student earns full XP when they master these later      │
 └────────────────────────────────────────────────────────────┘
                             ↓
 ┌────────────────────────────────────────────────────────────┐
 │  Student proceeds to MAIN MENU                             │
-│  • All grades now accessible                               │
-│  • Recommended starting point visible                      │
+│  • Locked to first non-mastered grade                      │
+│  • Cannot navigate to other grades until current           │
+│    grade is fully mastered (all levels at 3 stars)         │
+│  • Levels unlock sequentially within each category         │
+│    (3 stars required to unlock next level)                 │
 └────────────────────────────────────────────────────────────┘
 ```
 
@@ -183,12 +186,12 @@ Earning a new star **resets** the falloff counter back to full XP.
 
 | Scenario | Calculation | XP Earned |
 |----------|-------------|-----------|
-| 12/20 correct, 85% accuracy | 2 × (12/20) = **1.2 XP** |
-| 20/20 correct, 100% accuracy, new star | 2 × (20/20) × 1.25 = **2.5 XP** |
-| 15/20 correct, 75% accuracy | Below 80% threshold = **0 XP** |
-| 8/20 correct, 90% accuracy | 2 × (8/20) = **0.8 XP** |
-| 15/20 correct, 85% acc, 1st replay no new star | 2 × (15/20) × 0.5 = **0.75 XP** |
-| 15/20 correct, 85% acc, 3rd replay no new star | 2 × (15/20) × 0.1 = **0.15 XP** |
+| 12/20 correct, 85% accuracy | 2 × (12/20) | **1.2 XP** |
+| 20/20 correct, 100% accuracy, new star | 2 × (20/20) × 1.25 | **2.5 XP** |
+| 15/20 correct, 75% accuracy | Below 80% threshold | **0 XP** |
+| 8/20 correct, 90% accuracy | 2 × (8/20) | **0.8 XP** |
+| 15/20 correct, 85% acc, 1st replay no new star | 2 × (15/20) × 0.5 | **0.75 XP** |
+| 15/20 correct, 85% acc, 3rd replay no new star | 2 × (15/20) × 0.1 | **0.15 XP** |
 
 ---
 
@@ -224,17 +227,31 @@ Earning a new star **resets** the falloff counter back to full XP.
 
 Astro Math is a **fluency training tool**—it builds automaticity with math facts, not conceptual understanding. Students are expected to understand operations; Astro Math trains them to perform those operations automatically by improving their **CQPM (Correct Questions Per Minute)**.
 
-The game contains **77 levels** across Grades 1-5, requiring **2,428 total correct answers**. Time to mastery depends on a student's average time per correct answer (including practice and building speed):
+### Per-Grade Breakdown
 
-| Student Profile | Avg. Time/Answer | Time to Master All Grades |
-|-----------------|------------------|---------------------------|
-| Already fluent | ~3 sec | **2.5 hours** |
-| Near fluent | ~15 sec | **~10 hours** |
-| Developing fluency | ~30 sec | **~20 hours** |
-| Building from baseline | ~1 min | **~40 hours** |
-| Single grade (developing) | — | **3-6 hours per grade** |
+| Grade | Levels | Correct Answers to Master | Categories |
+|-------|--------|---------------------------|------------|
+| 1 | 11 | 385 | Addition, Subtraction, Add./Sub. |
+| 2 | 15 | 372 | Addition, Subtraction, Add./Sub., 2-Digit, Equivalence, 3-Digit |
+| 3 | 19 | 689 | Add./Sub., 3-Digit, Multiplication, Division, Mul./Div., Fractions |
+| 4 | 17 | 562 | Addition, Subtraction, Multiplication, Division, Mul./Div., Decimals, Fractions |
+| 5 | 15 | 430 | Addition, Subtraction, Decimals, Multiplication, Division, Mul./Div., Fractions |
+| **Total** | **77** | **2,438** | |
 
-The diagnostic assessment identifies fluency gaps and places students appropriately, avoiding repetition of already-mastered content.
+### Estimated Time Per Grade
+
+Time to mastery depends on a student's average time per correct answer (including practice and repeat attempts to build speed):
+
+| Grade | Developing (~30s/ans) | Near Fluent (~15s/ans) | Already Fluent (~3s/ans) |
+|-------|-----------------------|------------------------|--------------------------|
+| 1 | ~3 hours | ~1.5 hours | ~20 min |
+| 2 | ~3 hours | ~1.5 hours | ~20 min |
+| 3 | ~6 hours | ~3 hours | ~35 min |
+| 4 | ~5 hours | ~2.5 hours | ~30 min |
+| 5 | ~3.5 hours | ~2 hours | ~20 min |
+| **All Grades** | **~20 hours** | **~10 hours** | **~2 hours** |
+
+The diagnostic assessment identifies fluency gaps and places students at their first non-mastered grade, skipping already-mastered content entirely.
 
 ---
 
