@@ -593,14 +593,14 @@ func update_drill_mode_game_over_ui_visibility():
 	
 	var cqpm_title = game_over_node.get_node("CQPMTitle")
 	if cqpm_title:
-		cqpm_title.visible = true
+		cqpm_title.visible = GameConfig.show_cqpm_on_gameover
 	
 	if cqpm_label:
-		cqpm_label.visible = true
+		cqpm_label.visible = GameConfig.show_cqpm_on_gameover
 	
 	var cqpm_tooltip = game_over_node.get_node("CQPMTooltip")
 	if cqpm_tooltip:
-		cqpm_tooltip.visible = true
+		cqpm_tooltip.visible = GameConfig.show_cqpm_on_gameover
 	
 	if drill_mode_score_label:
 		drill_mode_score_label.visible = true
@@ -629,20 +629,27 @@ func update_normal_mode_game_over_ui_visibility():
 		level_complete_label.visible = true
 	
 	# Show Star1-3 (normal level stars), hide Star0 and Star4 (assessment only)
-	var nodes_to_show = ["CorrectTitle", "AccuracyTitle", "You", "PlayerCorrect", "PlayerAccuracy", "Star1", "Star2", "Star3", "CQPMTitle", "CQPMTooltip"]
+	var nodes_to_show = ["CorrectTitle", "AccuracyTitle", "You", "PlayerCorrect", "PlayerAccuracy", "Star1", "Star2", "Star3"]
 	for node_name in nodes_to_show:
 		var node = game_over_node.get_node(node_name)
 		if node:
 			node.visible = true
+	
+	# Handle CQPM nodes visibility based on config
+	var cqpm_title = game_over_node.get_node("CQPMTitle")
+	if cqpm_title:
+		cqpm_title.visible = GameConfig.show_cqpm_on_gameover
+	var cqpm_tooltip = game_over_node.get_node("CQPMTooltip")
+	if cqpm_tooltip:
+		cqpm_tooltip.visible = GameConfig.show_cqpm_on_gameover
+	if cqpm_label:
+		cqpm_label.visible = GameConfig.show_cqpm_on_gameover
 	
 	# Hide Star0 and Star4 (assessment only)
 	if star0_node:
 		star0_node.visible = false
 	if star4_node:
 		star4_node.visible = false
-	
-	if cqpm_label:
-		cqpm_label.visible = true
 	
 	# Show XP earned elements
 	if xp_earned_title:

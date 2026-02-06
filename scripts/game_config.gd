@@ -215,6 +215,9 @@ var show_progress_line = false  # Shows progress towards mastery_count (question
 var show_timer_line = false  # Shows remaining time
 var show_accuracy_line = false  # Shows current accuracy percentage
 
+# Game over screen visibility toggles
+var show_cqpm_on_gameover = false  # Shows CQPM label and tooltip on game over screen
+
 # Level unlock requirements
 var stars_required_to_unlock_next_level = 3  # Stars needed on a level to unlock the next level in the pack
 
